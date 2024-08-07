@@ -14,7 +14,7 @@ The project uses the Companies House dataset, which contains information about r
   - `companies.parquet`
 
 ## Repository Structure
-- `Companies_House_Data_Analysis.ipynb`: Main Jupyter notebook containing the analysis
+- `AVH_AutoValidate_CompaniesHouse.ipynb`: Main Jupyter notebook containing the analysis
 - `requirements.txt`: List of Python packages required for this project
 - `README.md`: This file, containing project information and instructions
 
