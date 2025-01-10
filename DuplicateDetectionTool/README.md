@@ -45,33 +45,8 @@ Export results as duplicates.csv, overly_similar.csv, and unique_records.csv.
 
 ### 4. Directory Structure
 
-DuplicateDetectionTool/
+![Alt text] (https://github.com/itsbigspark/ntu-ktp-data-quality/blob/main/DuplicateDetectionTool/KTP_Dupes/Images/Screenshot%202025-01-10%20at%2014.10.30.png)
 
-├── duplicate_detection_tool/
-
-│   ├── clustering.py
-
-│   ├── meta_classifier.py
-
-│   ├── preprocessing.py
-
-│   ├── processing.py
-
-│   ├── similarity.py
-
-│   ├── duplicates_app.py
-
-│   └── images/
-
-├── main.py
-
-├── requirements.txt
-
-├── setup.py
-
-├── README.md
-
-├── example_data/
 
 
 Contributing
