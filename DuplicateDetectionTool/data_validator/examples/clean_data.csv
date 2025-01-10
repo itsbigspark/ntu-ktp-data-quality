@@ -1,5 +1,0 @@
-TransactionID,TransactionDate,CustomerID,Amount,PaymentMethod,Description
-101,2023-01-01,C001,100.50,credit,Purchase of electronics
-102,2023-01-02,C002,200.75,debit,Online payment
-103,2023-01-03,C003,150.25,credit,Store purchase
-104,2023-01-04,C004,300.40,credit,Online subscription

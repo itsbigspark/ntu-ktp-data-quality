@@ -1,5 +1,0 @@
-TransactionID,TransactionDate,CustomerID,Amount,PaymentMethod,Description
-101,2023-01-01,C001,100.50,credit,Purchase of electronics
-102,MISSING,C002,INVALID,debit,
-,2023-01-03,C003,150.25,MISSING,"1234"
-INVALID,2023-01-04,C004,300.40,credit,Online subscription
