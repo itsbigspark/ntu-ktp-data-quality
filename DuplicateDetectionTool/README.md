@@ -46,7 +46,13 @@ Export results as duplicates.csv, overly_similar.csv, and unique_records.csv.
 ### 4. Images
 
 ![Screenshot of Duplicate Detection Tool](Screenshots/Screenshot%202025-01-10%20at%2014.10.30.png)
+Landing page after data upload
 
+![Screenshot of Duplicate Detection Tool](Screenshots/Screenshot%2025-01-10%at%14.10.53.png)
+
+![Screenshot of Duplicate Detection Tool](Screenshots/Screenshot%2025-01-10%at%14.12.41.png)
+
+![Screenshot of Duplicate Detection Tool](Screenshots/Screenshot%2025-01-10%at%14.12.49.png)
 
 
 
