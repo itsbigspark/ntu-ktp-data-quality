@@ -23,12 +23,17 @@ cd ntu-ktp-data-quality/DuplicateDetectionTool/KTP_Dupes
 It is recommended to use a virtual environment.
 
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+source venv/bin/activate  
+
+On Windows: venv\Scripts\activate
+
 pip install -r requirements.txt
 
 ### 3. Run the Tool
 
 python main.py <your-dataset.csv>
+
 Streamlit App
 
 streamlit run duplicate_detection_tool/duplicates_app.py
