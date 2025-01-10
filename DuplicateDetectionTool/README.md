@@ -14,7 +14,7 @@ This tool detects duplicate, overly similar, and unique records in datasets usin
 
 ### 1. Clone the Repository
 
-git clone https://github.com/preethamty-bigspark/DuplicateDetectionTool.git
+git clone https://github.com/itsbigspark/ntu-ktp-data-quality/tree/main/DuplicateDetectionTool.git
 
 cd DuplicateDetectionTool
 
