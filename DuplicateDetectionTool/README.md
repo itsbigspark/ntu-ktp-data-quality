@@ -36,7 +36,9 @@ python main.py <your-dataset.csv>
 
 Streamlit App
 
-streamlit run duplicate_detection_tool/duplicates_app.py
+cd duplicate_detection_tool
+
+streamlit run duplicates_app.py
 
 
 
