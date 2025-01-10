@@ -14,8 +14,7 @@ This tool detects duplicate, overly similar, and unique records in datasets usin
 
 ### 1. Clone the Repository
 
-git clone https://github.com/preethamty-bigspark/DuplicateDetectionTool.git
-
+git clone https://github.com/<your-username>/DuplicateDetectionTool.git
 cd DuplicateDetectionTool
 
 ### 2. Set Up the Environment
@@ -31,50 +30,3 @@ python main.py <your-dataset.csv>
 Streamlit App
 
 streamlit run duplicate_detection_tool/duplicates_app.py
-
-
-
-Example
-Upload your dataset (e.g., test.csv) and:
-
-Detect duplicate and overly similar records.
-View and inspect the results interactively.
-Export results as duplicates.csv, overly_similar.csv, and unique_records.csv.
-
-
-### 4. Directory Structure
-
-DuplicateDetectionTool/
-
-├── duplicate_detection_tool/
-
-│   ├── clustering.py
-
-│   ├── meta_classifier.py
-
-│   ├── preprocessing.py
-
-│   ├── processing.py
-
-│   ├── similarity.py
-
-│   ├── duplicates_app.py
-
-│   └── images/
-
-├── main.py
-
-├── requirements.txt
-
-├── setup.py
-
-├── README.md
-
-├── example_data/
-
-
-Contributing
-Feel free to open issues or submit pull requests for improvements.
-
-License
-MIT License
