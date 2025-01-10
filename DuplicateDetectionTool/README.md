@@ -45,7 +45,8 @@ Export results as duplicates.csv, overly_similar.csv, and unique_records.csv.
 
 ### 4. Directory Structure
 
-! [https://github.com/itsbigspark/ntu-ktp-data-quality/blob/main/DuplicateDetectionTool/KTP_Dupes/Images/Screenshot%202025-01-10%20at%2014.10.30.png]
+![Alt text](https://github.com/itsbigspark/ntu-ktp-data-quality/blob/main/DuplicateDetectionTool/KTP%20Dupes/Images/Screenshot%202025-01-10%20at%2014.10.30.png)
+
 
 
 
