@@ -14,9 +14,10 @@ This tool detects duplicate, overly similar, and unique records in datasets usin
 
 ### 1. Clone the Repository
 
-git clone https://github.com/itsbigspark/ntu-ktp-data-quality/tree/main/DuplicateDetectionTool.git
+git clone https://github.com/itsbigspark/ntu-ktp-data-quality.git
 
-cd DuplicateDetectionTool
+
+cd ntu-ktp-data-quality/DuplicateDetectionTool/KTP_Dupes
 
 ### 2. Set Up the Environment
 It is recommended to use a virtual environment.
