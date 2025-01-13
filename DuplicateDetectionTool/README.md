@@ -66,9 +66,9 @@ streamlit run duplicates_app.py
 1. Upload your dataset (e.g., ```test.csv```) to the app.
 
 2. Detect and classify:
-*Duplicate records
-*Overly similar records
-*Unique records
+   *Duplicate records
+   *Overly similar records
+   *Unique records
 
 3. Visualize results interactively.
    
@@ -82,24 +82,37 @@ streamlit run duplicates_app.py
 
 ### Images 📸\
 Landing Page After Data Upload
+![Screenshot of Landing Page After Data Upload](Screenshots/Screenshot%202025-01-10%20at%2014.10.30.png)
+
+---
 
 
 Duplicate Detection Interface
+![Screenshot of Duplicate Detection Tool](Screenshots/Screenshot%202025-01-10%20at%2014.10.53.png)
+
+---
+
 
 
 Results Visualization
+![Screenshot of Results Visualization](Screenshots/Screenshot%202025-01-10%20at%2014.12.41.png)
+
+---
 
 
 Export Options
+![Screenshot of Export Options](Screenshots/Screenshot%202025-01-10%20at%2014.12.49.png)
+
+---
 
 
-Contributing
+### Contributing
 Contributions are welcome! Feel free to:
 
 Open issues for bug reports or feature requests.
 Submit pull requests for improvements or fixes.\
 
-License
+### License
 This project is licensed under the MIT License. See the LICENSE file for details.
 
 
