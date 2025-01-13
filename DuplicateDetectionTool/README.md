@@ -80,7 +80,7 @@ streamlit run duplicates_app.py
 ---
 
 
-### Images 📸\
+### Images 📸
 Landing Page After Data Upload
 ![Screenshot of Landing Page After Data Upload](Screenshots/Screenshot%202025-01-10%20at%2014.10.30.png)
 
@@ -110,7 +110,7 @@ Export Options
 Contributions are welcome! Feel free to:
 
 Open issues for bug reports or feature requests.
-Submit pull requests for improvements or fixes.\
+Submit pull requests for improvements or fixes.
 
 ### License
 This project is licensed under the MIT License. See the LICENSE file for details.
