@@ -60,6 +60,7 @@ To use the Streamlit App, follow these steps:
 cd duplicate_detection_tool
 streamlit run duplicates_app.py
 ```
+---
 
 ### Example Usage
 1. Upload your dataset (e.g., ```test.csv```) to the app.
@@ -76,8 +77,10 @@ streamlit run duplicates_app.py
 ```overly_similar.csv```
 ```unique_records.csv```
 
+---
 
-Images 📸\
+
+### Images 📸\
 Landing Page After Data Upload
 
 
