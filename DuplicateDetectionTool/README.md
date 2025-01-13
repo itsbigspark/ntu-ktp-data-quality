@@ -21,7 +21,7 @@ This tool identifies **duplicate**, **overly similar**, and **unique records** i
 
 ```
 git clone https://github.com/itsbigspark/ntu-ktp-data-quality.git
-cd ntu-ktp-data-quality/DuplicateDetectionTool/KTP_Dupes
+cd ntu-ktp-data-quality/DuplicateDetectionTool
 ```
 
 ### 2. Set Up the Environment
