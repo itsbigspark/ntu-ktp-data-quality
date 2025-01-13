@@ -80,6 +80,43 @@ streamlit run duplicates_app.py
 ---
 
 
+### **Test Dataset Description**
+
+The test dataset is included to demonstrate the capabilities of the **Duplicate Detection Tool**. It simulates common scenarios in data quality management, including duplicates, similar records, and unique entries. Below is an overview of the dataset:
+
+#### **Key Features**
+- **File Name:** `test.csv`
+- **Format:** CSV file
+- **Purpose:** To test and showcase the tool's ability to:
+  - Detect duplicate records
+  - Identify overly similar records
+  - Distinguish unique entries
+- **Size:** Small-scale dataset for quick testing and demonstration.
+
+---
+
+#### **Dataset Columns**
+| **Column Name**       | **Description**                                          | **Example**            |
+|------------------------|----------------------------------------------------------|------------------------|
+| `ID`                  | Unique identifier for each record.                       | `001`, `002`, `003`   |
+| `Name`                | Name of an individual or entity.                         | `John Doe`            |
+| `Email`               | Email address for communication.                        | `john.doe@example.com`|
+| `Phone`               | Contact number in various formats.                      | `+1-123-456-7890`     |
+| `Address`             | Residential or business address.                        | `123 Main Street`     |
+| `Date`                | Date of registration or activity (ISO 8601 format).      | `2023-12-25`          |
+| `Other Attributes`    | Additional columns with categorical or numerical data.  | `Category A`, `1000`  |
+
+---
+
+#### **Usage Instructions**
+1. Place the test dataset (`test.csv`) in the appropriate directory.
+2. Run the tool to detect duplicates, overly similar records, and unique records:
+   ```bash
+   python main.py test.csv
+
+---
+
+
 ### Images 📸
 Landing Page After Data Upload
 ![Screenshot of Landing Page After Data Upload](Screenshots/Screenshot%202025-01-10%20at%2014.10.30.png)
