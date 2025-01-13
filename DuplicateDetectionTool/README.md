@@ -66,9 +66,9 @@ streamlit run duplicates_app.py
 1. Upload your dataset (e.g., ```test.csv```) to the app.
 
 2. Detect and classify:
-   *Duplicate records
-   *Overly similar records
-   *Unique records
+   - Duplicate records
+   - Overly similar records
+   - Unique records
 
 3. Visualize results interactively.
    
