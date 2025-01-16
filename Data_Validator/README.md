@@ -220,26 +220,26 @@ Contributions are welcome! To contribute:
 
 ## Images 📸
 ### Landing Page
-![Screenshot of Landing Page](images/Screenshot%2025-01-16%at%14.01.29.png)
+![Screenshot of Landing Page](Data_Validator/images/Screenshot%2025-01-16%at%14.01.29.png)
 
 ---
 
 
 ### Data Upload
-![Screenshot of Data Upload](images/Screenshot%2025-01-16%at%14.02.02.png)
+![Screenshot of Data Upload](Data_Validator/images/Screenshot%2025-01-16%at%14.02.02.png)
 
 ---
 
 
 
 ### Inferring Patterns
-![Screenshot of Pattern Inference](images/Screenshot%2025-01-16%at%14.03.00.png)
+![Screenshot of Pattern Inference](Data_Validator/images/Screenshot%2025-01-16%at%14.03.00.png)
 
 ---
 
 
 ### Cleaning Rules
-![Screenshot of  Cleaning Rules](images/Screenshot%2025-01-16%at%14.03.37.png)
+![Screenshot of  Cleaning Rules](Data_Validator/images/Screenshot%2025-01-16%at%14.03.37.png)
 
 ---
 
