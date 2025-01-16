@@ -236,10 +236,10 @@ Contributions are welcome! To contribute:
 ![Screenshot of Pattern Inference](Data_Validator/images/Screenshot%2025-01-16%at%14.03.00.png)
 
 ---
-
+Data_Validator/images/Screenshot 2025-01-16 at 14.01.29.png
 
 ### Cleaning Rules
-![Screenshot of  Cleaning Rules](Data_Validator/images/Screenshot%2025-01-16%at%14.03.37.png)
+![Screenshot of  Cleaning Rules](Data_Validator/images/Screenshot 2025-01-16 at 14.01.29.png)
 
 ---
 
