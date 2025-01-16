@@ -182,9 +182,9 @@ To add new features:
 - For visualization: Extend visualization.py.
 
 --
-### Testing
+## Testing
 
-## Run automated tests to ensure functionality:
+# Run automated tests to ensure functionality:
 ```
 python -m unittest discover tests
 ```
