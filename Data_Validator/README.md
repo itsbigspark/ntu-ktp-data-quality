@@ -239,7 +239,7 @@ Contributions are welcome! To contribute:
 Data_Validator/images/Screenshot 2025-01-16 at 14.01.29.png
 
 ### Cleaning Rules
-![Screenshot of  Cleaning Rules](Data_Validator/images/Screenshot 2025-01-16 at 14.01.29.png)
+![Screenshot of  Cleaning Rules](Data_Validator/images/Screenshot%2025-01-16%at%14.03.37.png)
 
 ---
 
