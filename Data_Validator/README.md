@@ -252,7 +252,8 @@ This project is licensed under the MIT License. See the LICENSE file for details
 For questions or support:
 
 Email: preetham.yuvaraju@bigspark.dev
-GitHub Issues: Submit an Issue
+
+
 
 
 
