@@ -219,27 +219,27 @@ Contributions are welcome! To contribute:
 
 
 ## Images 📸
-Landing Page After Data Upload
-![Screenshot of Landing Page After Data Upload](Screenshots/Screenshot%202025-01-10%20at%2014.10.30.png)
+### Landing Page
+![Screenshot of Landing Page After Data Upload](images/Screenshot%2025-01-16%at%14.01.29.png)
 
 ---
 
 
-Duplicate Detection Interface
-![Screenshot of Duplicate Detection Tool](Screenshots/Screenshot%202025-01-10%20at%2014.10.53.png)
+### Data Upload
+![Screenshot of Duplicate Detection Tool](images/Screenshot%2025-01-16%at%14.02.02.png)
 
 ---
 
 
 
-Results Visualization
-![Screenshot of Results Visualization](Screenshots/Screenshot%202025-01-10%20at%2014.12.41.png)
+### Inferring Patterns
+![Screenshot of Results Visualization](images/Screenshot%2025-01-16%at%14.03.00.png)
 
 ---
 
 
-Export Options
-![Screenshot of Export Options](Screenshots/Screenshot%202025-01-10%20at%2014.12.49.png)
+### Cleaning Rules
+![Screenshot of Export Options](images/Screenshot%2025-01-16%at%14.03.37.png)
 
 ---
 
