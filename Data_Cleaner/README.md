@@ -179,20 +179,20 @@ Contributions are welcome! To contribute:
 
 ## Images 📸
 ### Landing Page
-![Screenshot of Landing Page](images/Screenshot%2025-01-16%at%14.32.17.png)
+![Screenshot of Landing Page](images/Screenshot%202025-01-16%20at%2014.32.17.png)
 
 ---
 
 
 ### Data Upload
-![Screenshot of Data Upload](images/Screenshot%2025-01-16%at%14.32.45.png)
+![Screenshot of Data Upload](images/Screenshot%202025-01-16%20at%2014.32.45.png)
 
 ---
 
 
 
 ### Metrics
-![Screenshot of Metrics](images/Screenshot%2025-01-16%at%14.33.15.png)
+![Screenshot of Metrics](images/Screenshot%202025-01-16%20at%2014.33.15.png)
 
 ---
 
