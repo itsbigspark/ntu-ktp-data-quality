@@ -67,8 +67,11 @@ python main.py <error_data.csv> [reference_data.csv]
 ### Outputs:
 
 ```outputs/corrected_data.csv```: Corrected dataset.
+
 ```outputs/error_highlighted.xlsx```: Error-highlighted Excel file.
+
 ```outputs/corrected_highlighted.xlsx```: Correction-highlighted Excel file.
+
 ```outputs/error_detection_metrics.png```: Classification metrics as an image.
 
 
@@ -150,13 +153,6 @@ A PNG file displaying classification metrics like Precision, Recall, and F1-Scor
 ### Visualization:
 
 Classification metrics are displayed in the Streamlit App and saved as a PNG image.
-
-### Arguments:
-
-- <path_to_clean_data.csv>: Path to the clean dataset.
-- <path_to_unclean_data.csv>: Path to the unclean dataset.
-- [--rules <path_to_custom_rules.json>]: Optional JSON file for custom rules.
-
   
 ---
 
