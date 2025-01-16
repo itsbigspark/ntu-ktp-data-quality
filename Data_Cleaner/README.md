@@ -198,7 +198,8 @@ Contributions are welcome! To contribute:
 
 
 ### Corrected Data
-![Screenshot of  Corrected Data](images/Screenshot%2025-01-16%at%14.33.49.png)
+![Screenshot of Corrected Data](images/Screenshot%202025-01-16%20at%2014.33.49.png)
+
 
 ---
 
