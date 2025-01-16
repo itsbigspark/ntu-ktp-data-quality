@@ -1,4 +1,4 @@
-#### Data Validator Tool 🔧
+### **Data Validator Tool 🔧**
 
 This tool provides a robust solution for **data validation**, **cleaning**, and **visualization**. It identifies **missing**, **invalid**, and **incorrect patterns** in datasets  It includes:
 - **Command Line Interface (CLI):** For batch processing.
@@ -54,7 +54,7 @@ pip install -r requirements.txt
 
 ### 3. Run the Tool
 
-##To process your dataset via the CLI:
+## To process your dataset via the CLI:
 ```
 python main.py <path_to_clean_data.csv> <path_to_unclean_data.csv> [--rules <path_to_custom_rules.json>]
 
@@ -71,6 +71,8 @@ streamlit run duplicates_app.py
 - <path_to_clean_data.csv>: Path to the clean dataset.
 - <path_to_unclean_data.csv>: Path to the unclean dataset.
 - [--rules <path_to_custom_rules.json>]: Optional JSON file for custom rules.
+
+  
 ---
 
 ## Example Usage
@@ -121,6 +123,7 @@ TThe example datasets provided in the ```Examples/``` directory demonstrate comm
 
 
 #### **Dataset Columns**
+
 | **Column Name**         | **Description**                                          | **Example**             |
 |--------------------------|----------------------------------------------------------|-------------------------|
 | `CompanyName`           | Name of the company                                      | `XYZ Ltd.`              |
@@ -241,11 +244,6 @@ Export Options
 ---
 
 
-### Contributing
-Contributions are welcome! Feel free to:
-
-- Open issues for bug reports or feature requests.
-- Submit pull requests for improvements or fixes.
 
 ### License
 This project is licensed under the MIT License. See the LICENSE file for details.
