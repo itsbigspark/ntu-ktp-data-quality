@@ -1,4 +1,4 @@
-### **Data Validator Tool 🔧**
+# **Data Validator Tool 🔧**
 
 This tool provides a robust solution for **data validation**, **cleaning**, and **visualization**. It identifies **missing**, **invalid**, and **incorrect patterns** in datasets  It includes:
 - **Command Line Interface (CLI):** For batch processing.
@@ -52,9 +52,9 @@ pip install -r requirements.txt
 ```
 
 
-### 3. Run the Tool
+## 3. Run the Tool
 
-## To process your dataset via the CLI:
+### To process your dataset via the CLI:
 ```
 python main.py <path_to_clean_data.csv> <path_to_unclean_data.csv> [--rules <path_to_custom_rules.json>]
 
@@ -66,7 +66,7 @@ cd duplicate_detection_tool
 streamlit run duplicates_app.py
 ```
 
-## Arguments:
+### Arguments:
 
 - <path_to_clean_data.csv>: Path to the clean dataset.
 - <path_to_unclean_data.csv>: Path to the unclean dataset.
@@ -75,7 +75,7 @@ streamlit run duplicates_app.py
   
 ---
 
-## Example Usage
+### Example Usage
 
 ```
 python main.py examples/cleaned_data.csv examples/unclean_data.csv
@@ -83,20 +83,20 @@ python main.py examples/cleaned_data.csv examples/unclean_data.csv
 
 ---
 
-## Streamlit App
+### Streamlit App
 Launch the Streamlit app:
 ``` 
 streamlit run appy.py
 ```
 
-## Steps:
+### Steps:
 
 - Upload the **Error Data** File (required).
 - Upload the **Reference Data** File (optional).
 - Upload **Custom Rules** (optional).
 - Click **Start Validation and Cleaning**.
 
-## View and download:
+### View and download:
 
 - **Cleaned Data**
 - **Highlighted Issues**
@@ -141,20 +141,20 @@ TThe example datasets provided in the ```Examples/``` directory demonstrate comm
 
 ---
 
-### Visualization Examples
+## Visualization Examples
 
-## Landing Page After Data Upload
+### Landing Page After Data Upload
 
-## Cleaned Data Output
+### Cleaned Data Output
 
-## Highlighted Issues Visualization
+### Highlighted Issues Visualization
 
 --
 
 
-### Customization
+## Customization
 
-## Custom Rules
+### Custom Rules
 Custom rules can be provided in JSON format. Example:
 
 ```
@@ -172,9 +172,9 @@ Custom rules can be provided in JSON format. Example:
 
 --
 
-### Extend Functionality
+## Extend Functionality
 
-To add new features:
+### To add new features:
 
 - Modify the scripts in the data_validator/ directory.
 - For cleaning: Update cleaning.py.
@@ -184,7 +184,7 @@ To add new features:
 --
 ## Testing
 
-# Run automated tests to ensure functionality:
+### Run automated tests to ensure functionality:
 ```
 python -m unittest discover tests
 ```
@@ -197,7 +197,7 @@ python -m unittest discover tests
 
 --
 
-### Contributing
+## Contributing
 
 Contributions are welcome! To contribute:
 
@@ -218,7 +218,7 @@ Contributions are welcome! To contribute:
 ---
 
 
-### Images 📸
+## Images 📸
 Landing Page After Data Upload
 ![Screenshot of Landing Page After Data Upload](Screenshots/Screenshot%202025-01-10%20at%2014.10.30.png)
 
@@ -245,10 +245,10 @@ Export Options
 
 
 
-### License
+## License
 This project is licensed under the MIT License. See the LICENSE file for details.
 
-### Contact
+## Contact
 For questions or support:
 
 Email: preetham.yuvaraju@bigspark.dev
