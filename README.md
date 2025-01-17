@@ -1,4 +1,11 @@
-# NTU-KTP Data Quality Project 📊
+# NTU-KTP Data Quality Project 
+
+<p align="center">
+  <img src="images/bigspark_logo.png" alt="BigSpark Logo" width="200" style="margin: 10px;">
+  <img src="images/UKRI_logo.png" alt="UKRI Logo" width="200" style="margin: 10px;">
+  <img src="images/NTU_Primary_logo.png" alt="NTU Logo" width="200" style="margin: 10px;">
+</p>
+
 
 This repository is part of the **Knowledge Transfer Partnership (KTP)** between **Nottingham Trent University (NTU)** and **BigSpark**. The aim of this project is to address **data quality issues** in large datasets specifical;ly in **Finance** using advanced techniques for error detection, error correction, duplicate detection, and beyond.
 
