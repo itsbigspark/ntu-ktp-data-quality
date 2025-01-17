@@ -47,7 +47,6 @@ The repository is organized into the following folders:
 | `Data_Validator/`            | Contains tools for validating datasets by identifying missing or invalid values.                    |
 | `Data_Cleaner/`              | Includes tools for correcting errors in datasets and generating metrics for error resolution.        |
 | `DuplicateDetectionTool/`    | Tools for detecting duplicate and overly similar records in datasets.                               |
-| `Error-Identification-Correction/` | Initial implementation of error detection and correction.                                              |
 | `Resources/`            | Contains resources for the poject for more information                                                   |
 | `AVH-Autovalidate/`          | (Archive) Automated data validation tool for earlier experiments.                                   |
 | `README.md`                  | Comprehensive documentation for the repository.                                                     |
