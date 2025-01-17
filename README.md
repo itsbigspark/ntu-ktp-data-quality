@@ -1,9 +1,9 @@
 # NTU-KTP Data Quality Project 
 
 <p align="center">
-  <img src="images/bigspark_logo.png" alt="BigSpark Logo" width="200" style="margin: 10px;">
-  <img src="images/UKRI_logo.png" alt="UKRI Logo" width="200" style="margin: 10px;">
-  <img src="images/NTU_Primary_logo.png" alt="NTU Logo" width="200" style="margin: 10px;">
+  <img src="iResources/bigspark_logo.png" alt="BigSpark Logo" width="200" style="margin: 10px;">
+  <img src="Resources/UKRI_logo.png" alt="UKRI Logo" width="200" style="margin: 10px;">
+  <img src="Resources/NTU_Primary_logo.png" alt="NTU Logo" width="200" style="margin: 10px;">
 </p>
 
 
