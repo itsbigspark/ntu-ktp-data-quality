@@ -137,6 +137,7 @@ The repository is organized into the following folders:
 ```
 git clone https://github.com/itsbigspark/ntu-ktp-data-quality.git
 cd ntu-ktp-data-quality
+```
 
 ```
 python -m venv venv
@@ -149,12 +150,14 @@ pip install -r requirements.txt
 ### 1. Data Validator
 
 - **Command Line Interface:**
+  
 ```
 cd Data_Validator
 python main.py clean_data.csv unclean_data.csv --rules custom_rules.json
 ```
 
 - **Streamlit App:**
+  
 ```
 streamlit run appy.py
 ```
