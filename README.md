@@ -198,4 +198,12 @@ streamlit run duplicates_app.py
 - **Preetham Yuvaraj**
 - **BigSpark Team**
 
+## License
+This project is licensed under the MIT License. See the LICENSE file for details.
+
+## Contact
+For questions or support:
+
+Email: preetham.yuvaraju@bigspark.dev
+
 
