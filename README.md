@@ -201,6 +201,21 @@ streamlit run duplicates_app.py
 
 ---
 
+## Images
+
+### Data Validator
+![Screenshot of Data Validator](Resources/Screenshot%202025-01-16%20at%2014.01.29.png)
+
+--
+### Error Detection and Correction
+![Screenshot of Error Detection and Correction](Resources/Screenshot%202025-01-16%20at%2014.32.17.png)
+
+--
+### Duplicate Detection
+![Screenshot of Duplicate Detection](Resources/Screenshot%202025-01-10%20at%2014.10.30.png)
+
+---
+
 ## Contributors
 - **Preetham Yuvaraj**
 - **BigSpark Team**
