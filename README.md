@@ -7,7 +7,7 @@
 </p>
 
 
-This repository is part of the **Knowledge Transfer Partnership (KTP)** between **Nottingham Trent University (NTU)** and **BigSpark**. The aim of this project is to address **data quality issues** in large datasets specifical;ly in **Finance** using advanced techniques for error detection, error correction, duplicate detection, and beyond.
+This repository is part of the **Knowledge Transfer Partnership (KTP)** between **Nottingham Trent University (NTU)** and **BigSpark**. The aim of this project is to address **data quality issues** in large datasets specifically in **Finance** using advanced techniques for error detection, error correction, duplicate detection, and beyond.
 
 ---
 
