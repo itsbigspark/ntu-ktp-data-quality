@@ -196,6 +196,7 @@ python main.py input_dataset.csv
 bash
 
 ```
+cd duplicate_detection_tool
 streamlit run duplicates_app.py
 ```
 
