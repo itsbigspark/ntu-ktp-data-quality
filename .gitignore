@@ -1,0 +1,307 @@
+# Data Qualify - .gitignore
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+#  Usually these files are written by a python script from a template
+#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+junit.xml
+test-results/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+#   For a library or package, you might want to ignore these files since the code is
+#   intended to run in multiple environments; otherwise, check them in:
+# .python-version
+
+# pipenv
+#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
+#   However, in case of collaboration, if having platform-specific dependencies or dependencies
+#   having no cross-platform support, pipenv may install dependencies that don't work, or not
+#   install all needed dependencies.
+#Pipfile.lock
+
+# poetry
+#   Similar to Pipfile.lock, it is generally recommended to include poetry.lock in version control.
+#   This is especially recommended for binary packages to ensure reproducibility, and is more
+#   commonly ignored for libraries.
+#   https://python-poetry.org/docs/basic-usage/#commit-your-poetrylock-file-to-version-control
+#poetry.lock
+
+# pdm
+#   Similar to Pipfile.lock, it is generally recommended to include pdm.lock in version control.
+#pdm.lock
+#   pdm stores project-wide configurations in .pdm.toml, but it is recommended to not include it
+#   in version control.
+#   https://pdm.fming.dev/#use-with-ide
+.pdm.toml
+
+# PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
+__pypackages__/
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
+# PyCharm
+#  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
+#  be added to the global gitignore or merged into this project gitignore.  For a PyCharm
+#  project, it is generally recommended to include the directories below, but you may want to
+#  uncomment them and add them to this project's gitignore.
+.idea/
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*~
+*.swp
+*.swo
+*.*~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# Mac
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msm
+*.msp
+*.lnk
+
+# Data Qualify Specific
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.staging
+.env.production
+.env.test
+config/local.yaml
+config/secrets.yaml
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+db.sqlite3
+data.db
+test.db
+
+# Logs
+logs/
+*.log
+log/
+*.log.*
+
+# Data files
+data/
+datasets/
+*.csv
+*.parquet
+*.json
+*.xlsx
+*.xls
+raw_data/
+processed_data/
+temp_data/
+uploads/
+
+# Model artifacts
+models/
+*.pkl
+*.pickle
+*.joblib
+*.h5
+*.onnx
+*.pt
+*.pth
+model_cache/
+checkpoints/
+
+# Reports and outputs
+reports/
+output/
+results/
+exports/
+*.pdf
+*.html
+profile.stats
+benchmark_results/
+
+# Docker
+.dockerignore
+
+# Kubernetes secrets
+k8s-secrets/
+kubernetes/secrets/
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# Monitoring and metrics
+prometheus_data/
+grafana_data/
+*.rrd
+
+# Cache directories
+.cache/
+cache/
+.npm/
+.yarn/
+
+# IDE and editor files
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+
+# Backup files
+*.bak
+*.backup
+*.orig
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Archive files
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+
+# Profiling
+*.prof
+*.profile
+.prof/
+
+# Local development overrides
+docker-compose.override.yml
+local_settings.py
+settings_local.py
+
+# Documentation build
+docs/_build/
+docs/build/
+
+# UV specific
+.uv_cache/
