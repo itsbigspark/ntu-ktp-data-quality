@@ -11,7 +11,7 @@ This repository is part of the **Knowledge Transfer Partnership (KTP)** between 
 
 ---
 
-## Project Overview
+## Project Overview 
 
 Data quality is critical for effective decision-making and business operations. The NTU-KTP Data Quality Project is divided into **six stages**, each targeting a specific data quality challenge:
 
