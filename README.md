@@ -8,7 +8,7 @@ Enterprise-grade data quality platform for banking and financial services. Uploa
 
 ```bash
 git clone <repo-url>
-cd ntu_ktp_data_quality_APP_Rayane
+cd ntu-ktp-data-quality
 ./start.sh
 ```
 
@@ -18,7 +18,7 @@ Opens at `http://localhost:8501`. Login: `admin` / `admin123`.
 
 ```bash
 git clone <repo-url>
-cd ntu_ktp_data_quality_APP_Rayane
+cd ntu-ktp-data-quality
 docker-compose up
 ```
 
@@ -125,18 +125,20 @@ DATABASE_URL=postgresql://...    # For PostgreSQL (optional)
 ## Project Structure
 
 ```
-ntu_ktp_data_quality_APP_Rayane/
+ntu-ktp-data-quality/
   app/                    Multi-page Streamlit application
-  dq_engine/              Core engine package
-  core/                   Processing modules
-  output/                 Database and reports
+  dq_engine/              Core engine package (zero UI dependencies)
+  core/                   Processing modules (validation, anomaly, BERT, S3)
+  infra/                  AWS SAM template, Lambda handlers, Step Functions
+  configs/                Abbreviation mappings, YAML config
+  assets/                 Logos (NTU, UKRI, Bigspark)
+  lib/                    Frontend JS libraries (vis-network, tom-select)
+  tests/                  Engine unit tests
   TEST2_DATA/             Demo dataset (500 rows, all error types)
   start.sh                One-command startup script
   Dockerfile              Docker containerisation
   docker-compose.yml      Docker Compose config
   requirements.txt        Python dependencies
-  dashboard.py            Standalone Matrix dashboard (port 8503)
-  data_quality_app.py     Legacy monolith (still functional)
 ```
 
 ## License
