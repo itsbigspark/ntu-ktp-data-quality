@@ -1,0 +1,179 @@
+# ============================================================================
+# AI Powered DQ Investigator — Enterprise Configuration
+# ============================================================================
+# This file controls all pipeline behaviour. Deployment-specific overrides
+# can be provided via environment variables prefixed with DQ_ (see comments).
+# ============================================================================
+
+# -- Application metadata ----------------------------------------------------
+app:
+  name: "AI Powered DQ Investigator"
+  version: "1.0.0"
+  mode: "standalone"            # standalone | enterprise
+  log_level: "INFO"             # DEBUG | INFO | WARNING | ERROR
+
+# -- Data ingestion ----------------------------------------------------------
+ingestion:
+  # Where the pipeline reads incoming data from
+  source: "local"               # local | s3
+  local:
+    inbox_dir: "./inbox"        # drop files here for processing
+    archive_dir: "./archive"    # processed files move here
+    supported_formats:
+      - csv
+      - xlsx
+      - parquet
+      - json
+  s3:
+    inbox_bucket: ""            # env: DQ_S3_INBOX_BUCKET
+    inbox_prefix: "incoming/"
+    archive_prefix: "processed/"
+    region: "eu-west-2"         # env: DQ_AWS_REGION
+
+# -- Validation engine -------------------------------------------------------
+validation:
+  # Rule source: "infer" auto-generates rules from data, "file" loads from path
+  rule_source: "infer"          # infer | file
+  rules_file: ""                # path to rules JSON (used when rule_source=file)
+
+  # Checks to enable
+  enable_typo_detection: true
+  enable_anomaly_detection: true
+  enable_ml_anomaly: false      # requires scikit-learn, heavier compute
+  ml_models:
+    - IsolationForest
+    - LocalOutlierFactor
+
+  # Corpus matching
+  corpus:
+    enabled: true
+    corpus_dir: "./TEST2_DATA/corpus"   # directory containing corpus CSV files
+    jaro_winkler_threshold: 0.85
+
+  # Suggestion priority order
+  suggestion_priority:
+    - corpus_alias_exact
+    - corpus_jaro_winkler
+    - dominant_format_reformat
+    - reference_corpus_match
+    - high_frequency_match
+
+  # Column type detection
+  column_detection:
+    sample_size: 100            # number of values to sample for type confirmation
+    confidence_threshold: 0.50  # fraction of sample that must match a validator
+
+  # Scoring thresholds
+  scoring:
+    pass_threshold: 85.0        # batches below this score trigger an alert
+    dimensions:
+      - completeness
+      - uniqueness
+      - consistency
+      - validity
+      - accuracy
+      - timeliness
+
+# -- AI / LLM ---------------------------------------------------------------
+llm:
+  # Which provider to use
+  provider: "anthropic"         # anthropic | ollama | bedrock
+  model: "claude-sonnet-4-20250514"   # model name
+
+  anthropic:
+    api_key: ""                 # env: ANTHROPIC_API_KEY (never put keys here)
+
+  ollama:
+    host: "http://localhost:11434"
+    model: "llama3.1:8b"
+
+  bedrock:
+    region: "eu-west-2"         # env: DQ_AWS_REGION
+    model_id: "anthropic.claude-sonnet-4-20250514-v1:0"
+
+  # Context control — what the LLM is allowed to see
+  context:
+    include_data_samples: false   # if true, LLM sees sample rows
+    max_sample_rows: 20           # only used if include_data_samples=true
+    mask_pii: true                # mask PII columns before sending to LLM
+
+  # AI Enrichment (5 LLM calls per batch in enterprise mode)
+  enrichment:
+    enabled: false              # set to true to enable AI enrichment
+    rule_generation: true       # smarter rules from column context
+    cross_column: true          # detect logical inconsistencies across columns
+    anomaly_explanation: true   # explain WHY anomalies are unusual
+    issue_triage: true          # categorise issues by business impact
+    executive_summary: true     # generate one-paragraph summary
+
+  # Agentic loop (Streamlit chat mode)
+  agent:
+    max_iterations: 5           # max tool calls per user turn
+    confirmation_required:      # tools that need human approval before executing
+      - apply_fixes
+      - merge_duplicates
+      - edit_cell
+
+# -- BERT (optional) ---------------------------------------------------------
+bert:
+  enabled: false                # toggle for BERT-enhanced explanations
+  model_name: "all-MiniLM-L6-v2"
+  max_issues: 50                # max issues to explain per batch (performance)
+
+# -- Output / Storage -------------------------------------------------------
+output:
+  # Where results are stored
+  storage: "local"              # local | s3 | database
+
+  local:
+    output_dir: "./output"
+    reports_dir: "./output/reports"
+    corrected_dir: "./output/corrected"
+    logs_dir: "./output/logs"
+
+  s3:
+    output_bucket: ""           # env: DQ_S3_OUTPUT_BUCKET
+    reports_prefix: "reports/"
+    corrected_prefix: "corrected/"
+
+  database:
+    engine: "sqlite"             # sqlite | postgresql
+    host: ""                    # env: DQ_DB_HOST
+    port: 5432                  # env: DQ_DB_PORT
+    name: "dq_investigator"     # env: DQ_DB_NAME
+    user: ""                    # env: DQ_DB_USER
+    password: ""                # env: DQ_DB_PASSWORD (never put passwords here)
+
+  # What to output
+  generate:
+    issue_log: true             # detailed issue-level log (CSV/database)
+    corrected_dataset: true     # auto-corrected version of input data
+    quality_report: true        # summary report (JSON)
+    executive_summary: false    # AI-generated text summary (requires LLM)
+    audit_trail: true           # every step with timestamps and durations
+
+# -- Alerts ------------------------------------------------------------------
+alerts:
+  enabled: false
+  on_score_below: 85.0          # trigger alert if quality score drops below
+  channels:
+    email:
+      enabled: false
+      recipients: []            # list of email addresses
+      ses_region: "eu-west-2"
+    slack:
+      enabled: false
+      webhook_url: ""           # env: DQ_SLACK_WEBHOOK
+
+# -- Scheduling (enterprise mode) -------------------------------------------
+scheduling:
+  enabled: false
+  cron: "0 6 * * *"            # run daily at 6am
+  timezone: "Europe/London"
+
+# -- Security ----------------------------------------------------------------
+security:
+  authentication: true
+  password_hashing: "sha256"
+  session_timeout_minutes: 60
+  audit_logging: true

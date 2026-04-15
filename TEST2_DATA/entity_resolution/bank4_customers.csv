@@ -1,0 +1,81 @@
+customer_id,first_name,last_name,email,phone,date_of_birth,address,city,postcode,country,account_type,balance
+B4-0001,James,Smith,james.smith1@gmail.com,+44 7700 900001,13/03/1980,13 Oxford Road,London,SW1A 1AA,United Kingdom,Current,2128.52
+B4-0002,Oliver,Jones,oliver.jones2@gmail.com,+44 7700 900002,12/02/1994,150 High Street,Manchester,ec1a1bb,United Kingdom,ISA,38904.04
+B4-0003,Harry,Williams,harry.williams3@gmail.com,+44 7700 900003,02/04/1992,23 London Road,Birmingham,M1 1AE,United Kingdom,Current,37627.74
+B4-0004,Jack,Taylor,jack.taylor4@gmail.com,+44 7700 900004,08/02/1986,24 Baker Street,Leeds,B1 1BB,United Kingdom,Savings,1390.24
+B4-0005,George,Brown,george.brown5@gmail.com,+44 7700 900005,27/01/1987,145 Oxford Road,Liverpool,ls11ba,United Kingdom,Current,9765.99
+B4-0006,Noah,Davies,noah.davies6@gmail.com,+44 7700 900006,21/11/1974,150 High Street,Bristol,E1 6AN,United Kingdom,Business,14465.29
+B4-0007,Charlie,Evans,charlie.evans7@gmail.com,+44 7700 900007,13/10/1996,13 Church Lane,Sheffield,N1 9GU,United Kingdom,Savings,34338.08
+B4-0008,Jacob,Wilson,jacob.wilson8@gmail.com,+44 7700 900008,28/09/1962,35 Victoria Road,Nottingham,SE1 7PB,United Kingdom,Savings,3369.26
+B4-0009,Alfie,Thomas,alfie.thomas9@gmail.com,+44 7700 900009,18/03/1986,31 Bridge Road,Cardiff,G1 1XQ,United Kingdom,ISA,8022.5
+B4-0010,Freddie,Roberts,freddie.roberts10@gmail.com,+44 7700 900010,27/09/1979,47 Oxford Road,Edinburgh,EH1 1YZ,United Kingdom,ISA,45262.6
+B4-0011,Emily,Johnson,emily.johnson11@gmail.com,+44 7700 900011,21/10/1997,49 Station Road,London,SW1A 1AA,United Kingdom,ISA,25160.67
+B4-0012,Olivia,White,olivia.white12@gmail.com,+44 7700 900012,23/09/1966,17 Bridge Road,Manchester,EC1A 1BB,United Kingdom,Savings,29635.2
+B4-0013,Amelia,Walker,amelia.walker13@gmail.com,+44 7700 900013,07/10/1963,128 Baker Street,Birmingham,M1 1AE,United Kingdom,Savings,16021.97
+B4-0014,Jessica,Hall,jessica.hall14@gmail.com,+44 7700 900014,15/06/1987,150 Mill Lane,Leeds,b11bb,United Kingdom,Savings,20232.93
+B4-0015,Sophie,Green,sophie.green15@gmail.com,+44 7700 900015,08/05/1983,47 Church Lane,Liverpool,LS1 1BA,United Kingdom,ISA,34016.03
+B4-0016,Isabella,Wood,isabella.wood16@gmail.com,+44 7700 900016,10/10/1965,135 Mill Lane,Bristol,E1 6AN,United Kingdom,Savings,39627.0
+B4-0017,Mia,Harris,mia.harris17@gmail.com,+44 7700 900017,15/12/1981,74 Bridge Road,Sheffield,n19gu,United Kingdom,Current,31852.3
+B4-0018,Poppy,Martin,poppy.martin18@gmail.com,+44 7700 900018,17/02/1964,108 King Street,Nottingham,SE1 7PB,United Kingdom,Business,27803.49
+B4-0019,Lily,Jackson,lily.jackson19@gmail.com,+44 7700 900019,16/03/1981,108 High Street,Cardiff,G1 1XQ,United Kingdom,Current,12676.38
+B4-0020,Grace,Clarke,grace.clarke20@gmail.com,+44 7700 900020,19/09/1964,81 Station Road,Edinburgh,EH1 1YZ,United Kingdom,Business,36922.36
+B4-0021,Mohammed,Khan,mohammed.khan21@gmail.com,+44 7700 900021,16/10/1982,149 Mill Lane,London,SW1A 1AA,United Kingdom,Business,49525.86
+B4-0022,Priya,Patel,priya.patel22@gmail.com,+44 7700 900022,09/02/1964,122 Oxford Road,Manchester,EC1A 1BB,United Kingdom,ISA,16608.36
+B4-0023,Aisha,Singh,aisha.singh23@gmail.com,+44 7700 900023,23/12/1963,80 Bridge Road,Birmingham,m11ae,United Kingdom,Savings,8920.13
+B4-0024,Ravi,Ahmed,ravi.ahmed24@gmail.com,+44 7700 900024,23/05/1988,99 Station Road,Leeds,B1 1BB,United Kingdom,Current,14889.53
+B4-0025,Chen,Ali,chen.ali25@gmail.com,+44 7700 900025,12/08/1961,44 Bridge Road,Liverpool,LS1 1BA,United Kingdom,ISA,31997.97
+B4-0026,Mei,Shah,mei.shah26@gmail.com,+44 7700 900026,02/08/1967,56 Victoria Road,Bristol,E1 6AN,United Kingdom,ISA,36678.63
+B4-0027,Yusuf,Nguyen,yusuf.nguyen27@gmail.com,+44 7700 900027,08/12/1968,102 London Road,Sheffield,N1 9GU,United Kingdom,Savings,7553.3
+B4-0028,Fatima,Chen,fatima.chen28@gmail.com,+44 7700 900028,06/02/1991,115 London Road,Nottingham,SE1 7PB,United Kingdom,Business,20942.58
+B4-0029,Samuel,Wright,samuel.wright29@gmail.com,+44 7700 900029,05/05/1995,111 Baker Street,Cardiff,G1 1XQ,United Kingdom,Current,6687.96
+B4-0030,Chloe,Scott,chloe.scott30@gmail.com,+44 7700 900030,14/12/1977,92 London Road,Edinburgh,eh11yz,United Kingdom,Current,1212.25
+B4-0031,Daniel,Turner,daniel.turner31@gmail.com,+44 7700 900031,03/03/1974,46 King Street,London,sw1a1aa,United Kingdom,ISA,15256.57
+B4-0032,Thomas,Phillips,thomas.phillips32@gmail.com,+44 7700 900032,08/11/1974,4 Mill Lane,Manchester,EC1A 1BB,United Kingdom,Savings,20720.6
+B4-0033,Liam,Campbell,liam.campbell33@gmail.com,+44 7700 900033,09/03/1997,73 High Street,Birmingham,M1 1AE,United Kingdom,Savings,10288.8
+B4-0034,Ethan,Parker,ethan.parker34@gmail.com,+44 7700 900034,18/07/1969,95 Bridge Road,Leeds,B1 1BB,United Kingdom,Business,8015.31
+B4-0035,Lucas,Edwards,lucas.edwards35@gmail.com,+44 7700 900035,05/06/1996,132 Bridge Road,Liverpool,ls11ba,United Kingdom,Savings,35402.88
+B4-0036,Mason,Collins,mason.collins36@gmail.com,+44 7700 900036,28/08/1963,144 London Road,Bristol,E1 6AN,United Kingdom,Current,31946.68
+B4-0037,Logan,Stewart,logan.stewart37@gmail.com,+44 7700 900037,13/07/1985,27 Mill Lane,Sheffield,N1 9GU,United Kingdom,ISA,20157.45
+B4-0038,Elijah,Morris,elijah.morris38@gmail.com,+44 7700 900038,07/01/1985,18 Church Lane,Nottingham,se17pb,United Kingdom,Current,2900.92
+B4-0039,Benjamin,Rogers,benjamin.rogers39@gmail.com,+44 7700 900039,04/03/1988,88 Bridge Road,Cardiff,G1 1XQ,United Kingdom,ISA,29776.74
+B4-0040,William,Reed,william.reed40@gmail.com,+44 7700 900040,01/02/1963,146 King Street,Edinburgh,EH1 1YZ,United Kingdom,Business,12500.0
+B4-0041,Charlotte,Cook,charlotte.cook41@gmail.com,+44 7700 900041,12/02/1994,7 Oxford Road,London,SW1A 1AA,United Kingdom,Current,3170.27
+B4-0042,Ava,Morgan,ava.morgan42@gmail.com,+44 7700 900042,13/10/1973,39 Victoria Road,Manchester,ec1a1bb,United Kingdom,Savings,11959.67
+B4-0043,Harper,Bell,harper.bell43@gmail.com,+44 7700 900043,12/10/1982,122 Oxford Road,Birmingham,m11ae,United Kingdom,Current,716.27
+B4-0044,Evelyn,Murphy,evelyn.murphy44@gmail.com,+44 7700 900044,15/08/1967,123 Mill Lane,Leeds,B1 1BB,United Kingdom,Savings,7199.1
+B4-0045,Abigail,Bailey,abigail.bailey45@gmail.com,+44 7700 900045,05/02/1979,27 Station Road,Liverpool,ls11ba,United Kingdom,Business,40687.7
+B4-0046,Elizabeth,Rivera,elizabeth.rivera46@gmail.com,+44 7700 900046,27/08/1976,42 Baker Street,Bristol,e16an,United Kingdom,ISA,3281.98
+B4-0047,Camila,Cooper,camila.cooper47@gmail.com,+44 7700 900047,17/04/1961,93 King Street,Sheffield,N1 9GU,United Kingdom,Business,35798.39
+B4-0048,Luna,Richardson,luna.richardson48@gmail.com,+44 7700 900048,25/01/1994,136 Victoria Road,Nottingham,se17pb,United Kingdom,Business,37284.85
+B4-0049,Scarlett,Cox,scarlett.cox49@gmail.com,+44 7700 900049,28/12/1965,67 Baker Street,Cardiff,G1 1XQ,United Kingdom,Business,8852.05
+B4-0050,Victoria,Howard,victoria.howard50@gmail.com,+44 7700 900050,12/03/1983,58 Baker Street,Edinburgh,EH1 1YZ,United Kingdom,ISA,11691.6
+B4-0051,James,Smith,james.smith51@gmail.com,+44 7700 900051,11/09/1994,58 Bridge Road,London,sw1a1aa,United Kingdom,ISA,44574.57
+B4-0052,Oliver,Jones,oliver.jones52@gmail.com,+44 7700 900052,27/04/1972,103 Church Lane,Manchester,EC1A 1BB,United Kingdom,ISA,35613.04
+B4-0053,Harry,Williams,harry.williams53@gmail.com,+44 7700 900053,16/09/1972,92 High Street,Birmingham,m11ae,United Kingdom,Business,34318.11
+B4-0054,Jack,Taylor,jack.taylor54@gmail.com,+44 7700 900054,16/05/1961,67 Church Lane,Leeds,B1 1BB,United Kingdom,ISA,14851.29
+B4-0055,George,Brown,george.brown55@gmail.com,+44 7700 900055,15/06/1998,90 Station Road,Liverpool,LS1 1BA,United Kingdom,Savings,4362.51
+B4-0056,Noah,Davies,noah.davies56@gmail.com,+44 7700 900056,04/04/1965,59 Mill Lane,Bristol,E1 6AN,United Kingdom,Savings,13092.4
+B4-0057,Charlie,Evans,charlie.evans57@gmail.com,+44 7700 900057,07/06/1972,124 Bridge Road,Sheffield,n19gu,United Kingdom,Savings,47240.42
+B4-0058,Jacob,Wilson,jacob.wilson58@gmail.com,+44 7700 900058,16/01/1999,89 Oxford Road,Nottingham,SE1 7PB,United Kingdom,ISA,9677.66
+B4-0059,Alfie,Thomas,alfie.thomas59@gmail.com,+44 7700 900059,26/07/1967,52 Mill Lane,Cardiff,G1 1XQ,United Kingdom,Savings,19034.5
+B4-0060,Freddie,Roberts,freddie.roberts60@gmail.com,+44 7700 900060,26/07/1971,86 Oxford Road,Edinburgh,EH1 1YZ,United Kingdom,Business,23659.81
+B4-0061,Emily,Johnson,emily.johnson61@gmail.com,+44 7700 900061,13/08/1985,22 King Street,London,SW1A 1AA,United Kingdom,Current,42890.39
+B4-0062,Olivia,White,olivia.white62@gmail.com,+44 7700 900062,01/03/1970,39 Bridge Road,Manchester,EC1A 1BB,United Kingdom,Savings,28559.99
+B4-0063,Amelia,Walker,amelia.walker63@gmail.com,+44 7700 900063,05/11/1989,122 Station Road,Birmingham,M1 1AE,United Kingdom,Savings,19639.0
+B4-0064,Jessica,Hall,jessica.hall64@gmail.com,+44 7700 900064,18/09/1969,34 High Street,Leeds,B1 1BB,United Kingdom,Savings,7315.29
+B4-0065,Sophie,Green,sophie.green65@gmail.com,+44 7700 900065,21/12/1960,27 Baker Street,Liverpool,ls11ba,United Kingdom,Current,31136.26
+B4-0066,Isabella,Wood,isabella.wood66@gmail.com,+44 7700 900066,28/07/1968,50 Church Lane,Bristol,e16an,United Kingdom,Savings,35066.92
+B4-0067,Mia,Harris,mia.harris67@gmail.com,+44 7700 900067,07/05/1961,75 Baker Street,Sheffield,n19gu,United Kingdom,Savings,34662.0
+B4-0068,Poppy,Martin,poppy.martin68@gmail.com,+44 7700 900068,11/10/1975,67 Baker Street,Nottingham,SE1 7PB,United Kingdom,Current,36865.58
+B4-0069,Lily,Jackson,lily.jackson69@gmail.com,+44 7700 900069,02/03/1986,91 Mill Lane,Cardiff,g11xq,United Kingdom,ISA,10045.68
+B4-0070,Grace,Clarke,grace.clarke70@gmail.com,+44 7700 900070,14/09/1997,129 King Street,Edinburgh,EH1 1YZ,United Kingdom,Current,43997.76
+B4-0071,Mohammed,Khan,mohammed.khan71@gmail.com,+44 7700 900071,17/03/1994,131 High Street,London,SW1A 1AA,United Kingdom,Business,5445.08
+B4-0072,Priya,Patel,priya.patel72@gmail.com,+44 7700 900072,20/03/1988,2 King Street,Manchester,ec1a1bb,United Kingdom,Current,1789.65
+B4-0073,Aisha,Singh,aisha.singh73@gmail.com,+44 7700 900073,16/03/1971,31 Baker Street,Birmingham,M1 1AE,United Kingdom,Current,41270.51
+B4-0074,Ravi,Ahmed,ravi.ahmed74@gmail.com,+44 7700 900074,22/06/1963,133 Baker Street,Leeds,B1 1BB,United Kingdom,ISA,23908.06
+B4-0075,Chen,Ali,chen.ali75@gmail.com,+44 7700 900075,26/08/1995,28 Baker Street,Liverpool,ls11ba,United Kingdom,Savings,14793.52
+B4-0076,Mei,Shah,mei.shah76@gmail.com,+44 7700 900076,07/04/1963,71 High Street,Bristol,E1 6AN,United Kingdom,ISA,1143.83
+B4-0077,Yusuf,Nguyen,yusuf.nguyen77@gmail.com,+44 7700 900077,15/09/1966,144 High Street,Sheffield,n19gu,United Kingdom,ISA,2515.56
+B4-0078,Fatima,Chen,fatima.chen78@gmail.com,+44 7700 900078,11/08/1964,130 Bridge Road,Nottingham,SE1 7PB,United Kingdom,ISA,38484.95
+B4-0079,Samuel,Wright,samuel.wright79@gmail.com,+44 7700 900079,23/04/1992,71 Mill Lane,Cardiff,G1 1XQ,United Kingdom,Business,42583.73
+B4-0080,Chloe,Scott,chloe.scott80@gmail.com,+44 7700 900080,26/09/1992,123 Baker Street,Edinburgh,EH1 1YZ,United Kingdom,Current,39473.89

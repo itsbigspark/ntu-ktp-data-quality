@@ -1,0 +1,75 @@
+{
+  "Comment": "AI Powered DQ Investigator — Enterprise Pipeline",
+  "StartAt": "RunDQEngine",
+  "States": {
+
+    "RunDQEngine": {
+      "Type": "Task",
+      "Comment": "Run the full data quality validation pipeline",
+      "Resource": "${RunDQEngineFunctionArn}",
+      "TimeoutSeconds": 900,
+      "Retry": [
+        {
+          "ErrorEquals": ["States.TaskFailed", "Lambda.ServiceException"],
+          "IntervalSeconds": 5,
+          "MaxAttempts": 2,
+          "BackoffRate": 2.0
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.error",
+          "Next": "PipelineFailed"
+        }
+      ],
+      "Next": "CheckThreshold"
+    },
+
+    "CheckThreshold": {
+      "Type": "Task",
+      "Comment": "Evaluate quality score against pass threshold",
+      "Resource": "${CheckThresholdFunctionArn}",
+      "Next": "RouteByResult"
+    },
+
+    "RouteByResult": {
+      "Type": "Choice",
+      "Comment": "Branch based on pass/fail",
+      "Choices": [
+        {
+          "Variable": "$.route",
+          "StringEquals": "fail",
+          "Next": "SendAlert"
+        }
+      ],
+      "Default": "ArchiveFile"
+    },
+
+    "SendAlert": {
+      "Type": "Task",
+      "Comment": "Send notification for failed batch",
+      "Resource": "${SendAlertFunctionArn}",
+      "Next": "ArchiveFile"
+    },
+
+    "ArchiveFile": {
+      "Type": "Task",
+      "Comment": "Move processed file to archive",
+      "Resource": "${ArchiveFileFunctionArn}",
+      "Next": "PipelineComplete"
+    },
+
+    "PipelineComplete": {
+      "Type": "Succeed",
+      "Comment": "Pipeline finished successfully"
+    },
+
+    "PipelineFailed": {
+      "Type": "Fail",
+      "Comment": "Pipeline encountered an unrecoverable error",
+      "Cause": "DQ Engine execution failed",
+      "Error": "PipelineError"
+    }
+  }
+}

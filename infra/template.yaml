@@ -1,0 +1,253 @@
+# ============================================================================
+# AI Powered DQ Investigator — AWS SAM Template
+# ============================================================================
+# Deploys the full enterprise pipeline:
+#   - S3 bucket for data inbox and output
+#   - EventBridge rule to trigger on file upload
+#   - Step Functions state machine (orchestration)
+#   - Lambda functions (trigger, DQ engine, threshold check, alert, archive)
+#   - SNS topic for alerts
+#   - IAM roles with least-privilege permissions
+#
+# Deploy:
+#   sam build && sam deploy --guided
+# ============================================================================
+
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: AI Powered DQ Investigator - Enterprise Data Quality Pipeline
+
+# ---------------------------------------------------------------------------
+# Parameters
+# ---------------------------------------------------------------------------
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+
+  PassThreshold:
+    Type: Number
+    Default: 85
+    Description: Quality score threshold (batches below this trigger alerts)
+
+  AlertEmail:
+    Type: String
+    Default: ""
+    Description: Email address for quality alerts (leave empty to skip)
+
+  AppUrl:
+    Type: String
+    Default: ""
+    Description: URL of the Streamlit investigation app
+
+# ---------------------------------------------------------------------------
+# Globals
+# ---------------------------------------------------------------------------
+Globals:
+  Function:
+    Runtime: python3.12
+    Timeout: 30
+    MemorySize: 256
+    Environment:
+      Variables:
+        ENVIRONMENT: !Ref Environment
+        OUTPUT_BUCKET: !Ref OutputBucket
+        ARCHIVE_PREFIX: "processed/"
+
+# ---------------------------------------------------------------------------
+# Resources
+# ---------------------------------------------------------------------------
+Resources:
+
+  # ── S3 Buckets ───────────────────────────────────────────────────────────
+  InboxBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "dq-investigator-inbox-${Environment}"
+      NotificationConfiguration:
+        EventBridgeConfiguration:
+          EventBridgeEnabled: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: CleanupOldArchives
+            Prefix: "processed/"
+            Status: Enabled
+            ExpirationInDays: 90
+
+  OutputBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "dq-investigator-output-${Environment}"
+      LifecycleConfiguration:
+        Rules:
+          - Id: CleanupOldReports
+            Prefix: "reports/"
+            Status: Enabled
+            ExpirationInDays: 365
+
+  # ── SNS Topic for Alerts ─────────────────────────────────────────────────
+  AlertTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "dq-investigator-alerts-${Environment}"
+
+  AlertEmailSubscription:
+    Type: AWS::SNS::Subscription
+    Condition: HasAlertEmail
+    Properties:
+      TopicArn: !Ref AlertTopic
+      Protocol: email
+      Endpoint: !Ref AlertEmail
+
+  # ── Lambda Functions ─────────────────────────────────────────────────────
+
+  # 1. Trigger — receives S3 events, starts Step Functions
+  TriggerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "dq-trigger-${Environment}"
+      Handler: trigger.handler
+      CodeUri: lambda_handlers/
+      Environment:
+        Variables:
+          STATE_MACHINE_ARN: !Ref DQPipelineStateMachine
+      Policies:
+        - StepFunctionsExecutionPolicy:
+            StateMachineName: !GetAtt DQPipelineStateMachine.Name
+
+  # 2. DQ Engine — runs the full validation pipeline
+  RunDQEngineFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "dq-engine-${Environment}"
+      Handler: run_dq_engine.handler
+      CodeUri: lambda_handlers/
+      Timeout: 900
+      MemorySize: 1024
+      Environment:
+        Variables:
+          OUTPUT_BUCKET: !Ref OutputBucket
+          CONFIG_BUCKET: !Ref InboxBucket
+          CONFIG_KEY: "config/config.yaml"
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref InboxBucket
+        - S3CrudPolicy:
+            BucketName: !Ref OutputBucket
+
+  # 3. Check Threshold — evaluates pass/fail
+  CheckThresholdFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "dq-check-threshold-${Environment}"
+      Handler: check_threshold.handler
+      CodeUri: lambda_handlers/
+
+  # 4. Send Alert — notifies on failure
+  SendAlertFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "dq-send-alert-${Environment}"
+      Handler: send_alert.handler
+      CodeUri: lambda_handlers/
+      Environment:
+        Variables:
+          ALERT_TOPIC_ARN: !Ref AlertTopic
+          APP_URL: !Ref AppUrl
+      Policies:
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt AlertTopic.TopicName
+
+  # 5. Archive File — moves processed file
+  ArchiveFileFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "dq-archive-${Environment}"
+      Handler: archive_file.handler
+      CodeUri: lambda_handlers/
+      Policies:
+        - S3CrudPolicy:
+            BucketName: !Ref InboxBucket
+
+  # ── Step Functions State Machine ─────────────────────────────────────────
+  DQPipelineStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Name: !Sub "dq-pipeline-${Environment}"
+      DefinitionUri: stepfunctions.json
+      DefinitionSubstitutions:
+        RunDQEngineFunctionArn: !GetAtt RunDQEngineFunction.Arn
+        CheckThresholdFunctionArn: !GetAtt CheckThresholdFunction.Arn
+        SendAlertFunctionArn: !GetAtt SendAlertFunction.Arn
+        ArchiveFileFunctionArn: !GetAtt ArchiveFileFunction.Arn
+      Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref RunDQEngineFunction
+        - LambdaInvokePolicy:
+            FunctionName: !Ref CheckThresholdFunction
+        - LambdaInvokePolicy:
+            FunctionName: !Ref SendAlertFunction
+        - LambdaInvokePolicy:
+            FunctionName: !Ref ArchiveFileFunction
+
+  # ── EventBridge Rule ─────────────────────────────────────────────────────
+  S3EventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub "dq-s3-trigger-${Environment}"
+      Description: "Trigger DQ pipeline when new file arrives in inbox"
+      EventPattern:
+        source:
+          - "aws.s3"
+        detail-type:
+          - "Object Created"
+        detail:
+          bucket:
+            name:
+              - !Ref InboxBucket
+          object:
+            key:
+              - prefix: "incoming/"
+      Targets:
+        - Arn: !GetAtt TriggerFunction.Arn
+          Id: DQTriggerTarget
+
+  # Permission for EventBridge to invoke the trigger Lambda
+  TriggerFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref TriggerFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt S3EventRule.Arn
+
+# ---------------------------------------------------------------------------
+# Conditions
+# ---------------------------------------------------------------------------
+Conditions:
+  HasAlertEmail: !Not [!Equals [!Ref AlertEmail, ""]]
+
+# ---------------------------------------------------------------------------
+# Outputs
+# ---------------------------------------------------------------------------
+Outputs:
+  InboxBucket:
+    Description: "Upload data files here to trigger the pipeline"
+    Value: !Sub "s3://${InboxBucket}/incoming/"
+
+  OutputBucket:
+    Description: "Pipeline results are stored here"
+    Value: !Sub "s3://${OutputBucket}/"
+
+  StateMachineArn:
+    Description: "Step Functions state machine ARN"
+    Value: !Ref DQPipelineStateMachine
+
+  AlertTopicArn:
+    Description: "SNS topic for quality alerts"
+    Value: !Ref AlertTopic
+
+  HowToUse:
+    Description: "How to trigger the pipeline"
+    Value: !Sub "Upload a CSV to s3://${InboxBucket}/incoming/ and the pipeline runs automatically"

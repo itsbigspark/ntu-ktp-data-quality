@@ -1,0 +1,13 @@
+version: "3.8"
+
+services:
+  dq-investigator:
+    build: .
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./output:/app/output          # Persist database & reports
+      - ./TEST2_DATA:/app/TEST2_DATA  # Mount test data (optional)
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+    restart: unless-stopped

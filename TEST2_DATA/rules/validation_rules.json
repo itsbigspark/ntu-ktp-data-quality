@@ -1,0 +1,110 @@
+{
+  "customer_id": {
+    "pattern": "^C\\d{3,4}$",
+    "description": "Customer ID must be C followed by 3-4 digits",
+    "severity": "error",
+    "auto_fix": false
+  },
+  "customer_name": {
+    "min_length": 2,
+    "max_length": 100,
+    "description": "Customer name must be between 2 and 100 characters",
+    "severity": "warning",
+    "auto_fix": false
+  },
+  "email": {
+    "pattern": "^[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$",
+    "description": "Must be a valid email address",
+    "severity": "error",
+    "auto_fix": false
+  },
+  "phone": {
+    "pattern": "^(\\+44|0)[\\d\\s\\-]{9,13}$",
+    "description": "Must be a valid UK phone number",
+    "severity": "warning",
+    "auto_fix": true,
+    "fix_pattern": "normalize_phone"
+  },
+  "postcode": {
+    "pattern": "^[A-Z]{1,2}\\d{1,2}[A-Z]?\\s?\\d[A-Z]{2}$",
+    "description": "Must be a valid UK postcode",
+    "severity": "error",
+    "auto_fix": true,
+    "fix_pattern": "uppercase_and_space"
+  },
+  "country": {
+    "allowed_values": [
+      "United Kingdom",
+      "UK",
+      "GB",
+      "England",
+      "Scotland",
+      "Wales"
+    ],
+    "description": "Country must be a recognised UK value",
+    "severity": "warning",
+    "auto_fix": true,
+    "fix_pattern": "normalize_country"
+  },
+  "account_number": {
+    "pattern": "^\\d{8}$",
+    "description": "Account number must be exactly 8 digits",
+    "severity": "error",
+    "auto_fix": false
+  },
+  "transaction_date": {
+    "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+    "description": "Date must be in YYYY-MM-DD format",
+    "severity": "warning",
+    "auto_fix": true,
+    "fix_pattern": "normalize_date"
+  },
+  "transaction_amount": {
+    "min": -10000,
+    "max": 1000000,
+    "description": "Transaction amount must be between -\u00a310,000 and \u00a31,000,000",
+    "severity": "error",
+    "auto_fix": false
+  },
+  "transaction_type": {
+    "allowed_values": [
+      "Debit",
+      "Credit",
+      "Transfer",
+      "Payment",
+      "Withdrawal",
+      "Direct Debit",
+      "Standing Order",
+      "Card Payment",
+      "Refund",
+      "Deposit",
+      "ATM Withdrawal",
+      "Online Transfer",
+      "Bank Transfer",
+      "Cash Deposit",
+      "Cheque Deposit",
+      "Interest Credit",
+      "Fee Charge",
+      "Wire Transfer"
+    ],
+    "description": "Transaction type must be a recognised value",
+    "severity": "error",
+    "case_sensitive": false,
+    "auto_fix": true,
+    "fix_pattern": "normalize_case"
+  },
+  "status": {
+    "allowed_values": [
+      "Completed",
+      "Pending",
+      "Failed",
+      "Cancelled",
+      "Processing"
+    ],
+    "description": "Status must be one of the allowed values",
+    "severity": "error",
+    "case_sensitive": false,
+    "auto_fix": true,
+    "fix_pattern": "normalize_case"
+  }
+}

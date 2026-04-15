@@ -1,0 +1,52 @@
+# Secrets
+.streamlit/secrets.toml
+.env
+*.pem
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv*/
+.ven/
+venv*/
+
+# Large datasets (not for GitHub)
+DATASETS/
+Aizle_Bank_data/
+Example_Datasets/
+TESTING_DATA/
+chroma_db/
+data/
+eda_selection_output/
+output/
+logs/
+auto_artifacts/
+
+# Media / large binaries
+*.mp4
+*.avi
+*.mov
+*.zip
+
+# Research papers (Word docs, figures)
+Research_paper_drafts/
+*.docx
+
+# Notebooks (large, use Colab links instead)
+*.ipynb
+
+# IDE / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Experimental evaluation (491MB, results/notebooks)
+experimental_evaluation/
+
+# Claude project config
+.claude/
+
+# Docker build artifacts
+*.tar

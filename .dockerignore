@@ -1,0 +1,35 @@
+# Virtual environments
+.venv
+.venv_docx
+.ven
+
+# Python cache
+__pycache__
+*.pyc
+*.egg-info
+
+# Git / IDE
+.git
+.github
+.claude
+.DS_Store
+
+# Docs & research (not needed in container)
+Research_paper_drafts/
+docs/
+*.md
+*.docx
+*.ipynb
+
+# Data folders (not needed — TEST2_DATA is explicitly copied)
+DATASETS/
+Aizle_Bank_data/
+output/
+logs/
+
+# Infrastructure (not needed in app container)
+infra/
+
+# Misc
+*.~*
+.streamlit/secrets.toml
