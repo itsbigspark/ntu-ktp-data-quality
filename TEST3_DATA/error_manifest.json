@@ -1,0 +1,262 @@
+{
+  "dataset": "insurance_claims.csv",
+  "total_rows": 1085,
+  "total_columns": 20,
+  "columns": [
+    "claim_id",
+    "policy_id",
+    "claimant_name",
+    "date_of_birth",
+    "email",
+    "phone",
+    "address",
+    "city",
+    "postcode",
+    "insurer",
+    "policy_type",
+    "claim_type",
+    "policy_start_date",
+    "policy_end_date",
+    "claim_date",
+    "claim_amount",
+    "coverage_limit",
+    "diagnosis_code",
+    "claim_status",
+    "agent_id"
+  ],
+  "total_errors_injected": 532,
+  "error_types": 21,
+  "errors": [
+    {
+      "error_type": "format_error",
+      "column": "email",
+      "description": "Misspelled email domain (gmial.com, outlok.com etc.)",
+      "affected_rows": 60,
+      "example_rows": [
+        851,
+        321,
+        533
+      ]
+    },
+    {
+      "error_type": "missing_value",
+      "column": "email",
+      "description": "Blank email address",
+      "affected_rows": 20,
+      "example_rows": [
+        66,
+        63,
+        490
+      ]
+    },
+    {
+      "error_type": "missing_value",
+      "column": "phone",
+      "description": "Missing phone number",
+      "affected_rows": 30,
+      "example_rows": [
+        903,
+        893,
+        513
+      ]
+    },
+    {
+      "error_type": "format_error",
+      "column": "postcode",
+      "description": "Postcode missing space (SW1A1AA instead of SW1A 1AA)",
+      "affected_rows": 25,
+      "example_rows": [
+        412,
+        181,
+        407
+      ]
+    },
+    {
+      "error_type": "missing_value",
+      "column": "postcode",
+      "description": "Missing postcode",
+      "affected_rows": 15,
+      "example_rows": [
+        641,
+        162,
+        103
+      ]
+    },
+    {
+      "error_type": "corpus_mismatch",
+      "column": "insurer",
+      "description": "Insurer name variants (AXA vs AXA UK vs axa uk)",
+      "affected_rows": 50,
+      "example_rows": [
+        745,
+        876,
+        64
+      ]
+    },
+    {
+      "error_type": "standardisation_error",
+      "column": "claim_status",
+      "description": "Claim status not standardised (APPROVED, approvd, approve)",
+      "affected_rows": 40,
+      "example_rows": [
+        228,
+        616,
+        279
+      ]
+    },
+    {
+      "error_type": "format_error",
+      "column": "claim_amount",
+      "description": "Claim amount stored as string with \u00a3 symbol",
+      "affected_rows": 25,
+      "example_rows": [
+        406,
+        409,
+        296
+      ]
+    },
+    {
+      "error_type": "logical_error",
+      "column": "claim_amount",
+      "description": "Claim amount exceeds coverage limit (business rule violation)",
+      "affected_rows": 20,
+      "example_rows": [
+        568,
+        194,
+        895
+      ]
+    },
+    {
+      "error_type": "range_error",
+      "column": "claim_amount",
+      "description": "Negative claim amount",
+      "affected_rows": 12,
+      "example_rows": [
+        977,
+        382,
+        414
+      ]
+    },
+    {
+      "error_type": "logical_error",
+      "column": "claim_date",
+      "description": "Claim date is before policy start date",
+      "affected_rows": 30,
+      "example_rows": [
+        554,
+        680,
+        864
+      ]
+    },
+    {
+      "error_type": "range_error",
+      "column": "date_of_birth",
+      "description": "Date of birth in the future",
+      "affected_rows": 10,
+      "example_rows": [
+        119,
+        331,
+        932
+      ]
+    },
+    {
+      "error_type": "range_error",
+      "column": "date_of_birth",
+      "description": "Date of birth implies age > 110 years (implausible)",
+      "affected_rows": 8,
+      "example_rows": [
+        618,
+        230,
+        622
+      ]
+    },
+    {
+      "error_type": "format_error",
+      "column": "claim_date",
+      "description": "Claim date not in ISO format (15/01/2024, Jan 15 2024, etc.)",
+      "affected_rows": 35,
+      "example_rows": [
+        73,
+        981,
+        756
+      ]
+    },
+    {
+      "error_type": "corpus_mismatch",
+      "column": "diagnosis_code",
+      "description": "Diagnosis code not in valid ICD-10 list",
+      "affected_rows": 20,
+      "example_rows": [
+        121,
+        364,
+        594
+      ]
+    },
+    {
+      "error_type": "format_error",
+      "column": "claimant_name",
+      "description": "Leading/trailing whitespace in claimant name",
+      "affected_rows": 16,
+      "example_rows": [
+        437,
+        958,
+        38
+      ]
+    },
+    {
+      "error_type": "standardisation_error",
+      "column": "city",
+      "description": "City name not properly capitalised (london, manchester)",
+      "affected_rows": 16,
+      "example_rows": [
+        498,
+        566,
+        493
+      ]
+    },
+    {
+      "error_type": "format_error",
+      "column": "policy_id",
+      "description": "Policy ID not in POL-XXXXXX format",
+      "affected_rows": 15,
+      "example_rows": [
+        455,
+        708,
+        313
+      ]
+    },
+    {
+      "error_type": "duplicate",
+      "column": "all_columns",
+      "description": "Exact duplicate rows (same claim submitted twice)",
+      "affected_rows": 50,
+      "example_rows": [
+        1000,
+        1001,
+        1002
+      ]
+    },
+    {
+      "error_type": "near_duplicate",
+      "column": "claimant_name",
+      "description": "Near-duplicate claims (same person, minor name/amount variation)",
+      "affected_rows": 25,
+      "example_rows": [
+        1050,
+        1051,
+        1052
+      ]
+    },
+    {
+      "error_type": "missing_value",
+      "column": "all_columns",
+      "description": "Completely empty records",
+      "affected_rows": 10,
+      "example_rows": [
+        1075,
+        1076,
+        1077
+      ]
+    }
+  ]
+}

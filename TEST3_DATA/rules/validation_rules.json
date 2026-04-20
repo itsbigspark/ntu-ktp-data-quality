@@ -1,0 +1,91 @@
+{
+  "claim_id": {
+    "type": "string",
+    "pattern": "^CLM-\\d{5}$",
+    "description": "Claim ID must be in format CLM-XXXXX"
+  },
+  "policy_id": {
+    "type": "string",
+    "pattern": "^POL-\\d{6}$",
+    "description": "Policy ID must be in format POL-XXXXXX"
+  },
+  "email": {
+    "type": "email",
+    "required": true,
+    "description": "Must be a valid email address"
+  },
+  "phone": {
+    "type": "string",
+    "pattern": "^\\+44\\s7\\d{3}\\s\\d{6}$",
+    "description": "Must be a valid UK mobile number (+44 7XXX XXXXXX)"
+  },
+  "postcode": {
+    "type": "string",
+    "pattern": "^[A-Z]{1,2}\\d[A-Z\\d]?\\s\\d[A-Z]{2}$",
+    "auto_fix": "uppercase_and_add_space",
+    "description": "Must be a valid UK postcode with space"
+  },
+  "date_of_birth": {
+    "type": "date",
+    "format": "YYYY-MM-DD",
+    "min": "1900-01-01",
+    "max": "today",
+    "description": "Date of birth must be valid and not in the future"
+  },
+  "claim_date": {
+    "type": "date",
+    "format": "YYYY-MM-DD",
+    "auto_fix": "normalise_date",
+    "description": "Claim date must be ISO format YYYY-MM-DD"
+  },
+  "claim_amount": {
+    "type": "numeric",
+    "min": 0,
+    "max": 500000,
+    "auto_fix": "strip_currency_symbol",
+    "description": "Claim amount must be a positive number, no currency symbols"
+  },
+  "claim_status": {
+    "type": "categorical",
+    "allowed_values": [
+      "Submitted",
+      "Under Review",
+      "Approved",
+      "Rejected",
+      "Settled",
+      "Closed"
+    ],
+    "auto_fix": "corpus_lookup",
+    "description": "Claim status must be a standard value"
+  },
+  "insurer": {
+    "type": "categorical",
+    "auto_fix": "corpus_lookup",
+    "description": "Insurer name must match known insurer list"
+  },
+  "claim_type": {
+    "type": "categorical",
+    "allowed_values": [
+      "Motor",
+      "Home",
+      "Health",
+      "Life",
+      "Travel",
+      "Liability",
+      "Pet",
+      "Business"
+    ],
+    "description": "Claim type must be a valid category"
+  },
+  "coverage_limit": {
+    "type": "numeric",
+    "min": 1000,
+    "max": 10000000,
+    "description": "Coverage limit must be between \u00a31,000 and \u00a310,000,000"
+  },
+  "diagnosis_code": {
+    "type": "categorical",
+    "auto_fix": "corpus_lookup",
+    "description": "Diagnosis code must be valid ICD-10 code (if provided)"
+  }
+}

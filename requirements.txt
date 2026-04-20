@@ -44,6 +44,11 @@ python-dotenv>=1.0.0  # optional for API keys
 ollama>=0.3.0          # local LLM via Ollama
 anthropic>=0.20.0      # Claude (Anthropic API)
 
+# REST API
+fastapi>=0.110.0       # REST API framework
+uvicorn[standard]>=0.27.0  # ASGI server
+python-multipart>=0.0.7    # File upload support for FastAPI
+
 # Enterprise / Storage
 boto3>=1.34.0          # AWS S3, Bedrock, SNS, SES
 sqlalchemy>=2.0.0      # Database ORM (PostgreSQL, SQLite)

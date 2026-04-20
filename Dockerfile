@@ -24,14 +24,18 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY core/ ./core/
 COPY dq_engine/ ./dq_engine/
 COPY app/ ./app/
+COPY api/ ./api/
 COPY config.yaml* ./
 COPY TEST2_DATA/ ./TEST2_DATA/
+COPY configs/ ./configs/
+COPY assets/ ./assets/
+COPY lib/ ./lib/
 
 # Create output directory
 RUN mkdir -p output
 
-# Expose Streamlit port
-EXPOSE 8501
+# Expose Streamlit (8501) and FastAPI (8000)
+EXPOSE 8501 8000
 
 # Health check
 HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health || exit 1

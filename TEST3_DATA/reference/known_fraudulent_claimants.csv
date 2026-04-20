@@ -1,0 +1,31 @@
+claimant_name,policy_id,fraud_type,reported_date,risk_level,notes
+Priya Taylor,POL-174928,Identity Fraud,2024-08-05,High,Claim amount inconsistent with policy coverage
+Charlotte Edwards,POL-666700,Exaggerated Loss,2024-07-14,High,Linked to known fraud ring
+James Ward,POL-444107,Ghost Claimant,2024-12-19,Medium,Claimant address does not match records
+Rebecca Johnson,POL-950274,Duplicate Claim,2023-06-29,High,Linked to known fraud ring
+Hannah Wood,POL-267642,Ghost Claimant,2024-03-12,High,Submitted identical claim at two insurers
+Priya Jackson,POL-328209,Provider Fraud,2022-03-02,High,Multiple claims in 6-month window
+Michael Johnson,POL-888513,Identity Fraud,2022-08-22,High,Multiple claims in 6-month window
+Fatima Lewis,POL-615568,Ghost Claimant,2022-06-13,Medium,Claimant address does not match records
+Daniel Smith,POL-960950,Duplicate Claim,2022-12-08,High,Linked to known fraud ring
+William Hall,POL-149276,Staged Accident,2023-10-09,High,Multiple claims in 6-month window
+Aisha Thompson,POL-543504,Ghost Claimant,2023-03-02,High,Claimant address does not match records
+Mohammed Harris,POL-969331,Provider Fraud,2023-10-04,High,Linked to known fraud ring
+Sophie Smith,POL-906147,Provider Fraud,2023-10-15,High,Claim amount inconsistent with policy coverage
+Olivia Wright,POL-120945,Provider Fraud,2022-09-06,High,Multiple claims in 6-month window
+Fatima Turner,POL-712885,Duplicate Claim,2022-01-22,High,Multiple claims in 6-month window
+David Cooper,POL-701363,Identity Fraud,2023-09-22,High,Claimant address does not match records
+Jessica Brown,POL-355170,Provider Fraud,2024-05-23,High,Multiple claims in 6-month window
+Sarah Patel,POL-656918,Staged Accident,2024-12-31,High,Multiple claims in 6-month window
+Matthew Brown,POL-144791,Staged Accident,2023-11-03,High,Claim amount inconsistent with policy coverage
+Charlotte Evans,POL-849347,Identity Fraud,2023-02-28,Critical,Submitted identical claim at two insurers
+Kevin Johnson,POL-831025,Ghost Claimant,2024-10-13,High,Linked to known fraud ring
+George Wright,POL-246654,Identity Fraud,2022-06-11,High,Claimant address does not match records
+Michael Jackson,POL-728709,Identity Fraud,2023-05-18,High,Claimant address does not match records
+Fatima Turner,POL-748735,Duplicate Claim,2022-01-15,Medium,Multiple claims in 6-month window
+Ali Cooper,POL-887769,Identity Fraud,2022-07-05,Medium,Claimant address does not match records
+William Clarke,POL-358275,Duplicate Claim,2023-11-16,Critical,Linked to known fraud ring
+Fatima Hall,POL-611016,Ghost Claimant,2023-01-16,Medium,Claimant address does not match records
+Lucy Hill,POL-221309,Duplicate Claim,2024-02-17,Medium,Claim amount inconsistent with policy coverage
+Thomas Clarke,POL-743242,Duplicate Claim,2022-10-02,High,Linked to known fraud ring
+Hannah Davies,POL-579131,Duplicate Claim,2022-11-21,Critical,Linked to known fraud ring

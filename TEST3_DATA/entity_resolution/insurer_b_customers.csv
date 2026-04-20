@@ -1,0 +1,101 @@
+customer_id,full_name,date_of_birth,email,phone,postcode,active_policies
+CUST-1000,Amara Smith,1981-04-10,amara.smith@icloud.com,+44 7184 496058,EH1 1YZ,3
+CUST-1001,Mohammed Martin,1986-02-02,mohammed.martin@icloud.com,07813-584260,NG1 5FS,2
+CUST-1002,Ali Greei,1979-07-27,ali_green@gmail.com,+44 7482 230484,M1 1AE,2
+CUST-1003,Olivia Greee,1994-01-05,olivia_green@yahoo.com,+44 7108 376885,G1 1PT,4
+CUST-1004,Amara Evans,1987-03-28,amaraevans@gmail.com,07369-764545,EH1 1YZ,3
+CUST-1005,William Brown,1993-10-08,williambrown@outlook.com,07913-321684,SW1A 1AA,4
+CUST-1006,Daniel Turner,1962-07-16,daniel_turner@outlook.com,+44 7811 892903,SW1A 1AA,2
+CUST-1007,Priya Edwards,1994-05-20,priyaedwards@hotmail.com,+44 7883 382719,NG1 5FS,3
+CUST-1008,Emily Cooper,1975-06-18,emilycooper@hotmail.com,+44 7239 986946,N1 9GU,1
+CUST-1009,William Thomas,1972-01-21,william_thomas@icloud.com,+44 7673 225638,LS1 1BA,4
+CUST-1010,Patrick Martin,1977-12-25,patrick.martin@yahoo.com,+44 7412 318381,SE1 7PB,1
+CUST-1011,Michael Hughes,1973-09-16,michael_hughes@btinternet.com,+44 7865 476590,SE1 7PB,2
+CUST-1012,Sophie Wilsou,1973-07-10,sophie_wilson@hotmail.com,+44 7114 969689,EH1 1YZ,1
+CUST-1013,Fatima Patei,1960-10-01,fatimapatel@gmail.com,+44 7457 302376,SE1 7PB,4
+CUST-1014,James Davies,1994-03-13,james.davies@outlook.com,+44 7370 925779,L1 0AB,1
+CUST-1015,Rebecca Thomaa,1964-11-28,rebecca.thomas@yahoo.com,+44 7187 740903,M1 1AE,3
+CUST-1016,William White,1968-01-09,william_white@gmail.com,+44 7120 159346,N1 9GU,3
+CUST-1017,Emily Hall,1973-03-09,emily_hall@yahoo.com,+44 7960 677595,B1 1BB,1
+CUST-1018,Grace Hughea,1979-02-21,grace.hughes@yahoo.com,+44 7868 390505,W1A 1AA,4
+CUST-1019,James Hall,1995-08-05,jameshall@hotmail.com,+44 7361 702235,WC2N 5DU,2
+CUST-1020,Priya Davies,1983-02-16,priya_davies@yahoo.com,+44 7289 403680,SW1A 1AA,3
+CUST-1021,Patrick Hill,1973-03-14,patrick.hill@gmail.com,+44 7646 968679,M1 1AE,1
+CUST-1022,Robert Roberte,1984-09-14,robert.roberts@btinternet.com,+44 7490 325561,M1 1AE,4
+CUST-1023,James Taylor,1994-07-15,jamestaylor@btinternet.com,+44 7273 158815,G1 1PT,1
+CUST-1024,Sarah Lewis,1981-04-13,sarah_lewis@btinternet.com,+44 7238 173482,LE1 6ZZ,2
+CUST-1025,Amara Greei,1961-01-11,amara_green@hotmail.com,+44 7719 428192,SW1A 1AA,1
+CUST-1026,Emily Hughea,1975-03-11,emilyhughes@gmail.com,+44 7126 937319,E1 6RF,2
+CUST-1027,Grace Whito,1965-04-25,grace.white@btinternet.com,+44 7562 280003,L1 0AB,1
+CUST-1028,Emily Evans,1994-07-19,emily.evans@btinternet.com,+44 7621 595571,B1 1BB,4
+CUST-1029,Hannah Taylor,1971-02-01,hannah_taylor@outlook.com,+44 7991 844431,EH1 1YZ,4
+CUST-1030,Lucy Browi,1991-02-19,lucy.brown@icloud.com,+44 7927 171725,N1 9GU,1
+CUST-1031,William Thomas,1979-04-14,william.thomas@yahoo.com,+44 7944 336540,CF10 1EP,3
+CUST-1032,Aisha Turner,1968-03-12,aisha.turner@gmail.com,+44 7763 516611,SW1A 1AA,2
+CUST-1033,Ali Davies,1973-10-09,ali.davies@yahoo.com,+44 7850 796588,SW1A 1AA,3
+CUST-1034,Charlotte Jackson,1988-08-06,charlotte_jackson@icloud.com,+44 7123 318359,L1 0AB,4
+CUST-1035,Ryan Harriu,1982-06-04,ryan.harris@yahoo.com,+44 7581 528841,B1 1BB,4
+CUST-1036,Grace Martiu,1979-12-18,grace.martin@btinternet.com,07237-383480,LE1 6ZZ,3
+CUST-1037,Daniel Greea,1982-02-13,daniel.green@yahoo.com,+44 7208 211464,LS1 1BA,3
+CUST-1038,Rebecca Green,1965-03-26,rebecca_green@icloud.com,+44 7514 894241,CF10 1EP,4
+CUST-1039,John Hughes,1995-07-26,johnhughes@btinternet.com,+44 7531 233066,BS1 4DJ,4
+CUST-1040,Thomas Jones,1960-09-17,thomas_jones@outlook.com,+44 7567 371390,SW1A 1AA,2
+CUST-1041,William Martin,1995-02-19,william.martin@icloud.com,+44 7133 614531,CF10 1EP,2
+CUST-1042,Mohammed Thompson,1979-01-02,mohammed_thompson@icloud.com,+44 7854 861370,SE1 7PB,2
+CUST-1043,Thomas Lewis,1968-04-26,thomas_lewis@yahoo.com,+44 7385 666579,EH1 1YZ,4
+CUST-1044,John White,1962-09-06,john.white@yahoo.com,+44 7687 653421,WC2N 5DU,3
+CUST-1045,John Thompson,1971-03-23,john.thompson@yahoo.com,07167-274587,BS1 4DJ,4
+CUST-1046,Olivia Jackson,1969-01-12,olivia_jackson@gmail.com,07999-318247,BS1 4DJ,1
+CUST-1047,Sarah Smith,1961-09-17,sarah_smith@yahoo.com,+44 7912 405859,EC1A 1BB,4
+CUST-1048,Fatima Hall,1967-10-01,fatima.hall@icloud.com,07633-699509,B1 1BB,1
+CUST-1049,John Brown,1985-01-01,johnbrown@gmail.com,+44 7493 695294,G1 1PT,2
+CUST-1050,David Clarke,1991-04-15,davidclarke@icloud.com,07789-657771,E1 6RF,1
+CUST-1051,Thomas Smith,1994-12-11,thomas_smith@icloud.com,07962-186193,W1A 1AA,4
+CUST-1052,Hannah Thomas,1984-04-02,hannah.thomas@gmail.com,+44 7711 955570,SE1 7PB,3
+CUST-1053,Olivia Wilson,1975-07-04,olivia.wilson@btinternet.com,+44 7955 356186,E1 6RF,1
+CUST-1054,Rebecca Brown,1993-02-11,rebecca.brown@btinternet.com,+44 7718 682270,LE1 6ZZ,3
+CUST-1055,Ali Edwards,1969-10-26,ali_edwards@yahoo.com,07118-298298,EH1 1YZ,1
+CUST-1056,Mohammed Walker,1973-06-25,mohammed.walker@outlook.com,+44 7522 531086,SW1A 1AA,4
+CUST-1057,Ali Wright,1976-05-19,aliwright@outlook.com,+44 7983 524067,WC2N 5DU,4
+CUST-1058,David Patel,1963-02-02,davidpatel@yahoo.com,+44 7373 775243,SW1A 1AA,2
+CUST-1059,Matthew Wood,1994-02-23,matthewwood@yahoo.com,07241-784319,S1 2HH,4
+CUST-1060,Grace Ward,1978-01-05,grace_ward@yahoo.com,+44 7134 656666,LE1 6ZZ,1
+CUST-1061,Hannah Thomae,1980-03-15,hannah.thomas@outlook.com,07752-302011,WC2N 5DU,3
+CUST-1062,Priya Ward,1974-06-15,priya.ward@gmail.com,07401-191425,L1 0AB,1
+CUST-1063,George Green,1968-09-23,george_green@gmail.com,+44 7662 221839,WC2N 5DU,1
+CUST-1064,Ryan Davies,1980-06-19,ryan.davies@outlook.com,+44 7781 516895,LS1 1BA,1
+CUST-1065,Sarah White,1971-04-02,sarah_white@hotmail.com,+44 7518 124674,M1 1AE,1
+CUST-1066,David Green,1975-09-05,david_green@gmail.com,07130-194089,L1 0AB,2
+CUST-1067,Kevin Tayloi,1987-02-12,kevin.taylor@yahoo.com,+44 7130 786674,EH1 1YZ,3
+CUST-1068,James Hughea,1987-07-25,james_hughes@yahoo.com,+44 7934 909399,EH1 1YZ,3
+CUST-1069,Thomas Jackson,1962-05-21,thomas.jackson@yahoo.com,+44 7550 539313,S1 2HH,3
+CUST-1070,Thomas Martii,1961-02-20,thomas.martin@outlook.com,+44 7342 107176,LE1 6ZZ,4
+CUST-1071,Sophie Jackson,1973-12-10,sophie_jackson@yahoo.com,+44 7365 346287,LE1 6ZZ,4
+CUST-1072,Mohammed Hughea,1986-09-06,mohammed.hughes@outlook.com,07875-206490,G1 1PT,4
+CUST-1073,Olivia Daviei,1985-08-01,oliviadavies@hotmail.com,+44 7967 538625,EC1A 1BB,3
+CUST-1074,Rebecca Patel,1985-03-28,rebecca.patel@outlook.com,+44 7178 751586,E1 6RF,4
+CUST-1075,Aisha Green,1988-09-28,aisha_green@icloud.com,+44 7400 596296,E1 6RF,1
+CUST-1076,Olivia Davieu,1963-11-07,olivia_davies@gmail.com,+44 7137 532832,LS1 1BA,3
+CUST-1077,Michael Hall,1990-05-05,michael.hall@yahoo.com,+44 7420 385081,BS1 4DJ,3
+CUST-1078,Sarah Roberts,1986-12-25,sarah_roberts@icloud.com,07256-215828,G1 1PT,1
+CUST-1079,Ali Turner,1987-05-20,aliturner@outlook.com,+44 7267 474254,EH1 1YZ,2
+CUST-1080,James Wright,1977-05-21,james.wright@gmail.com,07203-803154,N1 9GU,2
+CUST-1081,Zoe Green,1965-09-05,zoe_green@yahoo.com,+44 7102 998812,WC2N 5DU,2
+CUST-1082,Charlotte Wilson,1981-11-19,charlotte_wilson@icloud.com,+44 7995 627108,L1 0AB,1
+CUST-1083,Michael Edwardu,1977-10-26,michael_edwards@icloud.com,+44 7123 524832,EC1A 1BB,3
+CUST-1084,Aisha Wood,1961-06-28,aisha.wood@gmail.com,+44 7144 290573,B1 1BB,2
+CUST-1085,Patrick Hilu,1983-05-07,patrickhill@btinternet.com,07385-186257,L1 0AB,2
+CUST-1086,Aisha Smith,1967-12-13,aisha.smith@outlook.com,+44 7725 880113,SE1 7PB,4
+CUST-1087,James Martin,1975-08-05,james.martin@btinternet.com,+44 7847 773039,SE1 7PB,4
+CUST-1088,Sarah Jonea,1972-03-02,sarahjones@yahoo.com,+44 7207 723561,E1 6RF,1
+CUST-1089,Mohammed Williams,1977-01-01,mohammed.williams@outlook.com,+44 7586 952797,LS1 1BA,2
+CUST-1090,Emily Wood,1991-12-04,emilywood@hotmail.com,+44 7880 783914,W1A 1AA,4
+CUST-1091,Sarah Wooa,1966-11-25,sarah_wood@yahoo.com,+44 7878 472012,M1 1AE,3
+CUST-1092,Emily Hall,1978-11-15,emilyhall@outlook.com,+44 7988 482372,SW1A 1AA,1
+CUST-1093,Mohammed Evani,1988-06-08,mohammed_evans@icloud.com,+44 7269 840471,LS1 1BA,1
+CUST-1094,Hannah Ward,1970-09-17,hannahward@hotmail.com,+44 7635 880850,SW1A 1AA,4
+CUST-1095,David Wood,1989-10-25,david.wood@btinternet.com,07332-590679,LS1 1BA,4
+CUST-1096,Emily Thompsoo,1961-09-23,emilythompson@gmail.com,+44 7897 745471,N1 9GU,2
+CUST-1097,David Hill,1972-11-20,davidhill@btinternet.com,+44 7493 363522,N1 9GU,4
+CUST-1098,George Brown,1994-04-16,george_brown@yahoo.com,+44 7141 569142,WC2N 5DU,1
+CUST-1099,Kevin Hila,1960-03-26,kevin_hill@icloud.com,+44 7115 806463,W1A 1AA,3
