@@ -1,33 +1,40 @@
-name: CI
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main, master, develop]
+    branches: [v2-aws]
   pull_request:
-    branches: [main, master]
+    branches: [v2-aws]
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: dq-investigator
+  ECS_CLUSTER: dq-cluster
+  ECS_SERVICE: dq-investigator
+  CONTAINER_NAME: dq-app
 
 jobs:
+  # ─────────────────────────────────────────────────────────────────
+  # JOB 1: Test
+  # ─────────────────────────────────────────────────────────────────
   test:
+    name: Run Tests
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.11", "3.12"]
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.11"
 
       - name: Cache pip packages
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
+          restore-keys: ${{ runner.os }}-pip-
 
       - name: Install dependencies
         run: |
@@ -36,39 +43,94 @@ jobs:
           pip install pytest
 
       - name: Run tests
-        run: pytest tests/test_engine.py -v
+        run: pytest tests/ -v --tb=short
 
+  # ─────────────────────────────────────────────────────────────────
+  # JOB 2: Lint / Syntax check
+  # ─────────────────────────────────────────────────────────────────
   lint:
+    name: Syntax Check
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.11"
 
-      - name: Check syntax (py_compile)
+      - name: Check syntax -- app
         run: |
           python -m py_compile app/Home.py
-          python -m py_compile app/shared/auth.py
-          python -m py_compile app/shared/state.py
-          python -m py_compile app/shared/theme.py
           for f in app/pages/*.py; do python -m py_compile "$f"; done
-          for f in dq_engine/*.py; do python -m py_compile "$f"; done
+          for f in app/shared/*.py; do python -m py_compile "$f"; done
 
-  docker:
+      - name: Check syntax -- core
+        run: |
+          for f in core/*.py; do python -m py_compile "$f"; done
+          for f in core/validator/*.py; do python -m py_compile "$f"; done
+          for f in core/storage/*.py; do python -m py_compile "$f"; done
+
+      - name: Check syntax -- api + engine
+        run: |
+          for f in api/*.py; do python -m py_compile "$f"; done
+          for f in dq_engine/orchestrators/*.py; do python -m py_compile "$f"; done
+
+  # ─────────────────────────────────────────────────────────────────
+  # JOB 3: Build + Push + Deploy (only on push to v2-aws, not PRs)
+  # ─────────────────────────────────────────────────────────────────
+  deploy:
+    name: Build, Push & Deploy
     runs-on: ubuntu-latest
     needs: [test, lint]
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/v2-aws'
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build Docker image
-        run: docker build -t dq-investigator .
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
-      - name: Verify container starts
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push Docker image (linux/amd64)
+        id: build-image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Force new ECS deployment
         run: |
-          docker run -d --name dq-test -p 8501:8501 dq-investigator
-          sleep 10
-          curl -sf http://localhost:8501/_stcore/health || (docker logs dq-test && exit 1)
-          docker stop dq-test
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service ${{ env.ECS_SERVICE }} \
+            --force-new-deployment \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Wait for deployment to stabilise
+        run: |
+          echo "Waiting for ECS service to stabilise..."
+          aws ecs wait services-stable \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services ${{ env.ECS_SERVICE }} \
+            --region ${{ env.AWS_REGION }}
+          echo "Deployment complete."
+
+      - name: Print live URL
+        run: |
+          echo "App live at: http://dq-investigator-alb-1649689009.us-east-1.elb.amazonaws.com"
+          echo "API docs at: http://dq-investigator-alb-1649689009.us-east-1.elb.amazonaws.com:8000/docs"
