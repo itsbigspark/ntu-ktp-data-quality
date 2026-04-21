@@ -12,12 +12,53 @@ For SQLite (local dev): no extra dependencies needed.
 
 import json
 import logging
+import os
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional, List
 
 import pandas as pd
 
 logger = logging.getLogger("dq_engine.db")
+
+# ---------------------------------------------------------------------------
+# Shared engine cache (one connection pool per process)
+# ---------------------------------------------------------------------------
+_ENGINE_CACHE = {}
+
+
+def get_engine(config: Dict[str, Any] = None):
+    """
+    Get a SQLAlchemy engine. Priority order:
+    1. DATABASE_URL environment variable (used in ECS/production)
+    2. Config dict (used when called from pipeline)
+    3. Default SQLite fallback
+    """
+    from sqlalchemy import create_engine
+
+    # 1. DATABASE_URL env var takes priority (set in ECS task definition)
+    db_url = os.environ.get("DATABASE_URL")
+    if db_url:
+        cache_key = db_url
+        if cache_key not in _ENGINE_CACHE:
+            logger.info("Using DATABASE_URL from environment")
+            _ENGINE_CACHE[cache_key] = create_engine(
+                db_url,
+                pool_size=5,
+                max_overflow=10,
+                pool_pre_ping=True,  # reconnect on stale connections
+            )
+        return _ENGINE_CACHE[cache_key]
+
+    # 2. Config dict
+    if config:
+        return _get_engine(config)
+
+    # 3. SQLite fallback
+    os.makedirs("./output", exist_ok=True)
+    url = "sqlite:///./output/dq_investigator.db"
+    if url not in _ENGINE_CACHE:
+        _ENGINE_CACHE[url] = create_engine(url)
+    return _ENGINE_CACHE[url]
 
 # ---------------------------------------------------------------------------
 # Schema DDL — executed on first run or via migrate command
@@ -157,7 +198,7 @@ SCHEMA_SQL_PG = SCHEMA_SQL.replace(
 # Connection management
 # ---------------------------------------------------------------------------
 def _get_engine(config: Dict[str, Any]):
-    """Create a SQLAlchemy engine from config."""
+    """Create a SQLAlchemy engine from config dict."""
     from sqlalchemy import create_engine
 
     db_cfg = config.get("output", {}).get("database", {})
@@ -165,6 +206,7 @@ def _get_engine(config: Dict[str, Any]):
 
     if engine_type == "sqlite":
         db_path = db_cfg.get("path", "./output/dq_investigator.db")
+        os.makedirs(os.path.dirname(os.path.abspath(db_path)), exist_ok=True)
         url = f"sqlite:///{db_path}"
         logger.info(f"Using SQLite: {db_path}")
     elif engine_type == "postgresql":
@@ -178,7 +220,10 @@ def _get_engine(config: Dict[str, Any]):
     else:
         raise ValueError(f"Unsupported database engine: {engine_type}")
 
-    return create_engine(url)
+    if url not in _ENGINE_CACHE:
+        kwargs = {"pool_pre_ping": True} if engine_type == "postgresql" else {}
+        _ENGINE_CACHE[url] = create_engine(url, **kwargs)
+    return _ENGINE_CACHE[url]
 
 
 # ---------------------------------------------------------------------------

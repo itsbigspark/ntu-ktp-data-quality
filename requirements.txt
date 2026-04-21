@@ -52,3 +52,4 @@ python-multipart>=0.0.7    # File upload support for FastAPI
 # Enterprise / Storage
 boto3>=1.34.0          # AWS S3, Bedrock, SNS, SES
 sqlalchemy>=2.0.0      # Database ORM (PostgreSQL, SQLite)
+psycopg2-binary>=2.9.9 # PostgreSQL driver
