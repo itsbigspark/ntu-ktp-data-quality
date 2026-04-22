@@ -22,9 +22,11 @@ from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
-from fastapi import FastAPI, File, UploadFile, HTTPException, Query, Depends
+from fastapi import FastAPI, File, UploadFile, HTTPException, Query, Depends, Security
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+
+from api.auth import require_api_key, ensure_api_keys_table
 
 from api.schemas import (
     HealthResponse,
@@ -62,6 +64,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.on_event("startup")
+async def startup():
+    """Create api_keys table on startup if it doesn't exist."""
+    ensure_api_keys_table()
 
 
 # ---------------------------------------------------------------------------
@@ -154,6 +162,7 @@ async def validate(
     reference_file: Optional[UploadFile] = File(None, description="Optional reference/clean data file"),
     pass_threshold: float = Query(85.0, description="Quality score threshold for pass/fail"),
     enable_ml_anomaly: bool = Query(False, description="Enable ML-based anomaly detection"),
+    client: str = Security(require_api_key),
 ):
     """
     Run full validation pipeline on an uploaded file.
@@ -209,6 +218,7 @@ async def validate(
 @app.post("/api/v1/profile", tags=["Profiling"])
 async def profile(
     file: UploadFile = File(..., description="Data file to profile"),
+    client: str = Security(require_api_key),
 ):
     """
     Profile a dataset: column types, distributions, nulls, outliers, correlations.
@@ -232,6 +242,7 @@ async def detect_anomalies(
     file: UploadFile = File(..., description="Data file"),
     reference_file: Optional[UploadFile] = File(None, description="Optional reference data"),
     use_ml: bool = Query(True, description="Use ML models for anomaly detection"),
+    client: str = Security(require_api_key),
 ):
     """
     Run anomaly detection on a dataset using statistical and ML methods.
@@ -262,6 +273,7 @@ async def detect_anomalies(
 @app.post("/api/v1/rules/generate", tags=["Rules"])
 async def generate_rules(
     file: UploadFile = File(..., description="Data file to infer rules from"),
+    client: str = Security(require_api_key),
 ):
     """
     Auto-generate validation rules from data patterns.
@@ -281,7 +293,7 @@ async def generate_rules(
 
 
 @app.post("/api/v1/s3/validate", tags=["S3 Integration"])
-async def validate_from_s3(request: S3ValidateRequest):
+async def validate_from_s3(request: S3ValidateRequest, client: str = Security(require_api_key)):
     """
     Validate a file directly from an S3 bucket.
     """
@@ -352,7 +364,7 @@ async def validate_from_s3(request: S3ValidateRequest):
 
 
 @app.post("/api/v1/investigate", tags=["AI Agent"])
-async def investigate(request: InvestigateRequest):
+async def investigate(request: InvestigateRequest, client: str = Security(require_api_key)):
     """
     Run the AI agentic investigation workflow.
 
@@ -415,6 +427,7 @@ async def investigate(request: InvestigateRequest):
 @app.get("/api/v1/batches", tags=["Batch History"])
 async def list_batches(
     limit: int = Query(20, description="Max number of batches to return"),
+    client: str = Security(require_api_key),
 ):
     """
     List past validation batch runs from the database.
@@ -448,7 +461,7 @@ async def list_batches(
 
 
 @app.get("/api/v1/batches/{batch_id}", tags=["Batch History"])
-async def get_batch(batch_id: str):
+async def get_batch(batch_id: str, client: str = Security(require_api_key)):
     """
     Get detailed results for a specific batch run.
     """
