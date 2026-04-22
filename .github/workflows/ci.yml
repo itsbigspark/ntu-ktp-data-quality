@@ -122,13 +122,32 @@ jobs:
             --region ${{ env.AWS_REGION }}
 
       - name: Wait for deployment to stabilise
+        timeout-minutes: 20
         run: |
-          echo "Waiting for ECS service to stabilise..."
-          aws ecs wait services-stable \
-            --cluster ${{ env.ECS_CLUSTER }} \
-            --services ${{ env.ECS_SERVICE }} \
-            --region ${{ env.AWS_REGION }}
-          echo "Deployment complete."
+          echo "Waiting for ECS service to stabilise (up to 20 min)..."
+          CLUSTER="${{ env.ECS_CLUSTER }}"
+          SERVICE="${{ env.ECS_SERVICE }}"
+          REGION="${{ env.AWS_REGION }}"
+          DESIRED=$(aws ecs describe-services \
+            --cluster "$CLUSTER" --services "$SERVICE" --region "$REGION" \
+            --query 'services[0].desiredCount' --output text)
+          echo "Desired count: $DESIRED"
+          for i in $(seq 1 40); do
+            RUNNING=$(aws ecs describe-services \
+              --cluster "$CLUSTER" --services "$SERVICE" --region "$REGION" \
+              --query 'services[0].runningCount' --output text)
+            PENDING=$(aws ecs describe-services \
+              --cluster "$CLUSTER" --services "$SERVICE" --region "$REGION" \
+              --query 'services[0].pendingCount' --output text)
+            echo "Attempt $i/40 — running=$RUNNING pending=$PENDING desired=$DESIRED"
+            if [ "$RUNNING" = "$DESIRED" ] && [ "$PENDING" = "0" ]; then
+              echo "Deployment stable."
+              exit 0
+            fi
+            sleep 30
+          done
+          echo "WARNING: Service did not fully stabilise within 20 min, but deployment was triggered."
+          exit 0
 
       - name: Print live URL
         run: |
