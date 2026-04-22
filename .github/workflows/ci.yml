@@ -115,9 +115,17 @@ jobs:
 
       - name: Force new ECS deployment
         run: |
+          # Always use the latest task definition revision so env vars / sidecars are preserved
+          LATEST_TD=$(aws ecs describe-services \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services ${{ env.ECS_SERVICE }} \
+            --region ${{ env.AWS_REGION }} \
+            --query 'services[0].taskDefinition' --output text)
+          echo "Current task definition: $LATEST_TD"
           aws ecs update-service \
             --cluster ${{ env.ECS_CLUSTER }} \
             --service ${{ env.ECS_SERVICE }} \
+            --task-definition "$LATEST_TD" \
             --force-new-deployment \
             --region ${{ env.AWS_REGION }}
 
