@@ -58,7 +58,7 @@ st.markdown(
 # ---------------------------------------------------------------------------
 # Tabs
 # ---------------------------------------------------------------------------
-upload_tab, manage_tab = st.tabs(["Upload Corpus", "Manage Corpora"])
+upload_tab, s3_tab, manage_tab = st.tabs(["Upload Corpus", "Load from S3", "Manage Corpora"])
 
 # ======================== UPLOAD TAB ========================
 with upload_tab:
@@ -158,6 +158,116 @@ with upload_tab:
 
                 except Exception as e:
                     st.error(f"Error processing file: {e}")
+
+# ======================== S3 TAB ========================
+with s3_tab:
+    section_header("// Load Corpus Files from S3")
+    st.caption("Automatically discover and load corpus files from your S3 bucket into Redis.")
+
+    s3c1, s3c2 = st.columns(2)
+    with s3c1:
+        s3_bucket_corpus = st.text_input(
+            "S3 Bucket Name",
+            value=st.session_state.get("s3_bucket", "ntu-dq-investigator-data"),
+            key="corpus_s3_bucket",
+            placeholder="e.g. ntu-dq-investigator-data"
+        )
+        s3_region_corpus = st.selectbox(
+            "AWS Region",
+            ["us-east-1", "us-west-2", "eu-west-1", "eu-west-2"],
+            key="corpus_s3_region"
+        )
+    with s3c2:
+        s3_prefix_corpus = st.text_input(
+            "Corpus Folder Prefix",
+            value="TEST2_DATA/corpus/",
+            key="corpus_s3_prefix",
+            help="The folder in S3 containing your corpus CSVs. e.g. TEST2_DATA/corpus/ or TEST3_DATA/corpus/"
+        )
+        corpus_type_s3 = st.selectbox(
+            "Corpus Type (applied to all)",
+            ["validation", "alias", "lookup"],
+            key="corpus_type_s3",
+            help="validation = list of valid values (most common for corpus files)"
+        )
+
+    col_list, col_load = st.columns(2)
+
+    with col_list:
+        if st.button("Discover Corpus Files", use_container_width=True, key="corpus_s3_list"):
+            if not s3_bucket_corpus:
+                st.error("Enter a bucket name.")
+            else:
+                try:
+                    from core.storage.s3 import list_inbox_files
+                    files = list_inbox_files(
+                        bucket=s3_bucket_corpus,
+                        prefix=s3_prefix_corpus,
+                        region=s3_region_corpus
+                    )
+                    if files:
+                        st.session_state["corpus_s3_files"] = files
+                        st.success(f"Found {len(files)} corpus file(s)")
+                    else:
+                        st.warning("No CSV/Excel files found at that prefix.")
+                except Exception as e:
+                    st.error(f"S3 error: {e}")
+
+    # Show discovered files
+    if st.session_state.get("corpus_s3_files"):
+        files = st.session_state["corpus_s3_files"]
+        st.markdown("**Files found:**")
+        for f in files:
+            st.markdown(f"- `{f['key']}` ({f['size_kb']} KB)")
+
+        with col_load:
+            if st.button("Load All into Redis", type="primary", use_container_width=True, key="corpus_s3_load_all"):
+                from core.storage.s3 import read_from_s3
+                loaded_count = 0
+                errors = []
+
+                progress = st.progress(0, text="Loading corpus files...")
+                for i, f in enumerate(files):
+                    try:
+                        df_c = read_from_s3(
+                            bucket=s3_bucket_corpus,
+                            key=f["key"],
+                            region=s3_region_corpus
+                        )
+                        # Derive corpus name from filename
+                        corpus_name = f["key"].split("/")[-1].rsplit(".", 1)[0].lower().replace(" ", "_")
+                        key_col = df_c.columns[0]
+
+                        result = corpus_mgr.load_corpus_from_dataframe(
+                            df=df_c,
+                            corpus_name=corpus_name,
+                            corpus_type=corpus_type_s3,
+                            key_column=key_col,
+                            value_column=key_col,
+                            normalize_keys=True,
+                        )
+                        if result["status"] == "success":
+                            loaded_count += 1
+                        else:
+                            errors.append(f"{corpus_name}: {result['message']}")
+                    except Exception as e:
+                        errors.append(f"{f['key']}: {e}")
+
+                    progress.progress((i + 1) / len(files), text=f"Loaded {i+1}/{len(files)}...")
+
+                progress.empty()
+                if loaded_count:
+                    st.success(f"{loaded_count} corpus file(s) loaded into Redis successfully.")
+                if errors:
+                    for err in errors:
+                        st.warning(err)
+
+                # Clear file list after loading
+                st.session_state.pop("corpus_s3_files", None)
+
+    st.divider()
+    st.caption("Manual upload is available in the **Upload Corpus** tab if you prefer to load files from your local machine.")
+
 
 # ======================== MANAGE TAB ========================
 with manage_tab:
