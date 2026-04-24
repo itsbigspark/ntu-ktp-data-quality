@@ -121,9 +121,10 @@ else:
                     st.session_state["s3_source_key"] = selected_key
                     st.session_state["s3_region"] = s3_region
                     st.success(f"Loaded from S3: {selected_key} -- {df.shape[0]} rows, {df.shape[1]} columns")
-                    st.rerun()
                 except Exception as e:
                     st.error(f"Failed to load from S3: {e}")
+                else:
+                    st.rerun()
 
             # Load reference data from S3 if specified
             if s3_ref_key and s3_bucket:
@@ -133,6 +134,9 @@ else:
                     st.session_state["df_ref"] = df_ref
                     st.success(f"Reference loaded from S3: {s3_ref_key} -- {df_ref.shape[0]} rows")
                 except Exception as e:
+                    import streamlit.runtime.scriptrunner as _sr
+                    if isinstance(e, _sr.StopException):
+                        raise
                     st.warning(f"Could not load reference from S3: {e}")
 
 # Rules JSON upload
