@@ -213,3 +213,9 @@ def init_state():
     if cm is not None and not st.session_state["_sample_corpora_loaded"]:
         st.session_state["_sample_corpora_loaded"] = True
         _autoload_corpora(cm)
+
+
+def get_df():
+    """Return the currently loaded DataFrame from session state, or None."""
+    import streamlit as st
+    return st.session_state.get("df_raw")
