@@ -243,12 +243,28 @@ if st.button("RUN VALIDATION", key="run_validation", use_container_width=True):
             st.info(f"Results saved to S3:\n{chr(10).join(s3_paths.values())}")
         except Exception as e:
             st.warning(f"Could not save to S3: {e}")
-    elif st.session_state.get("s3_bucket"):
-        st.markdown(
-            '<p style="color:#4a7a4f;font-family:Share Tech Mono;font-size:0.72rem;">'
-            'Tip: Set an S3 output bucket in Settings to auto-save results to S3.</p>',
-            unsafe_allow_html=True,
-        )
+    # Auto-save to S3 if data was loaded from S3 (and no dedicated output bucket is set)
+    s3_bucket = st.session_state.get("s3_bucket")
+    if s3_bucket and result:
+        try:
+            from core.engine import save_results_to_s3
+
+            # Build a result dict compatible with save_results_to_s3
+            _auto_result = {
+                "batch_id": batch_id,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "overall_score": overall_score,
+                "pass": overall_score >= 85.0,
+                "issues_count": result.total_issues,
+                "quality_scores": {},
+                "issues": result.report if isinstance(result.report, pd.DataFrame) else pd.DataFrame(),
+            }
+            s3_region = st.session_state.get("s3_region", "us-east-1")
+            paths = save_results_to_s3(_auto_result, bucket=s3_bucket, region=s3_region)
+            if paths:
+                st.success(f"Results auto-saved to S3: {paths.get('report', '')}")
+        except Exception as e:
+            st.caption(f"S3 auto-save skipped: {e}")
 
 # ---------------------------------------------------------------------------
 # Display results

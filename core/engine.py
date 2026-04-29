@@ -309,6 +309,64 @@ def run_pipeline(
     return result
 
 
+def save_results_to_s3(
+    result: Dict[str, Any],
+    bucket: str,
+    region: str = "us-east-1",
+) -> Dict[str, str]:
+    """
+    Save pipeline results to S3 after a validation run.
+
+    Writes two objects:
+      - reports/<batch_id>_issues.csv   -- the full issue log (if any issues exist)
+      - reports/<batch_id>_report.json  -- a summary JSON with key metrics
+
+    Returns a dict with keys ``issues`` and/or ``report`` pointing at the S3 URIs.
+    Returns an empty dict silently if boto3 is unavailable or the bucket is empty.
+    """
+    if not bucket:
+        return {}
+
+    try:
+        from core.storage.s3 import write_csv_to_s3, write_json_to_s3
+    except Exception:
+        logger.warning("core.storage.s3 not available; S3 auto-save skipped")
+        return {}
+
+    try:
+        batch_id = result.get("batch_id", f"batch_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}")
+        paths: Dict[str, str] = {}
+
+        # Issue log (CSV) — only written when there are issues
+        issues = result.get("issues")
+        if issues is not None and hasattr(issues, "empty") and not issues.empty:
+            key = f"reports/{batch_id}_issues.csv"
+            paths["issues"] = write_csv_to_s3(issues, bucket, key, region)
+
+        # Summary report (JSON)
+        report_data = {
+            "batch_id": batch_id,
+            "timestamp": result.get("timestamp", datetime.now(timezone.utc).isoformat()),
+            "overall_score": result.get("overall_score"),
+            "pass": result.get("pass"),
+            "issues_count": result.get("issues_count", 0),
+            "quality_scores": {
+                k: v
+                for k, v in result.get("quality_scores", {}).items()
+                if k != "missing_by_column"
+            },
+        }
+        key = f"reports/{batch_id}_report.json"
+        paths["report"] = write_json_to_s3(report_data, bucket, key, region, _json_serializer)
+
+        logger.info(f"Auto-saved {len(paths)} result file(s) to s3://{bucket}/reports/")
+        return paths
+
+    except Exception as exc:
+        logger.warning(f"S3 auto-save failed: {exc}")
+        return {}
+
+
 def _json_serializer(obj):
     """Handle numpy/pandas types that json.dump can't serialize."""
     if isinstance(obj, (np.bool_,)):

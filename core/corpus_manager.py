@@ -115,6 +115,22 @@ class CorpusManager:
                 df, prefix, key_column, normalize_keys
             )
 
+        # Persist to RDS so corpus survives Redis restarts
+        try:
+            from core.storage.database import save_corpus_to_db
+            save_corpus_to_db(
+                corpus_name=corpus_name,
+                corpus_type=corpus_type,
+                key_column=key_column,
+                value_column=value_column,
+                df=df,
+            )
+        except Exception as _db_err:
+            import logging
+            logging.getLogger("dq_engine.corpus").warning(
+                "Could not persist corpus '%s' to database: %s", corpus_name, _db_err
+            )
+
         return {
             "status": "success",
             "corpus_name": corpus_name,
@@ -395,6 +411,48 @@ class CorpusManager:
             "corpus_name": corpus_name,
             "keys_deleted": deleted,
         }
+
+    # ==========================================================
+    # DB RESTORE
+    # ==========================================================
+
+    def restore_from_db(self) -> int:
+        """
+        Restore all corpora that were previously persisted to RDS back into Redis.
+
+        Returns:
+            Number of corpora successfully restored.
+        """
+        from core.storage.database import load_all_corpus_from_db
+
+        records = load_all_corpus_from_db()
+        restored = 0
+
+        for record in records:
+            try:
+                result = self.load_corpus_from_dataframe(
+                    df=record["df"],
+                    corpus_name=record["corpus_name"],
+                    corpus_type=record["corpus_type"],
+                    key_column=record["key_column"],
+                    value_column=record["value_column"],
+                )
+                if result.get("status") == "success":
+                    restored += 1
+                else:
+                    import logging
+                    logging.getLogger("dq_engine.corpus").warning(
+                        "Restore skipped for '%s': %s",
+                        record["corpus_name"],
+                        result.get("message", "unknown error"),
+                    )
+            except Exception as e:
+                import logging
+                logging.getLogger("dq_engine.corpus").warning(
+                    "Restore failed for '%s': %s", record["corpus_name"], e
+                )
+
+        return restored
 
     # ==========================================================
     # FILE PARSING

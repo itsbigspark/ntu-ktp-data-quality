@@ -185,6 +185,18 @@ CREATE INDEX IF NOT EXISTS idx_ai_cross_column_batch ON ai_cross_column(batch_id
 CREATE INDEX IF NOT EXISTS idx_ai_explanations_batch ON ai_explanations(batch_id);
 CREATE INDEX IF NOT EXISTS idx_ai_triage_batch ON ai_triage(batch_id);
 CREATE INDEX IF NOT EXISTS idx_ai_exec_summary_batch ON ai_executive_summary(batch_id);
+
+-- Corpus persistence: survive Redis restarts
+CREATE TABLE IF NOT EXISTS corpus_store (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    corpus_name  VARCHAR(255) NOT NULL,
+    corpus_type  VARCHAR(50)  NOT NULL,
+    key_column   VARCHAR(255),
+    value_column VARCHAR(255),
+    csv_data     TEXT NOT NULL,
+    loaded_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(corpus_name)
+);
 """
 
 # PostgreSQL version (uses SERIAL instead of AUTOINCREMENT)
@@ -676,3 +688,124 @@ def get_batches_with_ai(config: Dict[str, Any], limit: int = 20) -> List[str]:
     """)
     df = pd.read_sql(query, engine, params={"limit": limit})
     return df["batch_id"].tolist() if not df.empty else []
+
+
+# ---------------------------------------------------------------------------
+# CORPUS PERSISTENCE — save/load corpus data to/from RDS
+# ---------------------------------------------------------------------------
+
+def save_corpus_to_db(
+    corpus_name: str,
+    corpus_type: str,
+    key_column: str,
+    value_column: str,
+    df: "pd.DataFrame",
+) -> None:
+    """
+    Persist a corpus DataFrame to the corpus_store table (upsert on corpus_name).
+
+    Args:
+        corpus_name:  Unique name for the corpus (used as the upsert key).
+        corpus_type:  One of 'alias', 'lookup', 'validation'.
+        key_column:   Name of the key column in the DataFrame.
+        value_column: Name of the value column in the DataFrame.
+        df:           The corpus DataFrame to store as CSV text.
+    """
+    import io
+    from sqlalchemy import text
+
+    engine = get_engine()
+    db_url = os.environ.get("DATABASE_URL", "")
+    is_pg = db_url.startswith("postgresql") or db_url.startswith("postgres")
+
+    # Ensure corpus_store table exists
+    schema_sql = SCHEMA_SQL_PG if is_pg else SCHEMA_SQL
+    with engine.connect() as conn:
+        for stmt in schema_sql.split(";"):
+            s = stmt.strip()
+            if s:
+                conn.execute(text(s))
+        conn.commit()
+
+    csv_text = df.to_csv(index=False)
+
+    with engine.connect() as conn:
+        if is_pg:
+            conn.execute(text("""
+                INSERT INTO corpus_store (corpus_name, corpus_type, key_column, value_column, csv_data, loaded_at)
+                VALUES (:corpus_name, :corpus_type, :key_column, :value_column, :csv_data, NOW())
+                ON CONFLICT (corpus_name) DO UPDATE SET
+                    corpus_type  = EXCLUDED.corpus_type,
+                    key_column   = EXCLUDED.key_column,
+                    value_column = EXCLUDED.value_column,
+                    csv_data     = EXCLUDED.csv_data,
+                    loaded_at    = NOW()
+            """), {
+                "corpus_name": corpus_name,
+                "corpus_type": corpus_type,
+                "key_column": key_column,
+                "value_column": value_column,
+                "csv_data": csv_text,
+            })
+        else:
+            # SQLite fallback — INSERT OR REPLACE respects UNIQUE constraint
+            conn.execute(text("""
+                INSERT OR REPLACE INTO corpus_store
+                    (corpus_name, corpus_type, key_column, value_column, csv_data, loaded_at)
+                VALUES
+                    (:corpus_name, :corpus_type, :key_column, :value_column, :csv_data, CURRENT_TIMESTAMP)
+            """), {
+                "corpus_name": corpus_name,
+                "corpus_type": corpus_type,
+                "key_column": key_column,
+                "value_column": value_column,
+                "csv_data": csv_text,
+            })
+        conn.commit()
+
+    logger.info("Corpus '%s' saved to database (%d rows)", corpus_name, len(df))
+
+
+def load_all_corpus_from_db() -> List[Dict]:
+    """
+    Load all corpora from the corpus_store table.
+
+    Returns:
+        List of dicts, each with keys:
+            corpus_name, corpus_type, key_column, value_column, df (pd.DataFrame)
+        Returns an empty list if the table does not exist or is empty.
+    """
+    import io
+    from sqlalchemy import text
+
+    engine = get_engine()
+
+    try:
+        with engine.connect() as conn:
+            result = conn.execute(text(
+                "SELECT corpus_name, corpus_type, key_column, value_column, csv_data "
+                "FROM corpus_store ORDER BY loaded_at ASC"
+            ))
+            rows = result.fetchall()
+    except Exception:
+        # Table may not exist yet (first run before any corpus is saved)
+        logger.debug("corpus_store table not found or inaccessible — returning empty list")
+        return []
+
+    corpora = []
+    for row in rows:
+        corpus_name, corpus_type, key_column, value_column, csv_data = row
+        try:
+            df = pd.read_csv(io.StringIO(csv_data))
+            corpora.append({
+                "corpus_name": corpus_name,
+                "corpus_type": corpus_type,
+                "key_column": key_column,
+                "value_column": value_column,
+                "df": df,
+            })
+        except Exception as e:
+            logger.warning("Failed to restore corpus '%s' from DB: %s", corpus_name, e)
+
+    logger.info("Loaded %d corpus record(s) from database", len(corpora))
+    return corpora

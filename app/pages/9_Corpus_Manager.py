@@ -43,6 +43,15 @@ if corpus_mgr is None:
     st.code("brew services start redis", language="bash")
     st.stop()
 
+# Auto-restore from DB if Redis is empty
+if corpus_mgr and not corpus_mgr.list_corpora():
+    try:
+        restored = corpus_mgr.restore_from_db()
+        if restored > 0:
+            st.info(f"Auto-restored {restored} corpus file(s) from database.")
+    except Exception:
+        pass
+
 st.markdown(
     '<div class="glass-card">'
     '<p style="color:#b0ffb8;font-size:0.78rem;">'
