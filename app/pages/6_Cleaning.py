@@ -204,7 +204,8 @@ if report is not None and isinstance(report, pd.DataFrame) and not report.empty:
                 disabled=len(approved_rows) == 0,
                 type="primary",
             ):
-                df_fixed = (st.session_state.get("df_cleaned") or df_raw).copy()
+                _df_cleaned = st.session_state.get("df_cleaned")
+                df_fixed = (_df_cleaned if _df_cleaned is not None else df_raw).copy()
                 applied = 0
                 skipped = 0
                 for _, row in approved_rows.iterrows():
