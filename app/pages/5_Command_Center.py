@@ -764,7 +764,7 @@ with research_tab:
     def _research_load_latest_batch():
         """Return (batch_row, issues_df) for the most recent batch_run."""
         try:
-            engine = get_engine(DB_CONFIG)
+            engine = get_engine()  # uses DATABASE_URL env var → PostgreSQL on ECS
             with engine.connect() as conn:
                 batch_row = conn.execute(
                     text("SELECT * FROM batch_runs ORDER BY timestamp DESC LIMIT 1")
@@ -939,7 +939,7 @@ with research_tab:
         # AI Explanations
         _ai_expl = pd.DataFrame()
         try:
-            engine = get_engine(DB_CONFIG)
+            engine = get_engine()  # uses DATABASE_URL → PostgreSQL on ECS
             with engine.connect() as conn:
                 if _rc_col:
                     _ai_expl = pd.read_sql(
@@ -997,7 +997,7 @@ with research_tab:
         # Cross-column issues involving this column
         _cc_issues = pd.DataFrame()
         try:
-            engine = get_engine(DB_CONFIG)
+            engine = get_engine()  # uses DATABASE_URL → PostgreSQL on ECS
             with engine.connect() as conn:
                 _cc_all = pd.read_sql(
                     text("SELECT * FROM ai_cross_column WHERE batch_id = :bid"),
@@ -1065,7 +1065,7 @@ with research_tab:
         # Load triage
         _ap_triage = pd.DataFrame()
         try:
-            engine = get_engine(DB_CONFIG)
+            engine = get_engine()  # uses DATABASE_URL → PostgreSQL on ECS
             with engine.connect() as conn:
                 _ap_triage = pd.read_sql(
                     text("SELECT * FROM ai_triage WHERE batch_id = :bid ORDER BY priority ASC"),
