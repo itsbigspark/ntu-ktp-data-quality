@@ -263,7 +263,7 @@ def _get_engine(config: Dict[str, Any]):
 # ---------------------------------------------------------------------------
 def init_schema(config: Dict[str, Any]) -> None:
     """Create tables if they don't exist."""
-    engine = _get_engine(config)
+    engine = get_engine(config)
     db_type = config.get("output", {}).get("database", {}).get("engine", "sqlite")
 
     sql = SCHEMA_SQL_PG if db_type == "postgresql" else SCHEMA_SQL
@@ -306,7 +306,7 @@ def save_results_to_db(
     Creates schema if tables don't exist.
     Returns dict with row counts written: {batch_runs, issues, audit_trail}.
     """
-    engine = _get_engine(config)
+    engine = get_engine(config)
     db_type = config.get("output", {}).get("database", {}).get("engine", "sqlite")
 
     # Ensure schema exists
@@ -418,7 +418,7 @@ def get_recent_batches(
     limit: int = 20,
 ) -> pd.DataFrame:
     """Get the most recent batch runs, ordered by timestamp descending."""
-    engine = _get_engine(config)
+    engine = get_engine(config)
     query = f"""
         SELECT batch_id, timestamp, source_file, rows_processed,
                overall_score, pass, issues_count,
@@ -435,7 +435,7 @@ def get_batch_issues(
     batch_id: str,
 ) -> pd.DataFrame:
     """Get all issues for a specific batch."""
-    engine = _get_engine(config)
+    engine = get_engine(config)
     from sqlalchemy import text
     query = text("""
         SELECT row_id, column_name, issue_type, detail, severity,
@@ -452,7 +452,7 @@ def get_score_trend(
     limit: int = 50,
 ) -> pd.DataFrame:
     """Get quality score trend over time."""
-    engine = _get_engine(config)
+    engine = get_engine(config)
     query = f"""
         SELECT batch_id, timestamp, overall_score, pass,
                completeness, uniqueness, consistency, validity, accuracy, timeliness
@@ -469,7 +469,7 @@ def get_batch_audit(
     batch_id: str,
 ) -> pd.DataFrame:
     """Get audit trail for a specific batch."""
-    engine = _get_engine(config)
+    engine = get_engine(config)
     from sqlalchemy import text
     query = text("""
         SELECT step_name, duration_ms, details, created_at
@@ -499,8 +499,9 @@ def save_ai_enrichment(
     Returns:
         Dict with counts of rows written per table.
     """
-    engine = _get_engine(config)
-    db_type = config.get("output", {}).get("database", {}).get("engine", "sqlite")
+    engine = get_engine(config)
+    _db_url = os.environ.get("DATABASE_URL", "")
+    db_type = "postgresql" if ("postgresql" in _db_url or "postgres" in _db_url) else config.get("output", {}).get("database", {}).get("engine", "sqlite")
     _init_schema_safe(engine, db_type)
 
     counts = {}
@@ -628,7 +629,7 @@ def save_ai_enrichment(
 # ---------------------------------------------------------------------------
 def get_ai_smart_rules(config: Dict[str, Any], batch_id: str) -> pd.DataFrame:
     """Get AI-generated smart rules for a batch."""
-    engine = _get_engine(config)
+    engine = get_engine(config)
     from sqlalchemy import text
     query = text("""
         SELECT column_name, rule_type, description, condition_text, confidence, reasoning
@@ -641,7 +642,7 @@ def get_ai_smart_rules(config: Dict[str, Any], batch_id: str) -> pd.DataFrame:
 
 def get_ai_cross_column(config: Dict[str, Any], batch_id: str) -> pd.DataFrame:
     """Get AI cross-column analysis for a batch."""
-    engine = _get_engine(config)
+    engine = get_engine(config)
     from sqlalchemy import text
     query = text("""
         SELECT columns_involved, check_type, description, severity, suggested_query
@@ -656,7 +657,7 @@ def get_ai_cross_column(config: Dict[str, Any], batch_id: str) -> pd.DataFrame:
 
 def get_ai_explanations(config: Dict[str, Any], batch_id: str) -> pd.DataFrame:
     """Get AI anomaly explanations for a batch."""
-    engine = _get_engine(config)
+    engine = get_engine(config)
     from sqlalchemy import text
     query = text("""
         SELECT column_name, issue_type, explanation, business_impact, suggested_action
@@ -669,7 +670,7 @@ def get_ai_explanations(config: Dict[str, Any], batch_id: str) -> pd.DataFrame:
 
 def get_ai_triage(config: Dict[str, Any], batch_id: str) -> pd.DataFrame:
     """Get AI issue triage for a batch."""
-    engine = _get_engine(config)
+    engine = get_engine(config)
     from sqlalchemy import text
     query = text("""
         SELECT priority, column_name, issue_type, issue_count, severity, reason, effort, recommendation
@@ -682,7 +683,7 @@ def get_ai_triage(config: Dict[str, Any], batch_id: str) -> pd.DataFrame:
 
 def get_ai_executive_summary(config: Dict[str, Any], batch_id: str) -> Optional[str]:
     """Get AI executive summary for a batch. Returns the summary text or None."""
-    engine = _get_engine(config)
+    engine = get_engine(config)
     from sqlalchemy import text
     query = text("""
         SELECT summary_text, provider, total_time_secs
@@ -699,7 +700,7 @@ def get_ai_executive_summary(config: Dict[str, Any], batch_id: str) -> Optional[
 
 def get_batches_with_ai(config: Dict[str, Any], limit: int = 20) -> List[str]:
     """Get batch IDs that have AI enrichment data."""
-    engine = _get_engine(config)
+    engine = get_engine(config)
     from sqlalchemy import text
     query = text("""
         SELECT DISTINCT batch_id FROM ai_executive_summary

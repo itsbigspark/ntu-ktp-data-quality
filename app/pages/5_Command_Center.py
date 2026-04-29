@@ -37,6 +37,10 @@ DB_CONFIG = {"output": {"database": {"engine": "sqlite", "path": "./output/dq_in
 
 
 def _db_available() -> bool:
+    # On ECS, DATABASE_URL env var is set → PostgreSQL is always available
+    if os.environ.get("DATABASE_URL"):
+        return True
+    # Local dev: fall back to checking SQLite file
     return os.path.isfile(DB_CONFIG["output"]["database"]["path"])
 
 
