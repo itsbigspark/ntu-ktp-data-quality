@@ -186,6 +186,26 @@ CREATE INDEX IF NOT EXISTS idx_ai_explanations_batch ON ai_explanations(batch_id
 CREATE INDEX IF NOT EXISTS idx_ai_triage_batch ON ai_triage(batch_id);
 CREATE INDEX IF NOT EXISTS idx_ai_exec_summary_batch ON ai_executive_summary(batch_id);
 
+-- AI Audit Log: one row per AI call, tracks what was sent and what came back
+CREATE TABLE IF NOT EXISTS ai_audit_log (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    timestamp        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    batch_id         TEXT,
+    call_type        VARCHAR(50),
+    provider         VARCHAR(50),
+    model            VARCHAR(100),
+    payload_summary  TEXT,
+    response_preview TEXT,
+    tokens_used      INTEGER,
+    response_time_ms INTEGER,
+    raw_data_included BOOLEAN DEFAULT FALSE,
+    pii_included      BOOLEAN DEFAULT FALSE,
+    success           BOOLEAN DEFAULT TRUE,
+    error_message     TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_ai_audit_batch ON ai_audit_log(batch_id);
+CREATE INDEX IF NOT EXISTS idx_ai_audit_time ON ai_audit_log(timestamp);
+
 -- Corpus persistence: survive Redis restarts
 CREATE TABLE IF NOT EXISTS corpus_store (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -809,3 +829,115 @@ def load_all_corpus_from_db() -> List[Dict]:
 
     logger.info("Loaded %d corpus record(s) from database", len(corpora))
     return corpora
+
+
+# ---------------------------------------------------------------------------
+# AI AUDIT LOG — log every AI call for compliance and transparency
+# ---------------------------------------------------------------------------
+
+def log_ai_call(
+    batch_id: str,
+    call_type: str,
+    provider: str,
+    model: str,
+    payload_summary: str,
+    response_preview: str,
+    tokens_used: int,
+    response_time_ms: int,
+    success: bool = True,
+    error_message: Optional[str] = None,
+) -> None:
+    """
+    Log an AI call to the ai_audit_log table.
+    Silently fails if DB unavailable — never breaks the calling enrichment.
+
+    Args:
+        batch_id:         The batch this call belongs to.
+        call_type:        One of: smart_rules, cross_column, anomaly_explanation,
+                          issue_triage, executive_summary.
+        provider:         LLM provider name (anthropic, bedrock, ollama).
+        model:            Model identifier string.
+        payload_summary:  JSON string describing WHAT STATISTICS were sent (no raw data).
+        response_preview: First 500 chars of the LLM response.
+        tokens_used:      Token count if available (0 if unknown).
+        response_time_ms: Wall-clock time for the LLM call in milliseconds.
+        success:          Whether the call completed without error.
+        error_message:    Error details if success=False.
+    """
+    try:
+        engine = get_engine()
+        db_url = os.environ.get("DATABASE_URL", "")
+        is_pg = db_url.startswith("postgresql") or db_url.startswith("postgres")
+
+        # Ensure the table exists (applies the full schema, which is idempotent)
+        schema_sql = SCHEMA_SQL_PG if is_pg else SCHEMA_SQL
+        with engine.connect() as conn:
+            from sqlalchemy import text as _text
+            for stmt in schema_sql.split(";"):
+                s = stmt.strip()
+                if s:
+                    try:
+                        conn.execute(_text(s))
+                    except Exception:
+                        pass  # table already exists — ignore
+            conn.commit()
+
+        with engine.connect() as conn:
+            from sqlalchemy import text as _text
+            if is_pg:
+                conn.execute(_text("""
+                    INSERT INTO ai_audit_log (
+                        timestamp, batch_id, call_type, provider, model,
+                        payload_summary, response_preview, tokens_used,
+                        response_time_ms, raw_data_included, pii_included,
+                        success, error_message
+                    ) VALUES (
+                        NOW(), :batch_id, :call_type, :provider, :model,
+                        :payload_summary, :response_preview, :tokens_used,
+                        :response_time_ms, FALSE, FALSE,
+                        :success, :error_message
+                    )
+                """), {
+                    "batch_id": batch_id,
+                    "call_type": call_type[:50] if call_type else None,
+                    "provider": provider[:50] if provider else None,
+                    "model": model[:100] if model else None,
+                    "payload_summary": payload_summary,
+                    "response_preview": (response_preview or "")[:500],
+                    "tokens_used": int(tokens_used) if tokens_used else 0,
+                    "response_time_ms": int(response_time_ms) if response_time_ms else 0,
+                    "success": bool(success),
+                    "error_message": error_message,
+                })
+            else:
+                conn.execute(_text("""
+                    INSERT INTO ai_audit_log (
+                        timestamp, batch_id, call_type, provider, model,
+                        payload_summary, response_preview, tokens_used,
+                        response_time_ms, raw_data_included, pii_included,
+                        success, error_message
+                    ) VALUES (
+                        CURRENT_TIMESTAMP, :batch_id, :call_type, :provider, :model,
+                        :payload_summary, :response_preview, :tokens_used,
+                        :response_time_ms, 0, 0,
+                        :success, :error_message
+                    )
+                """), {
+                    "batch_id": batch_id,
+                    "call_type": call_type[:50] if call_type else None,
+                    "provider": provider[:50] if provider else None,
+                    "model": model[:100] if model else None,
+                    "payload_summary": payload_summary,
+                    "response_preview": (response_preview or "")[:500],
+                    "tokens_used": int(tokens_used) if tokens_used else 0,
+                    "response_time_ms": int(response_time_ms) if response_time_ms else 0,
+                    "success": bool(success),
+                    "error_message": error_message,
+                })
+            conn.commit()
+
+        logger.debug("AI audit log: %s / %s / %s (%dms)", batch_id, call_type, provider, response_time_ms)
+
+    except Exception as exc:
+        # Never let logging break the calling enrichment
+        logger.debug("AI audit log write failed (non-fatal): %s", exc)

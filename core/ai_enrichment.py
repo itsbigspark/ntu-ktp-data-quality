@@ -523,34 +523,168 @@ def run_all_enrichments(
     issues = result.get("issues", pd.DataFrame())
     rules = result.get("rules", {})
 
+    _batch_id = result.get("batch_id", "unknown")
+    _provider = config.get("llm", {}).get("provider", "unknown")
+    _model = config.get("llm", {}).get("model", "unknown")
+
+    # Lazy import so logging never blocks enrichment
+    try:
+        from core.storage.database import log_ai_call as _log_ai_call
+    except Exception:
+        _log_ai_call = None
+
     # 1. Rule generation
     if enrich_cfg.get("rule_generation", True):
         logger.info("Enrichment 1/5: Intelligent rule generation")
+        _t0 = time.time()
         enriched["rules"] = enrich_rules(df, rules, config)
+        _ms = round((time.time() - _t0) * 1000)
+        if _log_ai_call:
+            try:
+                _log_ai_call(
+                    batch_id=_batch_id,
+                    call_type="smart_rules",
+                    provider=_provider,
+                    model=_model,
+                    payload_summary=json.dumps({
+                        "columns_analyzed": len(df.columns),
+                        "column_names": list(df.columns),
+                        "rows": len(df),
+                        "raw_data_included": False,
+                        "pii_included": False,
+                        "stats_sent": ["column_names", "data_types", "null_rates", "value_distributions"],
+                    }),
+                    response_preview=str(enriched.get("rules", ""))[:500],
+                    tokens_used=0,
+                    response_time_ms=_ms,
+                    success="error" not in enriched.get("rules", {}),
+                    error_message=enriched.get("rules", {}).get("error") if isinstance(enriched.get("rules"), dict) else None,
+                )
+            except Exception:
+                pass
         llm_calls += 1
 
     # 2. Cross-column checks
     if enrich_cfg.get("cross_column", True):
         logger.info("Enrichment 2/5: Cross-column relationship validation")
+        _t0 = time.time()
         enriched["cross_column"] = enrich_cross_column(df, config)
+        _ms = round((time.time() - _t0) * 1000)
+        if _log_ai_call:
+            try:
+                _log_ai_call(
+                    batch_id=_batch_id,
+                    call_type="cross_column",
+                    provider=_provider,
+                    model=_model,
+                    payload_summary=json.dumps({
+                        "columns_analyzed": len(df.columns),
+                        "column_names": list(df.columns),
+                        "sample_rows_sent": min(30, len(df)),
+                        "raw_data_included": False,
+                        "pii_included": False,
+                        "stats_sent": ["masked_sample_rows", "column_names"],
+                    }),
+                    response_preview=str(enriched.get("cross_column", ""))[:500],
+                    tokens_used=0,
+                    response_time_ms=_ms,
+                    success="error" not in enriched.get("cross_column", {}),
+                    error_message=enriched.get("cross_column", {}).get("error") if isinstance(enriched.get("cross_column"), dict) else None,
+                )
+            except Exception:
+                pass
         llm_calls += 1
 
     # 3. Anomaly explanations
     if enrich_cfg.get("anomaly_explanation", True):
         logger.info("Enrichment 3/5: Anomaly explanations")
+        _t0 = time.time()
         enriched["anomaly_explanations"] = enrich_anomaly_explanations(issues, df, config)
+        _ms = round((time.time() - _t0) * 1000)
+        if _log_ai_call:
+            try:
+                _anomaly_issues = issues[issues["issue"].str.contains("anomaly|outlier|unusual", case=False, na=False)] if not issues.empty and "issue" in issues.columns else pd.DataFrame()
+                _log_ai_call(
+                    batch_id=_batch_id,
+                    call_type="anomaly_explanation",
+                    provider=_provider,
+                    model=_model,
+                    payload_summary=json.dumps({
+                        "anomaly_issues_count": len(_anomaly_issues),
+                        "context_rows_sent": min(10, len(_anomaly_issues)),
+                        "raw_data_included": False,
+                        "pii_included": False,
+                        "stats_sent": ["masked_anomaly_rows", "issue_descriptions", "column_names"],
+                    }),
+                    response_preview=str(enriched.get("anomaly_explanations", ""))[:500],
+                    tokens_used=0,
+                    response_time_ms=_ms,
+                    success="error" not in enriched.get("anomaly_explanations", {}),
+                    error_message=enriched.get("anomaly_explanations", {}).get("error") if isinstance(enriched.get("anomaly_explanations"), dict) else None,
+                )
+            except Exception:
+                pass
         llm_calls += 1
 
     # 4. Issue triage
     if enrich_cfg.get("issue_triage", True):
         logger.info("Enrichment 4/5: Smart issue categorisation")
+        _t0 = time.time()
         enriched["issue_triage"] = enrich_issue_triage(issues, config)
+        _ms = round((time.time() - _t0) * 1000)
+        if _log_ai_call:
+            try:
+                _log_ai_call(
+                    batch_id=_batch_id,
+                    call_type="issue_triage",
+                    provider=_provider,
+                    model=_model,
+                    payload_summary=json.dumps({
+                        "total_issues": len(issues),
+                        "raw_data_included": False,
+                        "pii_included": False,
+                        "stats_sent": ["issue_type_counts", "severity_counts", "column_issue_counts"],
+                    }),
+                    response_preview=str(enriched.get("issue_triage", ""))[:500],
+                    tokens_used=0,
+                    response_time_ms=_ms,
+                    success="error" not in enriched.get("issue_triage", {}),
+                    error_message=enriched.get("issue_triage", {}).get("error") if isinstance(enriched.get("issue_triage"), dict) else None,
+                )
+            except Exception:
+                pass
         llm_calls += 1
 
     # 5. Executive summary
     if enrich_cfg.get("executive_summary", True):
         logger.info("Enrichment 5/5: Executive summary")
+        _t0 = time.time()
         enriched["executive_summary"] = enrich_executive_summary(result, config)
+        _ms = round((time.time() - _t0) * 1000)
+        if _log_ai_call:
+            try:
+                _log_ai_call(
+                    batch_id=_batch_id,
+                    call_type="executive_summary",
+                    provider=_provider,
+                    model=_model,
+                    payload_summary=json.dumps({
+                        "rows_processed": result.get("rows_processed", 0),
+                        "issues_count": result.get("issues_count", 0),
+                        "overall_score": result.get("overall_score", 0),
+                        "columns_count": len(result.get("columns", [])),
+                        "raw_data_included": False,
+                        "pii_included": False,
+                        "stats_sent": ["overall_score", "quality_dimension_scores", "issue_counts", "batch_metadata"],
+                    }),
+                    response_preview=str(enriched.get("executive_summary", {}).get("executive_summary", ""))[:500] if isinstance(enriched.get("executive_summary"), dict) else str(enriched.get("executive_summary", ""))[:500],
+                    tokens_used=0,
+                    response_time_ms=_ms,
+                    success="error" not in enriched.get("executive_summary", {}),
+                    error_message=enriched.get("executive_summary", {}).get("error") if isinstance(enriched.get("executive_summary"), dict) else None,
+                )
+            except Exception:
+                pass
         llm_calls += 1
 
     enriched["llm_calls"] = llm_calls
