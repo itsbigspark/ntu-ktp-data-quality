@@ -358,9 +358,24 @@ class ValidationOrchestrator:
 
     @staticmethod
     def _run_rules(
-        df: pd.DataFrame, rules: list, config: ValidationConfig
+        df: pd.DataFrame, rules, config: ValidationConfig
     ) -> Optional[pd.DataFrame]:
         """Run rule-based validation, optionally with BERT explanations."""
+
+        # Normalise rules into the dict format validate_df expects:
+        # {"columns": {col: {rule_key: val, ...}, ...}, "uniqueness": {...}}
+        if isinstance(rules, list):
+            rules_dict: Dict[str, Any] = {"columns": {}}
+            for r in rules:
+                if isinstance(r, dict):
+                    col = r.get("column")
+                    if col:
+                        entry = {k: v for k, v in r.items() if k != "column"}
+                        rules_dict["columns"].setdefault(col, {}).update(entry)
+        elif isinstance(rules, dict):
+            rules_dict = rules
+        else:
+            rules_dict = {"columns": {}}
 
         if config.use_bert:
             from core.enhanced_validator import validate_dataframe
@@ -373,10 +388,10 @@ class ValidationOrchestrator:
             elif config.bert_mode == "sample":
                 kwargs["explain_sample"] = config.bert_sample_size
 
-            report = validate_dataframe(df, rules=rules, **kwargs)
+            report = validate_dataframe(df, rules=rules_dict, **kwargs)
         else:
             from core.validator.validate import validate_df
-            report = validate_df(df, rules, enable_typo_detection=True)
+            report = validate_df(df, rules_dict, enable_typo_detection=True)
 
         if isinstance(report, pd.DataFrame):
             return report
