@@ -36,5 +36,29 @@ if not check_auth():
     login_page()
     st.stop()
 
-# Authenticated: redirect straight to Command Center (the dashboard)
-st.switch_page("pages/5_Command_Center.py")
+# ---------------------------------------------------------------------------
+# Explicit navigation — guarantees all pages appear in sidebar
+# ---------------------------------------------------------------------------
+pages = st.navigation(
+    [
+        st.Page("pages/1_Load_Data.py",           title="Load Data",            icon="📂"),
+        st.Page("pages/2_Rules.py",               title="Rules",                icon="📋"),
+        st.Page("pages/3_Validate.py",            title="Validate",             icon="✅"),
+        st.Page("pages/4_AI_Investigation.py",    title="AI Investigation",     icon="🤖"),
+        st.Page("pages/5_Command_Center.py",      title="Command Center",       icon="📡"),
+        st.Page("pages/6_Cleaning.py",            title="Cleaning",             icon="🧹"),
+        st.Page("pages/7_Dedupe.py",              title="Dedupe",               icon="🔁"),
+        st.Page("pages/8_Settings.py",            title="Settings",             icon="⚙️"),
+        st.Page("pages/9_Corpus_Manager.py",      title="Corpus Manager",       icon="📚"),
+        st.Page("pages/10_Pipeline_Manager.py",   title="Pipeline Manager",     icon="🔧"),
+        st.Page("pages/11_Vector_Index.py",       title="Vector Index",         icon="🗂️"),
+        st.Page("pages/12_Entity_Resolution.py",  title="Entity Resolution",    icon="🔗"),
+        st.Page("pages/13_Entity_Graph.py",       title="Entity Graph",         icon="🕸️"),
+        st.Page("pages/14_External_Validation.py",title="External Validation",  icon="🌐"),
+        st.Page("pages/15_Batch_History.py",      title="Batch History",        icon="🕒"),
+        st.Page("pages/16_Trending.py",           title="Trending",             icon="📈"),
+        st.Page("pages/17_AI_Audit_Log.py",       title="AI Audit Log",         icon="🔍"),
+    ],
+    position="sidebar",
+)
+pages.run()

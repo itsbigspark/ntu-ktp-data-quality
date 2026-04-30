@@ -5,12 +5,17 @@ Live external API validation -- check column values against
 authoritative external sources in real time.
 """
 
+import sys, os
+_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
+
 import time
 import streamlit as st
 import pandas as pd
 
-from app.shared.auth import require_auth
-from app.shared.state import get_df
+from shared.auth import require_auth
+from shared.state import get_df
 
 require_auth()
 
