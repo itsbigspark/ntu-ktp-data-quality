@@ -356,33 +356,50 @@ def save_results_to_db(
         })
         counts["batch_runs"] = 1
 
-        # ── 2. issues ──────────────────────────────────────────────────────
+        # ── 2. issues — bulk insert via to_sql (100x faster than iterrows) ──
         issues_df = result.get("issues", pd.DataFrame())
         issue_count = 0
+        if not isinstance(issues_df, pd.DataFrame):
+            issues_df = pd.DataFrame()
         if not issues_df.empty:
-            for _, row in issues_df.iterrows():
-                conn.execute(text("""
-                    INSERT INTO issues (
-                        batch_id, row_id, column_name, issue_type, detail,
-                        severity, value, expected, rule, suggestion, description
-                    ) VALUES (
-                        :batch_id, :row_id, :column_name, :issue_type, :detail,
-                        :severity, :value, :expected, :rule, :suggestion, :description
-                    )
-                """), {
-                    "batch_id": result["batch_id"],
-                    "row_id": int(row.get("row_id", 0)) if pd.notna(row.get("row_id")) else None,
-                    "column_name": str(row.get("column", "")),
-                    "issue_type": str(row.get("issue", row.get("issue_type", ""))),
-                    "detail": str(row.get("detail", row.get("detail_technical", "")))[:500],
-                    "severity": str(row.get("severity", "")),
-                    "value": str(row.get("value", ""))[:200],
-                    "expected": str(row.get("expected", ""))[:200],
-                    "rule": str(row.get("rule", row.get("source", ""))),
-                    "suggestion": str(row.get("suggestion", ""))[:200] if pd.notna(row.get("suggestion")) else None,
-                    "description": str(row.get("description", ""))[:500] if pd.notna(row.get("description")) else None,
-                })
-                issue_count += 1
+            # Normalise column names to what the DB expects
+            _col_map = {
+                "column": "column_name",
+                "issue": "issue_type",
+                "detail_technical": "detail",
+                "source": "rule",
+            }
+            bulk = issues_df.rename(columns=_col_map).copy()
+            bulk["batch_id"] = result["batch_id"]
+
+            # Ensure required columns exist, truncate long strings
+            def _col(df, name, default=""):
+                return df[name] if name in df.columns else default
+
+            bulk_rows = pd.DataFrame({
+                "batch_id":    bulk["batch_id"],
+                "row_id":      pd.to_numeric(_col(bulk, "row_id", 0), errors="coerce").fillna(0).astype(int),
+                "column_name": _col(bulk, "column_name", "").astype(str).str[:100],
+                "issue_type":  _col(bulk, "issue_type", "").astype(str).str[:100],
+                "detail":      _col(bulk, "detail", "").astype(str).str[:500],
+                "severity":    _col(bulk, "severity", "").astype(str).str[:50],
+                "value":       _col(bulk, "value", "").astype(str).str[:200],
+                "expected":    _col(bulk, "expected", "").astype(str).str[:200],
+                "rule":        _col(bulk, "rule", "").astype(str).str[:200],
+                "suggestion":  _col(bulk, "suggestion", "").astype(str).str[:200],
+                "description": _col(bulk, "description", "").astype(str).str[:500],
+            })
+
+            # to_sql uses executemany under the hood — single round-trip per chunk
+            bulk_rows.to_sql(
+                "issues",
+                conn,
+                if_exists="append",
+                index=False,
+                chunksize=500,   # 500 rows per INSERT batch
+                method="multi",  # single multi-value INSERT statement per chunk
+            )
+            issue_count = len(bulk_rows)
         counts["issues"] = issue_count
 
         # ── 3. audit_trail ─────────────────────────────────────────────────
