@@ -26,7 +26,7 @@ section_header("// Data Ingestion")
 
 source_mode = st.radio(
     "Data Source",
-    ["File Upload", "AWS S3 Bucket"],
+    ["File Upload", "AWS S3 Bucket", "Database"],
     horizontal=True,
     key="data_source_mode",
 )
@@ -138,6 +138,141 @@ else:
                     if isinstance(e, _sr.StopException):
                         raise
                     st.warning(f"Could not load reference from S3: {e}")
+
+# ---------------------------------------------------------------------------
+# Database connector
+# ---------------------------------------------------------------------------
+if source_mode == "Database":
+    st.markdown(
+        '<p style="color:#00ff41;font-family:Share Tech Mono;font-size:0.82rem;'
+        'letter-spacing:1px;">CONNECT TO DATABASE</p>',
+        unsafe_allow_html=True,
+    )
+
+    DB_ENGINES = {
+        "PostgreSQL":  "postgresql+psycopg2://user:password@host:5432/dbname",
+        "MySQL":       "mysql+pymysql://user:password@host:3306/dbname",
+        "MSSQL":       "mssql+pyodbc://user:password@host:1433/dbname?driver=ODBC+Driver+17+for+SQL+Server",
+        "Snowflake":   "snowflake://user:password@account/dbname/schema?warehouse=WH",
+        "BigQuery":    "bigquery://project/dataset",
+        "SQLite":      "sqlite:///path/to/file.db",
+        "Other (paste full URL)": "",
+    }
+
+    db_col1, db_col2 = st.columns(2, gap="large")
+
+    with db_col1:
+        db_engine_type = st.selectbox(
+            "Database Type",
+            list(DB_ENGINES.keys()),
+            key="db_engine_type",
+        )
+        conn_str = st.text_input(
+            "Connection String",
+            value=st.session_state.get("db_conn_str", DB_ENGINES[db_engine_type]),
+            type="password",
+            help="Your credentials are never stored or sent anywhere — used only for this session.",
+            key="db_conn_str_input",
+            placeholder=DB_ENGINES[db_engine_type],
+        )
+
+    with db_col2:
+        db_limit = st.number_input(
+            "Row limit (0 = no limit)",
+            min_value=0,
+            max_value=10_000_000,
+            value=10_000,
+            step=1_000,
+            key="db_row_limit",
+            help="Limit rows fetched to avoid loading huge tables into memory.",
+        )
+        db_schema = st.text_input(
+            "Schema (optional)",
+            value="",
+            key="db_schema_input",
+            placeholder="e.g. public, dbo, sales",
+        )
+
+    # SQL query box
+    section_header("// SQL Query")
+    db_query = st.text_area(
+        "SELECT query",
+        value=st.session_state.get("db_last_query", "SELECT * FROM your_table"),
+        height=100,
+        key="db_query_input",
+        help="Write any SELECT query. Use LIMIT in your query or set Row Limit above.",
+    )
+
+    # Helper: list tables
+    db_act1, db_act2 = st.columns(2, gap="large")
+
+    with db_act1:
+        if st.button("LIST TABLES", use_container_width=True, key="db_list_tables"):
+            if not conn_str:
+                st.error("Enter a connection string.")
+            else:
+                try:
+                    from sqlalchemy import create_engine as _ce, inspect as _inspect
+                    _eng = _ce(conn_str)
+                    _insp = _inspect(_eng)
+                    schemas = [db_schema] if db_schema else [None]
+                    tables = []
+                    for sch in schemas:
+                        try:
+                            tables += _insp.get_table_names(schema=sch)
+                        except Exception:
+                            pass
+                    if tables:
+                        st.session_state["db_table_list"] = tables
+                        st.success(f"Found {len(tables)} tables")
+                    else:
+                        st.warning("No tables found — check schema name or permissions.")
+                except Exception as e:
+                    st.error(f"Connection failed: {e}")
+
+    if st.session_state.get("db_table_list"):
+        selected_table = st.selectbox(
+            "Quick-load table",
+            st.session_state["db_table_list"],
+            key="db_table_select",
+        )
+        limit_clause = f" LIMIT {db_limit}" if db_limit > 0 else ""
+        schema_prefix = f"{db_schema}." if db_schema else ""
+        st.session_state["db_last_query"] = f'SELECT * FROM {schema_prefix}"{selected_table}"{limit_clause}'
+
+    with db_act2:
+        if st.button("LOAD FROM DATABASE", type="primary", use_container_width=True, key="db_load"):
+            if not conn_str:
+                st.error("Enter a connection string.")
+            elif not db_query.strip():
+                st.error("Enter a SQL query.")
+            else:
+                try:
+                    from sqlalchemy import create_engine as _ce, text as _text
+                    with st.spinner("Connecting and fetching data..."):
+                        _eng = _ce(conn_str)
+                        _q = db_query.strip()
+                        # Inject LIMIT if not present and limit > 0
+                        if db_limit > 0 and "limit" not in _q.lower():
+                            _q = f"{_q} LIMIT {db_limit}"
+                        with _eng.connect() as _conn:
+                            df = pd.read_sql(_text(_q), _conn)
+                    st.session_state["df_raw_full"] = df
+                    st.session_state["df_raw"] = df
+                    st.session_state["db_conn_str"] = conn_str
+                    st.session_state["db_last_query"] = db_query
+                    st.success(f"Loaded {len(df):,} rows x {len(df.columns)} columns from database")
+                except Exception as e:
+                    st.error(f"Failed to load from database: {e}")
+                else:
+                    st.rerun()
+
+    st.divider()
+    st.caption(
+        "Supported drivers must be installed in the environment: "
+        "`psycopg2` (PostgreSQL), `pymysql` (MySQL), `pyodbc` (MSSQL), "
+        "`snowflake-sqlalchemy` (Snowflake), `sqlalchemy-bigquery` (BigQuery)."
+    )
 
 # Rules JSON upload
 with st.expander("Import Rules JSON (optional)", expanded=False):
