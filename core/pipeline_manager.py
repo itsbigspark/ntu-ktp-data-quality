@@ -5,10 +5,120 @@ Pipeline Manager - Save, load, and execute data quality pipelines
 
 import json
 import os
+import io
+import uuid
+import logging
 from pathlib import Path
 from typing import Dict, List, Any, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 import pandas as pd
+
+logger = logging.getLogger("dq_engine.pipeline_manager")
+
+
+def _save_step_to_s3(pipeline_run_id: str, step_number: int, step_type: str,
+                     df: pd.DataFrame, bucket: str, region: str = "us-east-1") -> str:
+    """Save a step's output DataFrame to S3. Returns the S3 URI or empty string on failure."""
+    try:
+        import boto3
+        key = f"pipeline_runs/{pipeline_run_id}/step_{step_number:02d}_{step_type}.csv"
+        buf = io.BytesIO()
+        df.to_csv(buf, index=False)
+        buf.seek(0)
+        boto3.client("s3", region_name=region).put_object(
+            Bucket=bucket, Key=key, Body=buf.getvalue()
+        )
+        uri = f"s3://{bucket}/{key}"
+        logger.info("Saved step output: %s", uri)
+        return uri
+    except Exception as exc:
+        logger.warning("Could not save step to S3: %s", exc)
+        return ""
+
+
+def _save_pipeline_run_to_db(pipeline_run_id: str, pipeline_name: str,
+                              steps_executed: list, source_rows: int,
+                              output_rows: int, success: bool) -> None:
+    """Persist a pipeline run summary + per-step records to PostgreSQL/SQLite."""
+    try:
+        from core.storage.database import get_engine
+        from sqlalchemy import text
+
+        engine = get_engine()
+        _db_url = str(engine.url)
+        is_pg = "postgresql" in _db_url or "postgres" in _db_url
+
+        id_col = "SERIAL PRIMARY KEY" if is_pg else "INTEGER PRIMARY KEY AUTOINCREMENT"
+
+        with engine.connect() as conn:
+            # Create tables if they don't exist
+            conn.execute(text(f"""
+                CREATE TABLE IF NOT EXISTS pipeline_runs (
+                    id {id_col},
+                    run_id TEXT NOT NULL,
+                    pipeline_name TEXT,
+                    started_at TIMESTAMP,
+                    source_rows INTEGER,
+                    output_rows INTEGER,
+                    steps_count INTEGER,
+                    success BOOLEAN,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """))
+            conn.execute(text(f"""
+                CREATE TABLE IF NOT EXISTS pipeline_step_results (
+                    id {id_col},
+                    run_id TEXT NOT NULL,
+                    step_number INTEGER,
+                    step_type TEXT,
+                    description TEXT,
+                    rows_in INTEGER,
+                    rows_out INTEGER,
+                    success BOOLEAN,
+                    s3_uri TEXT,
+                    details TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """))
+
+            # Insert run summary
+            conn.execute(text("""
+                INSERT INTO pipeline_runs
+                    (run_id, pipeline_name, started_at, source_rows, output_rows, steps_count, success)
+                VALUES (:run_id, :name, :started_at, :src, :out, :steps, :ok)
+            """), {
+                "run_id": pipeline_run_id,
+                "name": pipeline_name,
+                "started_at": datetime.now(timezone.utc),
+                "src": source_rows,
+                "out": output_rows,
+                "steps": len(steps_executed),
+                "ok": success,
+            })
+
+            # Insert per-step records
+            for s in steps_executed:
+                conn.execute(text("""
+                    INSERT INTO pipeline_step_results
+                        (run_id, step_number, step_type, description,
+                         rows_in, rows_out, success, s3_uri, details)
+                    VALUES (:run_id, :num, :stype, :desc,
+                            :rows_in, :rows_out, :ok, :uri, :details)
+                """), {
+                    "run_id": pipeline_run_id,
+                    "num": s.get("step_number"),
+                    "stype": s.get("type"),
+                    "desc": s.get("description", ""),
+                    "rows_in": s.get("rows_in", 0),
+                    "rows_out": s.get("rows_out", 0),
+                    "ok": s.get("success", True),
+                    "uri": s.get("s3_uri", ""),
+                    "details": json.dumps(s.get("details", {})),
+                })
+            conn.commit()
+        logger.info("Pipeline run %s saved to DB", pipeline_run_id)
+    except Exception as exc:
+        logger.warning("Could not save pipeline run to DB: %s", exc)
 
 
 class Pipeline:
@@ -196,27 +306,35 @@ class PipelineExecutor:
         self,
         pipeline: Pipeline,
         df: pd.DataFrame,
-        progress_callback=None
+        progress_callback=None,
+        s3_bucket: str = None,
+        s3_region: str = "us-east-1",
     ) -> Dict[str, Any]:
         """
-        Execute entire pipeline
+        Execute entire pipeline, saving each step's output to S3 and DB.
 
         Args:
             pipeline: Pipeline to execute
             df: Input dataframe
             progress_callback: Optional callback for progress updates
+            s3_bucket: If set, each step output is saved to S3
+            s3_region: AWS region for S3 saves
 
         Returns:
-            Dictionary with results and execution details
+            Dictionary with results, execution details, and per-step S3 URIs
         """
+        pipeline_run_id = f"{pipeline.name.replace(' ', '_')}_{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S')}_{uuid.uuid4().hex[:6]}"
+
         results = {
             "success": True,
             "df_output": df.copy(),
             "steps_executed": [],
-            "errors": []
+            "errors": [],
+            "pipeline_run_id": pipeline_run_id,
         }
 
         current_df = df.copy()
+        source_rows = len(df)
 
         for idx, step in enumerate(pipeline.steps):
             if not step.get("enabled", True):
@@ -226,27 +344,39 @@ class PipelineExecutor:
             if progress_callback:
                 progress_callback(idx + 1, len(pipeline.steps), step)
 
+            rows_in = len(current_df)
+
             try:
-                # Execute step based on type
                 step_result = self._execute_step(step, current_df)
 
                 if step_result["success"]:
                     current_df = step_result["df_output"]
+                    rows_out = len(current_df)
+
+                    # Save step output to S3 if bucket configured
+                    s3_uri = ""
+                    if s3_bucket:
+                        s3_uri = _save_step_to_s3(
+                            pipeline_run_id, step["step_number"],
+                            step["type"], current_df, s3_bucket, s3_region,
+                        )
+
                     results["steps_executed"].append({
                         "step_number": step["step_number"],
                         "type": step["type"],
                         "description": step.get("description", ""),
                         "success": True,
-                        "details": step_result.get("details", {})
+                        "rows_in": rows_in,
+                        "rows_out": rows_out,
+                        "s3_uri": s3_uri,
+                        "details": step_result.get("details", {}),
                     })
                 else:
                     results["errors"].append({
                         "step_number": step["step_number"],
                         "type": step["type"],
-                        "error": step_result.get("error", "Unknown error")
+                        "error": step_result.get("error", "Unknown error"),
                     })
-
-                    # Stop execution on error
                     results["success"] = False
                     break
 
@@ -254,12 +384,22 @@ class PipelineExecutor:
                 results["errors"].append({
                     "step_number": step["step_number"],
                     "type": step["type"],
-                    "error": str(e)
+                    "error": str(e),
                 })
                 results["success"] = False
                 break
 
         results["df_output"] = current_df
+
+        # Persist run summary + step records to DB (silently skips if DB unavailable)
+        _save_pipeline_run_to_db(
+            pipeline_run_id=pipeline_run_id,
+            pipeline_name=pipeline.name,
+            steps_executed=results["steps_executed"],
+            source_rows=source_rows,
+            output_rows=len(current_df),
+            success=results["success"],
+        )
 
         return results
 

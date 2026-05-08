@@ -267,6 +267,16 @@ with execute_tab:
             for step in pipeline.steps:
                 st.markdown(f"{step['step_number']}. **{step['type'].title()}**: {step['description']}")
 
+        # S3 save option
+        s3_bucket = st.session_state.get("s3_bucket", "")
+        save_to_s3 = False
+        if s3_bucket:
+            save_to_s3 = st.checkbox(
+                f"Save each step output to S3 ({s3_bucket})",
+                value=True,
+                key="pipeline_save_s3",
+            )
+
         if st.button("Execute Pipeline", type="primary", use_container_width=True):
             executor = PipelineExecutor(st.session_state)
             progress_bar = st.progress(0)
@@ -277,32 +287,55 @@ with execute_tab:
                 status_text.markdown(f"**Step {current}/{total}:** {step['description']}...")
 
             with st.spinner("Executing pipeline..."):
-                results = executor.execute_pipeline(pipeline, df_raw, progress_callback=progress_callback)
+                results = executor.execute_pipeline(
+                    pipeline,
+                    df_raw,
+                    progress_callback=progress_callback,
+                    s3_bucket=s3_bucket if save_to_s3 else None,
+                    s3_region=st.session_state.get("s3_region", "us-east-1"),
+                )
 
             progress_bar.progress(1.0)
 
             if results["success"]:
-                status_text.success("Pipeline executed successfully")
+                status_text.success(f"Pipeline complete — Run ID: `{results.get('pipeline_run_id', '')}`")
                 st.session_state["df_pipeline_output"] = results["df_output"]
 
-                m1, m2, m3 = st.columns(3)
+                m1, m2, m3, m4 = st.columns(4)
                 m1.metric("Steps Executed", len(results["steps_executed"]))
                 m2.metric("Input Rows", len(df_raw))
                 m3.metric("Output Rows", len(results["df_output"]), delta=len(results["df_output"]) - len(df_raw))
+                m4.metric("Saved to DB", "Yes")
 
-                with st.expander("Step Details", expanded=True):
+                with st.expander("Step Results", expanded=True):
                     for step in results["steps_executed"]:
                         details = step.get("details", {})
-                        if details.get("skipped"):
-                            st.markdown(f"**Step {step['step_number']}: {step['type'].title()}** -- Skipped")
-                            st.caption(details.get("reason", "Step was skipped"))
-                        else:
-                            st.markdown(f"**Step {step['step_number']}: {step['type'].title()}**")
-                            if details:
-                                st.json(details)
+                        rows_in  = step.get("rows_in", "—")
+                        rows_out = step.get("rows_out", "—")
+                        s3_uri   = step.get("s3_uri", "")
+
+                        col_a, col_b = st.columns([3, 1])
+                        with col_a:
+                            if details.get("skipped"):
+                                st.markdown(f"**Step {step['step_number']}: {step['type'].title()}** — Skipped")
+                                st.caption(details.get("reason", ""))
+                            else:
+                                st.markdown(
+                                    f"**Step {step['step_number']}: {step['type'].title()}** — "
+                                    f"{rows_in} rows in → {rows_out} rows out"
+                                )
+                                if details:
+                                    st.json(details)
+                        with col_b:
+                            if s3_uri:
+                                st.markdown(
+                                    f'<p style="color:#00e5ff;font-family:Share Tech Mono;font-size:0.72rem;">'
+                                    f'S3: {s3_uri.split("/")[-1]}</p>',
+                                    unsafe_allow_html=True,
+                                )
 
                 st.download_button(
-                    "Download Processed Data (CSV)",
+                    "Download Final Output (CSV)",
                     results["df_output"].to_csv(index=False).encode("utf-8"),
                     f"{selected_name}_output.csv", "text/csv",
                     use_container_width=True,
