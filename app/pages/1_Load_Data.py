@@ -154,7 +154,7 @@ if source_mode == "Database":
         "MySQL":       "mysql+pymysql://user:password@host:3306/dbname",
         "MSSQL":       "mssql+pyodbc://user:password@host:1433/dbname?driver=ODBC+Driver+17+for+SQL+Server",
         "Snowflake":   "snowflake://user:password@account/dbname/schema?warehouse=WH",
-        "BigQuery":    "bigquery://project/dataset",
+        "BigQuery":    None,   # handled separately — needs service account JSON
         "SQLite":      "sqlite:///path/to/file.db",
         "Other (paste full URL)": "",
     }
@@ -167,24 +167,62 @@ if source_mode == "Database":
             list(DB_ENGINES.keys()),
             key="db_engine_type",
         )
-        conn_str = st.text_input(
-            "Connection String",
-            value=st.session_state.get("db_conn_str", DB_ENGINES[db_engine_type]),
-            type="password",
-            help="Your credentials are never stored or sent anywhere — used only for this session.",
-            key="db_conn_str_input",
-            placeholder=DB_ENGINES[db_engine_type],
-        )
 
     with db_col2:
         db_limit = st.number_input(
             "Row limit (0 = no limit)",
-            min_value=0,
-            max_value=10_000_000,
-            value=10_000,
-            step=1_000,
+            min_value=0, max_value=10_000_000, value=10_000, step=1_000,
             key="db_row_limit",
             help="Limit rows fetched to avoid loading huge tables into memory.",
+        )
+
+    # ── BigQuery: service account JSON upload ──────────────────────────────
+    bq_credentials = None
+    if db_engine_type == "BigQuery":
+        st.markdown(
+            '<p style="color:#00e5ff;font-family:Share Tech Mono;font-size:0.78rem;">'
+            'BigQuery uses a Service Account JSON key for authentication.</p>',
+            unsafe_allow_html=True,
+        )
+        bq_col1, bq_col2 = st.columns(2, gap="large")
+        with bq_col1:
+            bq_project = st.text_input(
+                "GCP Project ID",
+                key="bq_project",
+                placeholder="e.g. my-gcp-project",
+            )
+            bq_dataset = st.text_input(
+                "Dataset (optional)",
+                key="bq_dataset",
+                placeholder="e.g. analytics",
+                help="Leave blank to query across all datasets.",
+            )
+        with bq_col2:
+            bq_key_file = st.file_uploader(
+                "Service Account JSON Key",
+                type=["json"],
+                key="bq_key_upload",
+                help="Download from GCP Console → IAM → Service Accounts → Keys. "
+                     "Key is used only for this session and never stored.",
+            )
+            if bq_key_file:
+                import json as _json
+                bq_credentials = _json.load(bq_key_file)
+                st.success("Service account key loaded")
+
+        conn_str = None  # BigQuery uses credentials object, not a URL
+        db_schema = bq_dataset
+
+    else:
+        # ── All other DBs: connection string ──────────────────────────────
+        placeholder = DB_ENGINES.get(db_engine_type, "")
+        conn_str = st.text_input(
+            "Connection String",
+            value=st.session_state.get("db_conn_str", placeholder or ""),
+            type="password",
+            help="Your credentials are used only for this session and never stored.",
+            key="db_conn_str_input",
+            placeholder=placeholder or "dialect+driver://user:password@host/dbname",
         )
         db_schema = st.text_input(
             "Schema (optional)",
@@ -195,25 +233,44 @@ if source_mode == "Database":
 
     # SQL query box
     section_header("// SQL Query")
+    _default_query = "SELECT * FROM your_table"
+    if db_engine_type == "BigQuery":
+        _default_query = "SELECT * FROM `your_dataset.your_table` LIMIT 10000"
     db_query = st.text_area(
         "SELECT query",
-        value=st.session_state.get("db_last_query", "SELECT * FROM your_table"),
+        value=st.session_state.get("db_last_query", _default_query),
         height=100,
         key="db_query_input",
         help="Write any SELECT query. Use LIMIT in your query or set Row Limit above.",
     )
+
+    # ── Helper: build engine ───────────────────────────────────────────────
+    def _build_engine(engine_type, conn_string, bq_project_id, bq_creds):
+        from sqlalchemy import create_engine as _ce
+        if engine_type == "BigQuery":
+            from google.oauth2 import service_account
+            from sqlalchemy_bigquery import BigQueryDialect  # noqa — ensures dialect registered
+            creds = service_account.Credentials.from_service_account_info(bq_creds)
+            url = f"bigquery://{bq_project_id}"
+            return _ce(url, credentials_base=creds)
+        return _ce(conn_string)
 
     # Helper: list tables
     db_act1, db_act2 = st.columns(2, gap="large")
 
     with db_act1:
         if st.button("LIST TABLES", use_container_width=True, key="db_list_tables"):
-            if not conn_str:
-                st.error("Enter a connection string.")
+            _ready = (bq_credentials is not None) if db_engine_type == "BigQuery" else bool(conn_str)
+            if not _ready:
+                st.error("Enter connection details first.")
             else:
                 try:
-                    from sqlalchemy import create_engine as _ce, inspect as _inspect
-                    _eng = _ce(conn_str)
+                    from sqlalchemy import inspect as _inspect
+                    _eng = _build_engine(
+                        db_engine_type, conn_str,
+                        st.session_state.get("bq_project", ""),
+                        bq_credentials,
+                    )
                     _insp = _inspect(_eng)
                     schemas = [db_schema] if db_schema else [None]
                     tables = []
@@ -226,7 +283,7 @@ if source_mode == "Database":
                         st.session_state["db_table_list"] = tables
                         st.success(f"Found {len(tables)} tables")
                     else:
-                        st.warning("No tables found — check schema name or permissions.")
+                        st.warning("No tables found — check schema/dataset name or permissions.")
                 except Exception as e:
                     st.error(f"Connection failed: {e}")
 
@@ -236,32 +293,46 @@ if source_mode == "Database":
             st.session_state["db_table_list"],
             key="db_table_select",
         )
-        limit_clause = f" LIMIT {db_limit}" if db_limit > 0 else ""
-        schema_prefix = f"{db_schema}." if db_schema else ""
-        st.session_state["db_last_query"] = f'SELECT * FROM {schema_prefix}"{selected_table}"{limit_clause}'
+        if db_engine_type == "BigQuery":
+            ds = f"{db_schema}." if db_schema else ""
+            proj = st.session_state.get("bq_project", "project")
+            st.session_state["db_last_query"] = f"SELECT * FROM `{proj}.{ds}{selected_table}` LIMIT {db_limit or 10000}"
+        else:
+            limit_clause = f" LIMIT {db_limit}" if db_limit > 0 else ""
+            schema_prefix = f"{db_schema}." if db_schema else ""
+            st.session_state["db_last_query"] = f'SELECT * FROM {schema_prefix}"{selected_table}"{limit_clause}'
 
     with db_act2:
         if st.button("LOAD FROM DATABASE", type="primary", use_container_width=True, key="db_load"):
-            if not conn_str:
-                st.error("Enter a connection string.")
+            _bq_ready = db_engine_type == "BigQuery" and bq_credentials and st.session_state.get("bq_project")
+            _other_ready = db_engine_type != "BigQuery" and conn_str
+            if not (_bq_ready or _other_ready):
+                if db_engine_type == "BigQuery":
+                    st.error("Upload a service account JSON key and enter a GCP Project ID.")
+                else:
+                    st.error("Enter a connection string.")
             elif not db_query.strip():
                 st.error("Enter a SQL query.")
             else:
                 try:
-                    from sqlalchemy import create_engine as _ce, text as _text
+                    from sqlalchemy import text as _text
                     with st.spinner("Connecting and fetching data..."):
-                        _eng = _ce(conn_str)
+                        _eng = _build_engine(
+                            db_engine_type, conn_str,
+                            st.session_state.get("bq_project", ""),
+                            bq_credentials,
+                        )
                         _q = db_query.strip()
-                        # Inject LIMIT if not present and limit > 0
-                        if db_limit > 0 and "limit" not in _q.lower():
+                        # Auto-inject LIMIT for non-BigQuery (BQ uses its own syntax)
+                        if db_limit > 0 and "limit" not in _q.lower() and db_engine_type != "BigQuery":
                             _q = f"{_q} LIMIT {db_limit}"
                         with _eng.connect() as _conn:
                             df = pd.read_sql(_text(_q), _conn)
                     st.session_state["df_raw_full"] = df
                     st.session_state["df_raw"] = df
-                    st.session_state["db_conn_str"] = conn_str
+                    st.session_state["db_conn_str"] = conn_str or ""
                     st.session_state["db_last_query"] = db_query
-                    st.success(f"Loaded {len(df):,} rows x {len(df.columns)} columns from database")
+                    st.success(f"Loaded {len(df):,} rows x {len(df.columns)} columns from {db_engine_type}")
                 except Exception as e:
                     st.error(f"Failed to load from database: {e}")
                 else:
