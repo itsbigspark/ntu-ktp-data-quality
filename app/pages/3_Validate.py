@@ -160,13 +160,67 @@ if st.button("RUN VALIDATION", key="run_validation", use_container_width=True):
     # Build batch metadata
     from datetime import datetime, timezone
     batch_id = f"batch_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-    overall_score = 100 - (result.total_issues / max(len(df_raw) * len(df_raw.columns), 1) * 100)
+
+    # ── Calculate proper quality dimension scores from issues report ──────
+    def _calc_quality_scores(df, issues_df):
+        """Derive 6-dimension scores from the issues DataFrame."""
+        total_cells = max(len(df) * len(df.columns), 1)
+        total_rows  = max(len(df), 1)
+        scores = {"completeness": 100.0, "uniqueness": 100.0, "consistency": 100.0,
+                  "validity": 100.0, "accuracy": 100.0, "timeliness": 100.0}
+        if not isinstance(issues_df, pd.DataFrame) or issues_df.empty:
+            return scores
+
+        # Map issue_type → dimension
+        _dim_map = {
+            "missing_value": "completeness", "null_value": "completeness",
+            "duplicate": "uniqueness", "near_duplicate": "uniqueness",
+            "format_error": "validity", "regex_mismatch": "validity",
+            "type_error": "validity", "invalid_value": "validity",
+            "out_of_range": "validity", "constraint_violation": "validity",
+            "corpus_mismatch": "accuracy", "unknown_value": "accuracy",
+            "referential_integrity": "accuracy",
+            "inconsistency": "consistency", "cross_column": "consistency",
+            "stale_date": "timeliness", "future_date": "timeliness",
+            "invalid_date": "timeliness",
+        }
+        issue_col = "issue_type" if "issue_type" in issues_df.columns else issues_df.columns[0]
+        dim_counts = {d: 0 for d in scores}
+        for itype in issues_df[issue_col].dropna():
+            dim = _dim_map.get(str(itype).lower().replace(" ", "_"), "validity")
+            dim_counts[dim] += 1
+
+        # Score = 100 - (issues in dim / total_cells * 100), floored at 0
+        for dim, count in dim_counts.items():
+            penalty = (count / total_cells) * 100
+            scores[dim] = max(0.0, round(100.0 - penalty, 1))
+
+        # Completeness: also factor in actual null rate
+        null_rate = df.isna().mean().mean() * 100
+        scores["completeness"] = max(0.0, round(100.0 - null_rate, 1))
+
+        # Uniqueness: factor in duplicate rows
+        dup_rate = df.duplicated().mean() * 100
+        scores["uniqueness"] = max(0.0, round(min(scores["uniqueness"], 100.0 - dup_rate), 1))
+
+        return scores
+
+    quality_scores = _calc_quality_scores(df_raw, result.report)
+    overall_score  = round(sum(quality_scores.values()) / len(quality_scores), 1)
+
+    # Work out source file name
+    source_file = (
+        st.session_state.get("s3_source_key")
+        or st.session_state.get("db_last_query", "")[:60]
+        or "file_upload"
+    )
 
     # Save to database
     try:
-        from core.storage.database import save_results_to_db, save_ai_enrichment
+        from core.storage.database import save_results_to_db, save_ai_enrichment, get_engine
 
-        db_config = {"output": {"database": {"engine": "sqlite", "path": "./output/dq_investigator.db"}}}
+        # Pass empty config — get_engine() inside will use DATABASE_URL → PostgreSQL
+        db_config = {}
 
         db_result = {
             "batch_id": batch_id,
@@ -179,19 +233,19 @@ if st.button("RUN VALIDATION", key="run_validation", use_container_width=True):
             "issues_count": result.total_issues,
             "llm_calls": 5 if result.ai_enrichment else 0,
             "data_sent_to_llm": result.ai_enrichment is not None,
-            "quality_scores": {},
+            "quality_scores": quality_scores,
             "issues": result.report,
             "audit_trail": [
                 {"step": k, "duration_ms": int(v * 1000)}
                 for k, v in result.step_timings.items()
             ],
         }
-        save_results_to_db(db_result, db_config, source_file="app_upload")
+        save_results_to_db(db_result, db_config, source_file=source_file)
 
         if result.ai_enrichment:
             save_ai_enrichment(batch_id, result.ai_enrichment, db_config)
 
-        st.info(f"Results saved to database (batch: {batch_id})")
+        st.info(f"Results saved — batch: `{batch_id}` | Score: {overall_score}%")
     except Exception as e:
         st.warning(f"Could not save to database: {e}")
 

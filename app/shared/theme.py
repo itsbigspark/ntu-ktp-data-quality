@@ -292,11 +292,25 @@ _MATRIX_RAIN = """
 
 
 def apply_theme(show_rain: bool = False):
-    """Apply the Matrix theme to the current page."""
+    """Apply the Matrix theme and render the sidebar footer (user + logout)."""
     css = _BASE_CSS
     if show_rain:
         css += _MATRIX_RAIN
     st.markdown(css, unsafe_allow_html=True)
+
+    # Sidebar: show logged-in user and logout button on every page
+    user = st.session_state.get("auth_user")
+    if user:
+        with st.sidebar:
+            st.markdown(
+                f'<p style="color:#4a7a4f;font-family:Share Tech Mono;font-size:0.7rem;'
+                f'letter-spacing:1px;margin:0;padding:4px 0;">USER: {user.upper()}</p>',
+                unsafe_allow_html=True,
+            )
+            if st.button("Logout", key="sidebar_logout", use_container_width=True):
+                st.session_state["authenticated"] = False
+                st.session_state["auth_user"] = None
+                st.rerun()
 
 
 def page_header(title: str, subtitle: str = ""):
