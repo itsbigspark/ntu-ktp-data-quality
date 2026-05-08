@@ -30,9 +30,12 @@ if df is None:
     terminal_block("// NO DATA LOADED<br><span style='color:#4a7a4f;'>Go to Load Data first.</span>")
     st.stop()
 
+_large = len(df) > 50_000
 st.markdown(
     f'<p style="color:#00e5ff;font-family:Share Tech Mono;font-size:0.78rem;">'
-    f'Working with: {len(df)} rows, {len(df.columns)} columns</p>',
+    f'Working with: {len(df):,} rows, {len(df.columns)} columns'
+    + (' &nbsp;<span style="color:#ff9100;">[LARGE DATASET — fuzzy dedup capped at 50k rows]</span>' if _large else '')
+    + '</p>',
     unsafe_allow_html=True,
 )
 
@@ -70,14 +73,26 @@ text_cols = df.select_dtypes(include=["object"]).columns.tolist()
 match_cols = st.multiselect("Columns to match on", text_cols, default=text_cols[:3], key="fuzzy_cols")
 threshold = st.slider("Similarity threshold", 0.5, 1.0, 0.85, 0.05, key="fuzzy_threshold")
 
+FUZZY_ROW_CAP = 50_000
+
 if match_cols and st.button("FIND FUZZY DUPLICATES", key="find_fuzzy", use_container_width=True):
     with st.spinner("Computing similarity scores..."):
         try:
             from core.vectorizers import build_vectorizers
             from core.matcher import compute_pair_scores, label_pairs
 
-            vectorizers = build_vectorizers(df, match_cols)
-            pairs = compute_pair_scores(df, vectorizers, match_cols)
+            # Cap at 50k — fuzzy matching is O(n²); beyond this it's too slow
+            df_fuzzy = df
+            if len(df) > FUZZY_ROW_CAP:
+                df_fuzzy = df.head(FUZZY_ROW_CAP).copy()
+                st.warning(
+                    f"Dataset has {len(df):,} rows. Fuzzy matching capped at first "
+                    f"{FUZZY_ROW_CAP:,} rows to stay within memory limits. "
+                    f"Exact duplicate detection above still covers all rows."
+                )
+
+            vectorizers = build_vectorizers(df_fuzzy, match_cols)
+            pairs = compute_pair_scores(df_fuzzy, vectorizers, match_cols)
             labelled = label_pairs(pairs, threshold=threshold)
 
             dups = labelled[labelled["label"] == "duplicate"]

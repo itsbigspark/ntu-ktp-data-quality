@@ -49,7 +49,7 @@ class AutoConfig:
     key_alpha: float = 0.4
     similar_thr: float = 0.60
     duplicate_thr: float = 0.80
-    max_rows_for_dedupe: int = 5000  # head(N) for performance
+    max_rows_for_dedupe: int = 50_000  # hard cap — fuzzy dedup is O(n²); 50k is safe ceiling
 
     # Side-by-side artifact
     side_by_side_limit: int = 200  # first N pairs expanded to columns

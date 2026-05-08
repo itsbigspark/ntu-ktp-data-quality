@@ -549,6 +549,13 @@ class PipelineExecutor:
         threshold = config.get("threshold", 0.80)
         merge_strategy = config.get("merge_strategy", "fill_nulls")
 
+        # ── Row cap: fuzzy dedup is O(n²) — hard cap at 50k rows ──────────────
+        DEDUP_ROW_CAP = 50_000
+        sampled = False
+        if len(df) > DEDUP_ROW_CAP:
+            df = df.head(DEDUP_ROW_CAP).copy()
+            sampled = True
+
         if not columns:
             # Skip if no columns specified - use all string columns as default
             string_columns = df.select_dtypes(include=['object']).columns.tolist()
@@ -597,7 +604,8 @@ class PipelineExecutor:
                 "df_output": df.copy(),
                 "details": {
                     "duplicates_found": 0,
-                    "duplicates_removed": 0
+                    "duplicates_removed": 0,
+                    "sampled_to": 50_000 if sampled else None,
                 }
             }
 
@@ -618,7 +626,8 @@ class PipelineExecutor:
             "details": {
                 "duplicates_found": len(duplicate_pairs),
                 "duplicates_removed": len(df) - len(df_deduped),
-                "clusters": len(clusters)
+                "clusters": len(clusters),
+                "sampled_to": 50_000 if sampled else None,
             }
         }
 
