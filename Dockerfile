@@ -30,19 +30,16 @@ COPY TEST2_DATA/ ./TEST2_DATA/
 COPY configs/ ./configs/
 COPY assets/ ./assets/
 COPY lib/ ./lib/
+COPY start.sh ./start.sh
 
 # Create output directory
-RUN mkdir -p output
+RUN mkdir -p output && chmod +x start.sh
 
 # Expose Streamlit (8501) and FastAPI (8000)
 EXPOSE 8501 8000
 
-# Health check
+# Health check on Streamlit
 HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health || exit 1
 
-# Run the multi-page app
-CMD ["streamlit", "run", "app/Home.py", \
-     "--server.port=8501", \
-     "--server.headless=true", \
-     "--browser.gatherUsageStats=false", \
-     "--theme.base=dark"]
+# Start both FastAPI (port 8000) and Streamlit (port 8501)
+CMD ["./start.sh"]
