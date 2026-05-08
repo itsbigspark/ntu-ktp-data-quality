@@ -278,9 +278,13 @@ def init_schema(config: Dict[str, Any]) -> None:
     logger.info("Database schema initialized")
 
 
-def _init_schema_safe(engine, db_type: str) -> None:
+def _init_schema_safe(engine, db_type: str = None) -> None:
     """Create tables using raw connection to avoid SQLAlchemy text() issues."""
-    sql = SCHEMA_SQL_PG if db_type == "postgresql" else SCHEMA_SQL
+    # Always detect from the actual engine URL — never trust the caller's config dict
+    # which may say "sqlite" even when DATABASE_URL points to PostgreSQL.
+    _engine_url = str(engine.url)
+    _is_pg = "postgresql" in _engine_url or "postgres" in _engine_url
+    sql = SCHEMA_SQL_PG if _is_pg else SCHEMA_SQL
 
     with engine.connect() as conn:
         from sqlalchemy import text
