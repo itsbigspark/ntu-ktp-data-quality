@@ -275,6 +275,30 @@ if user_input := st.chat_input("Ask about your data, run validation, review fixe
                 response = raw.get("response", "")
                 tools_called = raw.get("tools_called", [])
                 open_tool = raw.get("open_tool")
+
+                # ── Audit log ──────────────────────────────────────────────
+                try:
+                    from core.storage.database import log_ai_call
+                    _tokens = raw.get("usage", {})
+                    _total_tokens = (
+                        _tokens.get("input_tokens", 0) + _tokens.get("output_tokens", 0)
+                        if isinstance(_tokens, dict) else 0
+                    )
+                    log_ai_call(
+                        batch_id=st.session_state.get("current_batch_id", "interactive"),
+                        call_type="chat_agent",
+                        provider=provider_type,
+                        model=_model,
+                        payload_summary=user_input[:500],
+                        response_preview=response[:500],
+                        tokens_used=_total_tokens,
+                        response_time_ms=int(raw.get("latency_ms", 0)),
+                        success=True,
+                    )
+                except Exception:
+                    pass  # audit log failure must never break the chat
+                # ───────────────────────────────────────────────────────────
+
             except Exception as e:
                 response = f"Agent error: {e}"
                 tools_called = []
