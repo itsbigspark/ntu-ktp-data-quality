@@ -26,7 +26,7 @@ section_header("// Data Ingestion")
 
 source_mode = st.radio(
     "Data Source",
-    ["File Upload", "AWS S3 Bucket", "Database"],
+    ["File Upload", "AWS S3 Bucket", "Database", "REST API", "Google Sheets"],
     horizontal=True,
     key="data_source_mode",
 )
@@ -61,7 +61,7 @@ if source_mode == "File Upload":
             key="ref_upload",
         )
 
-else:
+elif source_mode == "AWS S3 Bucket":
     # ── S3 Source ──────────────────────────────────────────────────────────
     st.markdown(
         '<p style="color:#00ff41;font-family:Share Tech Mono;font-size:0.82rem;'
@@ -344,6 +344,248 @@ if source_mode == "Database":
         "`psycopg2` (PostgreSQL), `pymysql` (MySQL), `pyodbc` (MSSQL), "
         "`snowflake-sqlalchemy` (Snowflake), `sqlalchemy-bigquery` (BigQuery)."
     )
+
+# ---------------------------------------------------------------------------
+# REST API connector
+# ---------------------------------------------------------------------------
+elif source_mode == "REST API":
+    st.markdown(
+        '<p style="color:#00ff41;font-family:Share Tech Mono;font-size:0.82rem;'
+        'letter-spacing:1px;">CONNECT TO REST API</p>',
+        unsafe_allow_html=True,
+    )
+
+    api_col1, api_col2 = st.columns([3, 1], gap="large")
+    with api_col1:
+        api_url = st.text_input(
+            "API Endpoint URL",
+            key="api_url",
+            placeholder="https://api.example.com/v1/data",
+            help="Any JSON-returning GET endpoint. Supports pagination.",
+        )
+    with api_col2:
+        api_method = st.selectbox("Method", ["GET", "POST"], key="api_method")
+
+    # Auth
+    auth_col1, auth_col2 = st.columns(2, gap="large")
+    with auth_col1:
+        api_auth_type = st.selectbox(
+            "Authentication",
+            ["None", "Bearer Token", "API Key Header", "Basic Auth"],
+            key="api_auth_type",
+        )
+    with auth_col2:
+        api_auth_value = ""
+        if api_auth_type == "Bearer Token":
+            api_auth_value = st.text_input("Bearer Token", type="password", key="api_bearer")
+        elif api_auth_type == "API Key Header":
+            hdr_col1, hdr_col2 = st.columns(2)
+            api_key_header = hdr_col1.text_input("Header Name", value="X-API-Key", key="api_key_header")
+            api_auth_value = hdr_col2.text_input("API Key", type="password", key="api_key_value")
+        elif api_auth_type == "Basic Auth":
+            b_col1, b_col2 = st.columns(2)
+            api_basic_user = b_col1.text_input("Username", key="api_basic_user")
+            api_basic_pass = b_col2.text_input("Password", type="password", key="api_basic_pass")
+
+    # Advanced
+    with st.expander("Advanced Options", expanded=False):
+        adv1, adv2 = st.columns(2)
+        with adv1:
+            api_data_path = st.text_input(
+                "JSON data path (dot notation)",
+                value="",
+                key="api_data_path",
+                placeholder="e.g. data.results  or  items",
+                help="Path to the array within the JSON response. Leave blank if the root is an array.",
+            )
+            api_limit = st.number_input("Max rows", min_value=0, max_value=1_000_000, value=10_000, step=1_000, key="api_max_rows")
+        with adv2:
+            api_extra_headers = st.text_area(
+                "Extra headers (JSON)",
+                value="{}",
+                key="api_extra_headers",
+                height=80,
+                placeholder='{"Content-Type": "application/json"}',
+            )
+            api_body = st.text_area(
+                "Request body (POST only, JSON)",
+                value="{}",
+                key="api_body",
+                height=80,
+            )
+
+    if st.button("FETCH FROM API", key="api_fetch", use_container_width=True, type="primary"):
+        if not api_url.strip():
+            st.error("Enter an API URL.")
+        else:
+            try:
+                import requests as _req
+                import json as _json
+
+                # Build headers
+                headers = {}
+                try:
+                    headers = _json.loads(st.session_state.get("api_extra_headers", "{}") or "{}")
+                except Exception:
+                    pass
+
+                if api_auth_type == "Bearer Token":
+                    headers["Authorization"] = f"Bearer {api_auth_value}"
+                elif api_auth_type == "API Key Header":
+                    headers[st.session_state.get("api_key_header", "X-API-Key")] = api_auth_value
+
+                # Auth tuple for Basic
+                auth = None
+                if api_auth_type == "Basic Auth":
+                    auth = (st.session_state.get("api_basic_user", ""), st.session_state.get("api_basic_pass", ""))
+
+                with st.spinner(f"Fetching {api_url}..."):
+                    if api_method == "POST":
+                        body = {}
+                        try:
+                            body = _json.loads(st.session_state.get("api_body", "{}") or "{}")
+                        except Exception:
+                            pass
+                        resp = _req.post(api_url.strip(), headers=headers, json=body, auth=auth, timeout=30)
+                    else:
+                        resp = _req.get(api_url.strip(), headers=headers, auth=auth, timeout=30)
+
+                resp.raise_for_status()
+                raw_json = resp.json()
+
+                # Navigate to data path
+                data_path = st.session_state.get("api_data_path", "").strip()
+                if data_path:
+                    for key in data_path.split("."):
+                        if isinstance(raw_json, dict):
+                            raw_json = raw_json.get(key, raw_json)
+                        else:
+                            break
+
+                # Normalise to DataFrame
+                if isinstance(raw_json, list):
+                    df = pd.json_normalize(raw_json)
+                elif isinstance(raw_json, dict):
+                    # Try values if it looks like a records dict
+                    vals = list(raw_json.values())
+                    if vals and isinstance(vals[0], dict):
+                        df = pd.json_normalize(vals)
+                    else:
+                        df = pd.json_normalize([raw_json])
+                else:
+                    st.error(f"Unexpected response type: {type(raw_json)}. Expected array or object.")
+                    st.stop()
+
+                if api_limit > 0:
+                    df = df.head(api_limit)
+
+                st.session_state["df_raw_full"] = df
+                st.session_state["df_raw"] = df
+                st.success(f"Loaded {len(df):,} rows x {len(df.columns)} columns from API")
+                st.rerun()
+
+            except Exception as e:
+                st.error(f"API fetch failed: {e}")
+
+# ---------------------------------------------------------------------------
+# Google Sheets connector
+# ---------------------------------------------------------------------------
+elif source_mode == "Google Sheets":
+    st.markdown(
+        '<p style="color:#00ff41;font-family:Share Tech Mono;font-size:0.82rem;'
+        'letter-spacing:1px;">CONNECT TO GOOGLE SHEETS</p>',
+        unsafe_allow_html=True,
+    )
+
+    gs_col1, gs_col2 = st.columns(2, gap="large")
+    with gs_col1:
+        gs_url = st.text_input(
+            "Google Sheets URL",
+            key="gs_url",
+            placeholder="https://docs.google.com/spreadsheets/d/SHEET_ID/...",
+            help="Paste the full URL from your browser. The sheet must be shared.",
+        )
+        gs_sheet_name = st.text_input(
+            "Sheet / Tab name (optional)",
+            value="",
+            key="gs_sheet_name",
+            placeholder="Sheet1",
+            help="Leave blank to load the first sheet.",
+        )
+    with gs_col2:
+        gs_auth_type = st.selectbox(
+            "Authentication",
+            ["Service Account JSON", "Public sheet (no auth)"],
+            key="gs_auth_type",
+        )
+        gs_creds = None
+        if gs_auth_type == "Service Account JSON":
+            gs_key_file = st.file_uploader(
+                "Service Account JSON Key",
+                type=["json"],
+                key="gs_key_upload",
+                help="GCP Console → IAM → Service Accounts → Keys. "
+                     "Share the sheet with the service account email.",
+            )
+            if gs_key_file:
+                import json as _json
+                gs_creds = _json.load(gs_key_file)
+                st.success(f"Key loaded: {gs_creds.get('client_email', 'ok')}")
+
+    if st.button("LOAD FROM GOOGLE SHEETS", key="gs_load", use_container_width=True, type="primary"):
+        if not gs_url.strip():
+            st.error("Enter a Google Sheets URL.")
+        elif gs_auth_type == "Service Account JSON" and not gs_creds:
+            st.error("Upload a service account JSON key.")
+        else:
+            try:
+                import gspread
+                from gspread.utils import extract_id_from_url
+
+                with st.spinner("Connecting to Google Sheets..."):
+                    sheet_id = extract_id_from_url(gs_url.strip())
+
+                    if gs_auth_type == "Service Account JSON":
+                        gc = gspread.service_account_from_dict(gs_creds)
+                    else:
+                        # Public sheet — use anonymous access
+                        gc = gspread.service_account_from_dict({
+                            "type": "service_account",
+                            "project_id": "",
+                            "private_key_id": "",
+                            "private_key": "",
+                            "client_email": "",
+                            "client_id": "",
+                            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                            "token_uri": "https://oauth2.googleapis.com/token",
+                        }) if False else None  # fallback to export URL
+
+                    if gs_auth_type == "Public sheet (no auth)":
+                        # Use the CSV export URL — works for publicly shared sheets
+                        import requests as _req
+                        _gid = 0  # first sheet
+                        csv_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv&gid={_gid}"
+                        resp = _req.get(csv_url, timeout=30)
+                        resp.raise_for_status()
+                        import io
+                        df = pd.read_csv(io.StringIO(resp.text))
+                    else:
+                        spreadsheet = gc.open_by_key(sheet_id)
+                        if gs_sheet_name.strip():
+                            worksheet = spreadsheet.worksheet(gs_sheet_name.strip())
+                        else:
+                            worksheet = spreadsheet.sheet1
+                        records = worksheet.get_all_records()
+                        df = pd.DataFrame(records)
+
+                st.session_state["df_raw_full"] = df
+                st.session_state["df_raw"] = df
+                st.success(f"Loaded {len(df):,} rows x {len(df.columns)} columns from Google Sheets")
+                st.rerun()
+
+            except Exception as e:
+                st.error(f"Google Sheets load failed: {e}")
+                st.caption("Make sure the sheet is shared with your service account email, or set to 'Anyone with link can view'.")
 
 # Rules JSON upload
 with st.expander("Import Rules JSON (optional)", expanded=False):
