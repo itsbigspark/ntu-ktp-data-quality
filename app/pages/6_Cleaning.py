@@ -253,7 +253,9 @@ if report is not None and isinstance(report, pd.DataFrame) and not report.empty:
 st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
 section_header("// Export")
 
-export_df = st.session_state.get("df_corrected") or st.session_state.get("df_cleaned")
+_df_corrected = st.session_state.get("df_corrected")
+_df_cleaned   = st.session_state.get("df_cleaned")
+export_df = _df_corrected if _df_corrected is not None else _df_cleaned
 if export_df is not None:
     csv = export_df.to_csv(index=False).encode("utf-8")
     st.download_button("DOWNLOAD CLEANED DATA [CSV]", data=csv, file_name="cleaned_data.csv", mime="text/csv", use_container_width=True)
