@@ -374,7 +374,10 @@ def save_results_to_db(
 
             # Ensure required columns exist, truncate long strings
             def _col(df, name, default=""):
-                return df[name] if name in df.columns else default
+                # Must return a Series so .astype(str).str[:n] works when column is absent
+                if name in df.columns:
+                    return df[name]
+                return pd.Series([default] * len(df), dtype=str)
 
             bulk_rows = pd.DataFrame({
                 "batch_id":    bulk["batch_id"],
