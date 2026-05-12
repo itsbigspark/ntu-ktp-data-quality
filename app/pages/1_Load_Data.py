@@ -681,14 +681,101 @@ with st.expander("Import Rules JSON (optional)", expanded=False):
 def _load_demo_csv(path: str) -> pd.DataFrame:
     return pd.read_csv(path)
 
-# Quick-load demo data from disk
-_demo_path = os.path.join(_ROOT, "TEST2_DATA", "main_data", "customer_transactions.csv")
-if os.path.exists(_demo_path) and st.session_state.get("df_raw") is None:
-    if st.button("Load Demo Dataset (TEST2_DATA)", type="secondary"):
-        df_demo = _load_demo_csv(_demo_path)
-        st.session_state["df_raw_full"] = df_demo
-        st.session_state["df_raw"] = df_demo
-        st.rerun()
+
+# ---------------------------------------------------------------------------
+# Demo Data Loader
+# ---------------------------------------------------------------------------
+_DEMO_MAIN  = os.path.join(_ROOT, "TEST2_DATA", "main_data",  "customer_transactions.csv")
+_DEMO_REF   = os.path.join(_ROOT, "TEST2_DATA", "reference",  "known_fraudulent_merchants.csv")
+_DEMO_RULES = os.path.join(_ROOT, "TEST2_DATA", "rules",      "validation_rules.json")
+_DEMO_CORPUS_DIR = os.path.join(_ROOT, "TEST2_DATA", "corpus")
+
+_DEMO_CORPORA = [
+    ("corpus_bank_names.csv",        "bank_name",        "alias",      "alias", "canonical"),
+    ("corpus_company_names.csv",     "merchant_name",    "alias",      "alias", "canonical"),
+    ("corpus_country_codes.csv",     "country",          "alias",      "alias", "canonical"),
+    ("corpus_transaction_types.csv", "transaction_type", "validation", "value", "value"),
+]
+
+_demo_available = os.path.exists(_DEMO_MAIN)
+
+if _demo_available:
+    section_header("// Quick Start — Demo Dataset")
+
+    already_loaded = (
+        st.session_state.get("df_raw") is not None
+        and st.session_state.get("_demo_loaded", False)
+    )
+
+    if already_loaded:
+        st.success(
+            "Demo dataset loaded — 500 rows · reference data · validation rules · 4 corpora. "
+            "Scroll down or head to Validate to continue."
+        )
+        if st.button("Reload Demo Data", key="reload_demo", type="secondary"):
+            st.session_state["_demo_loaded"] = False
+            st.rerun()
+    else:
+        col_demo, col_desc = st.columns([1, 2], gap="large")
+        with col_demo:
+            st.markdown(
+                '<p style="color:#00e5ff;font-family:Share Tech Mono;font-size:0.8rem;'
+                'letter-spacing:1px;">ONE-CLICK DEMO</p>',
+                unsafe_allow_html=True,
+            )
+            load_demo = st.button(
+                "LOAD DEMO DATA",
+                key="load_demo_all",
+                type="primary",
+                use_container_width=True,
+            )
+        with col_desc:
+            st.markdown(
+                '<p style="color:#4a7a4f;font-family:monospace;font-size:0.78rem;line-height:1.7;">'
+                "Loads all demo assets in one click:<br>"
+                "&nbsp;&nbsp;• <b style='color:#00ff41'>500-row</b> financial transactions dataset (with intentional errors)<br>"
+                "&nbsp;&nbsp;• <b style='color:#00ff41'>Reference</b> known-fraudulent merchants list<br>"
+                "&nbsp;&nbsp;• <b style='color:#00ff41'>Validation rules</b> JSON (email, postcode, amounts &amp; more)<br>"
+                "&nbsp;&nbsp;• <b style='color:#00ff41'>4 corpora</b> — bank names, merchant names, country codes, transaction types"
+                "</p>",
+                unsafe_allow_html=True,
+            )
+
+        if load_demo:
+            with st.spinner("Loading demo data..."):
+                # 1. Main dataset
+                df_demo = _load_demo_csv(_DEMO_MAIN)
+                st.session_state["df_raw_full"] = df_demo
+                st.session_state["df_raw"] = df_demo
+
+                # 2. Reference dataset
+                if os.path.exists(_DEMO_REF):
+                    st.session_state["df_ref"] = _load_demo_csv(_DEMO_REF)
+
+                # 3. Validation rules JSON
+                if os.path.exists(_DEMO_RULES):
+                    import json as _json
+                    with open(_DEMO_RULES) as _f:
+                        st.session_state["rules_json"] = _json.load(_f)
+
+                # 4. Corpus — load into Redis via CorpusManager
+                cm = st.session_state.get("corpus_manager")
+                if cm is not None:
+                    for _fname, _name, _ctype, _key, _val in _DEMO_CORPORA:
+                        _fpath = os.path.join(_DEMO_CORPUS_DIR, _fname)
+                        if not os.path.exists(_fpath):
+                            continue
+                        try:
+                            _df_c = _load_demo_csv(_fpath)
+                            cm.load_corpus_from_dataframe(
+                                _df_c, corpus_name=_name, corpus_type=_ctype,
+                                key_column=_key, value_column=_val,
+                            )
+                        except Exception:
+                            pass
+
+                st.session_state["_demo_loaded"] = True
+            st.rerun()
 
 st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
 

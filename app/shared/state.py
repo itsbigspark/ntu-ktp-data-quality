@@ -187,6 +187,7 @@ def init_state():
         # Internal flags
         "_redis_init_done": False,
         "_sample_corpora_loaded": False,
+        "_demo_loaded": False,
     }
 
     for key, default in defaults.items():
