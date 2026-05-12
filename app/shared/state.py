@@ -181,6 +181,9 @@ def init_state():
         "openai_api_key": "",
         "gemini_api_key": "",
 
+        # Batch tracking
+        "current_batch_id": None,
+
         # Internal flags
         "_redis_init_done": False,
         "_sample_corpora_loaded": False,

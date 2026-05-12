@@ -389,17 +389,48 @@ if pii_results is not None:
             st.session_state["df_anonymised"] = df_anon
             st.success(f"Anonymised {anon_count:,} cells across {len(anon_cols)} column(s). Original data unchanged.")
 
-        # Download anonymised
+        # Download + promote anonymised data
         df_anon_out = st.session_state.get("df_anonymised")
         if df_anon_out is not None:
             st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-            csv_anon = df_anon_out.to_csv(index=False).encode("utf-8")
-            st.download_button(
-                "DOWNLOAD ANONYMISED DATA [CSV]",
-                data=csv_anon,
-                file_name="anonymised_data.csv",
-                mime="text/csv",
-                use_container_width=True,
+
+            btn_col1, btn_col2 = st.columns(2, gap="medium")
+            with btn_col1:
+                csv_anon = df_anon_out.to_csv(index=False).encode("utf-8")
+                st.download_button(
+                    "DOWNLOAD ANONYMISED DATA [CSV]",
+                    data=csv_anon,
+                    file_name="anonymised_data.csv",
+                    mime="text/csv",
+                    use_container_width=True,
+                )
+            with btn_col2:
+                if st.button(
+                    "SET AS WORKING DATASET",
+                    key="pii_promote",
+                    use_container_width=True,
+                    type="primary",
+                    help="Replace the current working dataset with the anonymised copy. "
+                         "All downstream pages (Validate, Cleaning, Dedupe) will use this data.",
+                ):
+                    st.session_state["df_raw"] = df_anon_out
+                    st.session_state["df_raw_full"] = df_anon_out
+                    # Clear stale downstream results so pages re-run cleanly
+                    for _key in ["unified_issues_report", "validation_completed",
+                                 "df_corrected", "df_cleaned", "df_deduplicated",
+                                 "generated_rules", "rules_merged"]:
+                        st.session_state.pop(_key, None)
+                    st.success(
+                        f"Working dataset updated to anonymised copy "
+                        f"({len(df_anon_out):,} rows). "
+                        "Go to Rules then Validate to re-run the pipeline on clean data."
+                    )
+
+            st.markdown(
+                '<p style="color:#4a7a4f;font-family:Share Tech Mono;font-size:0.7rem;margin-top:4px;">'
+                'SET AS WORKING DATASET replaces the active dataset for all pages. '
+                'Original raw data is not affected — reload it from Load Data if needed.</p>',
+                unsafe_allow_html=True,
             )
             st.dataframe(df_anon_out.head(50), use_container_width=True, hide_index=False, height=300)
 

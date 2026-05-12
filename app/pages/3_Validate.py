@@ -182,11 +182,13 @@ if st.button("RUN VALIDATION", key="run_validation", use_container_width=True):
     if result.ai_enrichment:
         st.session_state["ai_enrichment_result"] = result.ai_enrichment
 
-    st.success(f"Pipeline complete in {elapsed:.1f}s -- {result.total_issues} issues found")
+    st.success(f"Pipeline complete in {elapsed:.1f}s — {result.total_issues} issues found")
 
     # Build batch metadata
     from datetime import datetime, timezone
-    batch_id = f"batch_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    import uuid
+    batch_id = f"batch_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}"
+    st.session_state["current_batch_id"] = batch_id
 
     # ── Calculate proper quality dimension scores from issues report ──────
     def _calc_quality_scores(df, issues_df):
@@ -390,17 +392,112 @@ if result is not None:
             for err in result.errors:
                 st.error(err)
 
-    # Issues table
+    # Issues breakdown
     if isinstance(result.report, pd.DataFrame) and not result.report.empty:
-        section_header("// Issue Report")
-        st.dataframe(result.report, use_container_width=True, hide_index=True, height=400)
+        rpt = result.report
 
-        csv = result.report.to_csv(index=False).encode("utf-8")
+        # ── Severity breakdown ───────────────────────────────────────────────
+        section_header("// Issue Breakdown")
+        _sev_col = next((c for c in ["severity", "Severity"] if c in rpt.columns), None)
+        _typ_col = next((c for c in ["issue_type", "issue", "Issue Type"] if c in rpt.columns), None)
+        _col_col = next((c for c in ["column", "column_name", "Column"] if c in rpt.columns), None)
+
+        breakdown_cols = st.columns(2, gap="large")
+
+        with breakdown_cols[0]:
+            st.markdown(
+                '<p style="color:#00e5ff;font-family:Share Tech Mono;font-size:0.72rem;'
+                'letter-spacing:1px;margin-bottom:8px;">BY SEVERITY</p>',
+                unsafe_allow_html=True,
+            )
+            if _sev_col:
+                sev_counts = rpt[_sev_col].value_counts()
+                _sev_colors = {"critical": "#ff1744", "high": "#ff9100",
+                               "medium": "#ffea00", "low": "#00e5ff", "info": "#4a7a4f"}
+                for sev, count in sev_counts.items():
+                    color = _sev_colors.get(str(sev).lower(), "#b0ffb8")
+                    pct = count / len(rpt) * 100
+                    st.markdown(
+                        f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">'
+                        f'<span style="font-family:Share Tech Mono;font-size:0.72rem;'
+                        f'color:{color};width:70px;text-transform:uppercase;">{sev}</span>'
+                        f'<div style="flex:1;background:rgba(255,255,255,0.05);border-radius:3px;height:8px;">'
+                        f'<div style="width:{pct:.0f}%;background:{color};height:8px;border-radius:3px;"></div>'
+                        f'</div>'
+                        f'<span style="font-family:Share Tech Mono;font-size:0.72rem;color:#b0ffb8;width:40px;text-align:right;">{count}</span>'
+                        f'</div>',
+                        unsafe_allow_html=True,
+                    )
+            else:
+                st.caption("No severity column in report.")
+
+        with breakdown_cols[1]:
+            st.markdown(
+                '<p style="color:#00e5ff;font-family:Share Tech Mono;font-size:0.72rem;'
+                'letter-spacing:1px;margin-bottom:8px;">TOP AFFECTED COLUMNS</p>',
+                unsafe_allow_html=True,
+            )
+            if _col_col:
+                col_counts = rpt[_col_col].value_counts().head(8)
+                max_c = col_counts.max()
+                for col_name, count in col_counts.items():
+                    pct = count / max_c * 100
+                    st.markdown(
+                        f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">'
+                        f'<span style="font-family:Share Tech Mono;font-size:0.7rem;'
+                        f'color:#00ff41;width:120px;white-space:nowrap;overflow:hidden;'
+                        f'text-overflow:ellipsis;" title="{col_name}">{col_name}</span>'
+                        f'<div style="flex:1;background:rgba(255,255,255,0.05);border-radius:3px;height:8px;">'
+                        f'<div style="width:{pct:.0f}%;background:#00ff41;height:8px;border-radius:3px;opacity:0.7;"></div>'
+                        f'</div>'
+                        f'<span style="font-family:Share Tech Mono;font-size:0.72rem;color:#b0ffb8;width:40px;text-align:right;">{count}</span>'
+                        f'</div>',
+                        unsafe_allow_html=True,
+                    )
+            else:
+                st.caption("No column info in report.")
+
+        st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
+
+        # ── Issue type summary ───────────────────────────────────────────────
+        if _typ_col:
+            with st.expander("Issue types breakdown", expanded=False):
+                type_counts = rpt[_typ_col].value_counts().reset_index()
+                type_counts.columns = ["Issue Type", "Count"]
+                type_counts["% of Total"] = (type_counts["Count"] / len(rpt) * 100).round(1).astype(str) + "%"
+                st.dataframe(type_counts, use_container_width=True, hide_index=True, height=min(300, 40 + 35 * len(type_counts)))
+
+        # ── Full issue table ─────────────────────────────────────────────────
+        section_header("// Full Issue Report")
+        st.dataframe(rpt, use_container_width=True, hide_index=True, height=350)
+
+        csv = rpt.to_csv(index=False).encode("utf-8")
         st.download_button(
             "EXPORT ISSUES [CSV]",
             data=csv,
             file_name="validation_issues.csv",
             mime="text/csv",
+        )
+
+        # ── Next steps CTA ───────────────────────────────────────────────────
+        st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
+        _has_fixes = "suggested_fix" in rpt.columns and rpt["suggested_fix"].notna().any()
+        _has_ai    = result.ai_enrichment is not None
+        st.markdown(
+            '<div style="background:rgba(0,229,255,0.05);border:1px solid rgba(0,229,255,0.2);'
+            'border-radius:10px;padding:16px 20px;font-family:Share Tech Mono;">'
+            '<p style="color:#00e5ff;font-size:0.78rem;letter-spacing:1px;margin-bottom:8px;">// NEXT STEPS</p>'
+            + (f'<p style="color:#b0ffb8;font-size:0.75rem;margin:4px 0;">→ <b>Cleaning</b> — '
+               f'{rpt["suggested_fix"].notna().sum()} auto-fix suggestions ready to review and apply</p>'
+               if _has_fixes else
+               '<p style="color:#4a7a4f;font-size:0.75rem;margin:4px 0;">→ <b>Cleaning</b> — manually review and correct issues</p>')
+            + ('<p style="color:#b0ffb8;font-size:0.75rem;margin:4px 0;">→ <b>AI Investigation</b> — AI enrichment results ready, including executive summary</p>'
+               if _has_ai else
+               '<p style="color:#4a7a4f;font-size:0.75rem;margin:4px 0;">→ <b>AI Investigation</b> — re-run with AI Enrichment enabled for deeper insights</p>')
+            + '<p style="color:#b0ffb8;font-size:0.75rem;margin:4px 0;">→ <b>Command Center</b> — full dashboard with quality scores and trend charts</p>'
+            + f'<p style="color:#4a7a4f;font-size:0.7rem;margin-top:10px;">Batch: {st.session_state.get("current_batch_id","—")}</p>'
+            + '</div>',
+            unsafe_allow_html=True,
         )
 
     # AI Enrichment summary
