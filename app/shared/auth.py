@@ -70,7 +70,7 @@ def login_page():
         st.markdown(
             "<p style='color:#4a7a4f;font-family:monospace;font-size:0.65rem;"
             "text-align:center;margin-top:20px;letter-spacing:1px;'>"
-            "Default: admin / admin123</p>",
+            "Contact your administrator for access credentials.</p>",
             unsafe_allow_html=True,
         )
 
