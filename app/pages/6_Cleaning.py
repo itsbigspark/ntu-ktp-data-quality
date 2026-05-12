@@ -10,7 +10,7 @@ if _ROOT not in sys.path:
 import streamlit as st
 import pandas as pd
 from shared.auth import require_auth
-from shared.theme import apply_theme, page_header, section_header, terminal_block
+from shared.theme import apply_theme, page_header, section_header, terminal_block, workflow_breadcrumb
 from shared.state import init_state
 
 init_state()
@@ -21,6 +21,13 @@ page_header("CLEANING & FIXES", "Apply corrections and standardise data")
 
 df_raw = st.session_state.get("df_raw")
 report = st.session_state.get("unified_issues_report")
+
+workflow_breadcrumb([
+    ("Load Data", df_raw is not None),
+    ("Validate", st.session_state.get("validation_completed", False)),
+    ("Cleaning", st.session_state.get("df_corrected") is not None),
+    ("Dedupe", st.session_state.get("df_deduplicated") is not None),
+])
 
 if df_raw is None:
     terminal_block("// NO DATA LOADED<br><span style='color:#4a7a4f;'>Go to Load Data first.</span>")

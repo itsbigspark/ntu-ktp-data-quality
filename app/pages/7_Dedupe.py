@@ -302,8 +302,7 @@ elif st.button("FIND FUZZY DUPLICATES", key="find_fuzzy", use_container_width=Tr
             k4.markdown(kpi_card(f"{_effective_run_mode.split()[0]}", "Mode Used", ""), unsafe_allow_html=True)
 
         except Exception as e:
-            st.error(f"Fuzzy matching failed: {e}")
-            import traceback; st.code(traceback.format_exc(), language="text")
+            st.error(f"Matching failed — check your column selection and try again. ({type(e).__name__})")
 
 # ---------------------------------------------------------------------------
 # Results: duplicates + similar
@@ -378,8 +377,7 @@ if dups is not None and not dups.empty:
                 st.success(f"Deduplication applied. {removed:,} rows merged. Dataset updated.")
 
             except Exception as e:
-                st.error(f"Merge failed: {e}")
-                import traceback; st.code(traceback.format_exc(), language="text")
+                st.error(f"Merge failed — try a different strategy or re-run matching. ({type(e).__name__})")
 
 # ---------------------------------------------------------------------------
 # Export

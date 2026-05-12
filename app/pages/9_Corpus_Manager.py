@@ -166,7 +166,7 @@ with upload_tab:
                             st.error(result["message"])
 
                 except Exception as e:
-                    st.error(f"Error processing file: {e}")
+                    st.error(f"Could not process file — check it is a valid CSV with a 'value' column. ({type(e).__name__})")
 
 # ======================== S3 TAB ========================
 with s3_tab:
@@ -220,7 +220,7 @@ with s3_tab:
                     else:
                         st.warning("No CSV/Excel files found at that prefix.")
                 except Exception as e:
-                    st.error(f"S3 error: {e}")
+                    st.error("S3 access failed — check bucket name, region, and AWS credentials.")
 
     # Show discovered files
     if st.session_state.get("corpus_s3_files"):

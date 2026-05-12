@@ -340,3 +340,33 @@ def kpi_card(value: str, label: str, accent: str = ""):
 def terminal_block(text: str):
     """Render a terminal-style message."""
     st.markdown(f'<div class="terminal-block">{text}</div>', unsafe_allow_html=True)
+
+
+def workflow_breadcrumb(steps: list[tuple[str, bool]]):
+    """
+    Render a horizontal pipeline breadcrumb.
+
+    steps: list of (label, is_complete) tuples in order.
+    """
+    parts = []
+    for i, (label, done) in enumerate(steps):
+        color = "#00ff41" if done else "#4a7a4f"
+        border = "rgba(0,255,65,0.4)" if done else "rgba(74,122,79,0.3)"
+        bg = "rgba(0,255,65,0.06)" if done else "rgba(0,5,1,0.4)"
+        tick = " ✓" if done else ""
+        parts.append(
+            f'<div style="background:{bg};border:1px solid {border};border-radius:6px;'
+            f'padding:5px 12px;font-family:Share Tech Mono;font-size:0.7rem;color:{color};">'
+            f'{label}{tick}</div>'
+        )
+        if i < len(steps) - 1:
+            parts.append(
+                '<div style="color:#4a7a4f;font-size:0.8rem;padding:0 2px;align-self:center;">→</div>'
+            )
+    html = (
+        '<div style="display:flex;gap:6px;align-items:center;'
+        'flex-wrap:wrap;margin-bottom:16px;">'
+        + "".join(parts)
+        + "</div>"
+    )
+    st.markdown(html, unsafe_allow_html=True)

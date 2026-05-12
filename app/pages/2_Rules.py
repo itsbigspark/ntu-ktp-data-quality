@@ -158,7 +158,7 @@ if st.button("GENERATE STATISTICAL RULES", key="generate_rules", use_container_w
             total = sum(len(v) for v in generated.values() if isinstance(v, list))
             st.success(f"Rules generated: {len(generated)} columns, {total} rules")
         except Exception as e:
-            st.error(f"Rule generation failed: {e}")
+            st.error(f"Rule generation failed — try with a smaller dataset or check your data types. ({type(e).__name__})")
 
 # ---------------------------------------------------------------------------
 # Display statistical rules per column
@@ -384,7 +384,7 @@ else:
                 st.error("Claude response was not valid JSON. Raw response shown below.")
                 st.code(raw)
             except Exception as e:
-                st.error(f"AI rule generation failed: {e}")
+                st.error("AI rule generation failed. Check your AI provider settings and API key.")
 
 # Display AI suggested rules
 ai_rules = st.session_state.get("ai_suggested_rules")

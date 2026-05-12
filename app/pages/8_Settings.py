@@ -77,7 +77,7 @@ if provider == "ollama":
             else:
                 st.warning("Connected but no models found. Run: ollama pull phi3:mini")
         except Exception as e:
-            st.error(f"Cannot reach Ollama at {url}: {e}")
+            st.error(f"Cannot reach Ollama at {url}. Is the Ollama service running? (ollama serve)")
 
 elif provider == "anthropic":
     st.markdown(
@@ -122,7 +122,7 @@ elif provider == "anthropic":
             else:
                 st.warning("Connected but unexpected response")
         except Exception as e:
-            st.error(f"Anthropic connection failed: {e}")
+            st.error("Anthropic connection failed. Check your API key is correct and has credits.")
 
 elif provider == "openai":
     st.markdown(
@@ -208,7 +208,7 @@ with connector_tab1:
             s3.head_bucket(Bucket=s3_out_bucket)
             st.success(f"Connected to s3://{s3_out_bucket}/")
         except Exception as e:
-            st.error(f"S3 connection failed: {e}")
+            st.error("S3 connection failed. Check your bucket name, region, and AWS credentials.")
 
     st.markdown(
         '<p style="color:#4a7a4f;font-family:Share Tech Mono;font-size:0.72rem;margin-top:8px;">'
@@ -252,7 +252,7 @@ with connector_tab2:
                 result = conn.execute(text("SELECT 1"))
                 st.success("Database connection successful.")
         except Exception as e:
-            st.error(f"Database connection failed: {e}")
+            st.error("Database connection failed. Check the URL format and that the host is reachable.")
 
     if db_url and db_query and st.button("Load Data from Database", key="load_db"):
         try:
@@ -264,7 +264,7 @@ with connector_tab2:
             st.session_state["df_raw"] = df
             st.success(f"Loaded {df.shape[0]} rows, {df.shape[1]} columns from database")
         except Exception as e:
-            st.error(f"Failed to load from database: {e}")
+            st.error("Failed to load data from database. Check your SQL query and connection URL.")
 
 with connector_tab3:
     st.markdown(
@@ -315,7 +315,7 @@ with connector_tab3:
             st.session_state["df_raw"] = df
             st.success(f"Loaded {df.shape[0]} rows, {df.shape[1]} columns from API")
         except Exception as e:
-            st.error(f"API fetch failed: {e}")
+            st.error("API request failed. Check the URL is reachable and the response is JSON.")
 
 # ---------------------------------------------------------------------------
 # Database Configuration (results storage)

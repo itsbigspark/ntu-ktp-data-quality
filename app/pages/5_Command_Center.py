@@ -87,8 +87,8 @@ from core.storage.database import (
 try:
     batches = get_recent_batches(DB_CONFIG, limit=100)
     trend = get_score_trend(DB_CONFIG, limit=100)
-except Exception as exc:
-    st.error(f"// SYSTEM ERROR: {exc}")
+except Exception:
+    st.error("Could not load dashboard data. The database may be initialising — try again in a moment.")
     st.stop()
 
 if batches.empty:

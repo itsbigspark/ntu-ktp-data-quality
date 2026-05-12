@@ -16,7 +16,8 @@ import time
 from shared.auth import require_auth
 from shared.theme import (
     apply_theme, page_header, section_header, terminal_block,
-    kpi_card, MATRIX_GREEN, MATRIX_CYAN, MATRIX_RED, MATRIX_ORANGE, MATRIX_TEXT_DIM,
+    kpi_card, workflow_breadcrumb,
+    MATRIX_GREEN, MATRIX_CYAN, MATRIX_RED, MATRIX_ORANGE, MATRIX_TEXT_DIM,
 )
 from shared.state import init_state
 
@@ -29,16 +30,42 @@ page_header("VALIDATE & FIX", "Run the full data quality pipeline")
 df_raw = st.session_state.get("df_raw")
 rules = st.session_state.get("rules_merged")
 
+workflow_breadcrumb([
+    ("Load Data", df_raw is not None),
+    ("Rules", rules is not None),
+    ("Validate", st.session_state.get("validation_completed", False)),
+    ("AI Investigate", st.session_state.get("ai_enrichment_result") is not None),
+    ("Clean", st.session_state.get("df_corrected") is not None),
+])
+
 if df_raw is None:
     terminal_block("// NO DATA LOADED<br><span style='color:#4a7a4f;'>Go to Load Data first.</span>")
     st.stop()
 
-if rules is None:
-    terminal_block(
-        "// NO RULES AVAILABLE<br>"
-        "<span style='color:#4a7a4f;'>Go to Rules page to generate validation rules first, "
-        "or the system will use basic inferred rules.</span>"
+# Session status bar — shows what's ready
+_corpus_mgr = st.session_state.get("corpus_manager")
+_has_corpus = _corpus_mgr is not None and hasattr(_corpus_mgr, "list_corpora") and bool(_corpus_mgr.list_corpora() if callable(_corpus_mgr.list_corpora) else [])
+_status_items = [
+    ("Data", f"{len(df_raw):,} rows", "#00ff41"),
+    ("Rules", f"{sum(len(v) for v in rules.values() if isinstance(v, list))} rules" if rules else "None (inferred)", "#00ff41" if rules else "#ff9100"),
+    ("Corpus", "Loaded" if _has_corpus else "Not loaded", "#00ff41" if _has_corpus else "#4a7a4f"),
+    ("AI", st.session_state.get("ai_provider_type", "ollama").upper(), "#00e5ff"),
+]
+st.markdown(
+    '<div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap;">'
+    + "".join(
+        f'<div style="background:rgba(0,5,1,0.7);border:1px solid rgba(0,255,65,0.15);'
+        f'border-radius:6px;padding:6px 14px;font-family:Share Tech Mono;font-size:0.72rem;">'
+        f'<span style="color:#4a7a4f;">{label}: </span>'
+        f'<span style="color:{color};">{value}</span></div>'
+        for label, value, color in _status_items
     )
+    + "</div>",
+    unsafe_allow_html=True,
+)
+
+if rules is None:
+    st.info("No rules loaded — validation will use inferred statistical rules. Go to Rules page to generate custom rules.")
 
 # ---------------------------------------------------------------------------
 # Validation configuration
@@ -97,7 +124,7 @@ if st.button("RUN VALIDATION", key="run_validation", use_container_width=True):
                 url = st.session_state.get("ollama_url", "http://localhost:11434")
                 ai_provider = OllamaProvider(model=model, base_url=url)
         except Exception as e:
-            st.error(f"Failed to initialise AI provider: {e}")
+            st.error("Could not connect to AI provider. Check your Settings — API key or Ollama URL may be wrong.")
             ai_provider = None
 
     config = ValidationConfig(

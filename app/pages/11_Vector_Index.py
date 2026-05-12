@@ -31,8 +31,12 @@ except ImportError:
     st.code("pip install chromadb>=0.4.0", language="bash")
     st.stop()
 
+@st.cache_resource
+def _get_vector_db_manager():
+    return VectorDBManager()
+
 if "vector_db_manager" not in st.session_state:
-    st.session_state["vector_db_manager"] = VectorDBManager()
+    st.session_state["vector_db_manager"] = _get_vector_db_manager()
 
 vdb = st.session_state["vector_db_manager"]
 

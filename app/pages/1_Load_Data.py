@@ -675,13 +675,17 @@ with st.expander("Import Rules JSON (optional)", expanded=False):
             st.session_state["rules_json"] = json.load(rules_file)
             st.success(f"Rules loaded: {len(st.session_state['rules_json'].get('columns', {}))} columns")
         except Exception as e:
-            st.error(f"Failed to parse rules JSON: {e}")
+            st.error(f"Failed to parse rules JSON — check the file is valid JSON. ({type(e).__name__})")
+
+@st.cache_data(show_spinner=False)
+def _load_demo_csv(path: str) -> pd.DataFrame:
+    return pd.read_csv(path)
 
 # Quick-load demo data from disk
 _demo_path = os.path.join(_ROOT, "TEST2_DATA", "main_data", "customer_transactions.csv")
 if os.path.exists(_demo_path) and st.session_state.get("df_raw") is None:
     if st.button("Load Demo Dataset (TEST2_DATA)", type="secondary"):
-        df_demo = pd.read_csv(_demo_path)
+        df_demo = _load_demo_csv(_demo_path)
         st.session_state["df_raw_full"] = df_demo
         st.session_state["df_raw"] = df_demo
         st.rerun()

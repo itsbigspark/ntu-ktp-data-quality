@@ -15,7 +15,7 @@ import streamlit as st
 import pandas as pd
 from shared.auth import require_auth
 from shared.theme import (
-    apply_theme, page_header, section_header, terminal_block, kpi_card,
+    apply_theme, page_header, section_header, terminal_block, kpi_card, workflow_breadcrumb,
     MATRIX_GREEN, MATRIX_CYAN, MATRIX_RED, MATRIX_ORANGE, MATRIX_YELLOW, MATRIX_TEXT, MATRIX_TEXT_DIM,
 )
 from shared.state import init_state
@@ -25,6 +25,13 @@ apply_theme()
 require_auth()
 
 page_header("AI INVESTIGATION", "AI-powered data quality insights")
+
+workflow_breadcrumb([
+    ("Load Data", st.session_state.get("df_raw") is not None),
+    ("Validate", st.session_state.get("validation_completed", False)),
+    ("AI Enrichment", st.session_state.get("ai_enrichment_result") is not None),
+    ("Clean", st.session_state.get("df_corrected") is not None),
+])
 
 DB_CONFIG = {"output": {"database": {"engine": "sqlite", "path": "./output/dq_investigator.db"}}}
 
