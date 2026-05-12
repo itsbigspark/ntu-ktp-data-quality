@@ -20,6 +20,9 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Download spaCy model for Presidio PII detection (en_core_web_lg = best accuracy)
+RUN python -m spacy download en_core_web_lg
+
 # Copy application code
 COPY core/ ./core/
 COPY dq_engine/ ./dq_engine/

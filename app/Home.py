@@ -42,6 +42,7 @@ pages = st.navigation(
             st.Page("pages/3_Validate.py",            title="Validate",             icon="✅"),
             st.Page("pages/6_Cleaning.py",            title="Cleaning",             icon="🧹"),
             st.Page("pages/7_Dedupe.py",              title="Dedupe",               icon="🔁"),
+            st.Page("pages/18_PII_Detection.py",      title="PII Detection",        icon="🔒"),
         ],
         "AI & Intelligence": [
             st.Page("pages/4_AI_Investigation.py",    title="AI Investigation",     icon="🤖"),
