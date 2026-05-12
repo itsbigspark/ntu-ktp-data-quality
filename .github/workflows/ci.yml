@@ -129,7 +129,7 @@ jobs:
             --region ${{ env.AWS_REGION }} \
             --query 'taskDefinition' > /tmp/td_full.json
 
-          # Strip read-only fields, inject DQ_ENV and DQ_USERS into container env
+          # Strip read-only fields, inject env vars into container env
           python3 - <<'PYEOF'
           import json, sys
 
@@ -143,10 +143,12 @@ jobs:
 
           # Inject into the first container
           env = td['containerDefinitions'][0].setdefault('environment', [])
-          # Remove any existing DQ_ENV / DQ_USERS entries
-          env = [e for e in env if e['name'] not in ('DQ_ENV', 'DQ_USERS')]
-          env.append({'name': 'DQ_ENV',   'value': 'production'})
-          env.append({'name': 'DQ_USERS', 'value': '${{ secrets.DQ_USERS }}'})
+          # Remove any existing managed entries before re-injecting
+          managed = ('DQ_ENV', 'DQ_USERS', 'DATABASE_URL')
+          env = [e for e in env if e['name'] not in managed]
+          env.append({'name': 'DQ_ENV',        'value': 'production'})
+          env.append({'name': 'DQ_USERS',      'value': '${{ secrets.DQ_USERS }}'})
+          env.append({'name': 'DATABASE_URL',  'value': '${{ secrets.DATABASE_URL }}'})
           td['containerDefinitions'][0]['environment'] = env
 
           with open('/tmp/td_new.json', 'w') as f:
