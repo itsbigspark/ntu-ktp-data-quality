@@ -113,19 +113,61 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Force new ECS deployment
+      - name: Inject credentials env vars into task definition
         run: |
-          # Always use the latest task definition revision so env vars / sidecars are preserved
+          # Fetch current task definition, inject DQ_ENV + DQ_USERS, register new revision
           LATEST_TD=$(aws ecs describe-services \
             --cluster ${{ env.ECS_CLUSTER }} \
             --services ${{ env.ECS_SERVICE }} \
             --region ${{ env.AWS_REGION }} \
             --query 'services[0].taskDefinition' --output text)
-          echo "Current task definition: $LATEST_TD"
+          echo "Base task definition: $LATEST_TD"
+
+          # Download the full task def JSON
+          aws ecs describe-task-definition \
+            --task-definition "$LATEST_TD" \
+            --region ${{ env.AWS_REGION }} \
+            --query 'taskDefinition' > /tmp/td_full.json
+
+          # Strip read-only fields, inject DQ_ENV and DQ_USERS into container env
+          python3 - <<'PYEOF'
+          import json, sys
+
+          with open('/tmp/td_full.json') as f:
+              td = json.load(f)
+
+          # Remove fields that cannot be re-registered
+          for field in ('taskDefinitionArn','revision','status','requiresAttributes',
+                        'compatibilities','registeredAt','registeredBy','deregisteredAt'):
+              td.pop(field, None)
+
+          # Inject into the first container
+          env = td['containerDefinitions'][0].setdefault('environment', [])
+          # Remove any existing DQ_ENV / DQ_USERS entries
+          env = [e for e in env if e['name'] not in ('DQ_ENV', 'DQ_USERS')]
+          env.append({'name': 'DQ_ENV',   'value': 'production'})
+          env.append({'name': 'DQ_USERS', 'value': '${{ secrets.DQ_USERS }}'})
+          td['containerDefinitions'][0]['environment'] = env
+
+          with open('/tmp/td_new.json', 'w') as f:
+              json.dump(td, f)
+          print("Task definition prepared.")
+          PYEOF
+
+          # Register the new revision
+          NEW_TD=$(aws ecs register-task-definition \
+            --cli-input-json file:///tmp/td_new.json \
+            --region ${{ env.AWS_REGION }} \
+            --query 'taskDefinition.taskDefinitionArn' --output text)
+          echo "New task definition: $NEW_TD"
+          echo "NEW_TASK_DEF=$NEW_TD" >> $GITHUB_ENV
+
+      - name: Force new ECS deployment
+        run: |
           aws ecs update-service \
             --cluster ${{ env.ECS_CLUSTER }} \
             --service ${{ env.ECS_SERVICE }} \
-            --task-definition "$LATEST_TD" \
+            --task-definition "$NEW_TASK_DEF" \
             --force-new-deployment \
             --region ${{ env.AWS_REGION }}
 

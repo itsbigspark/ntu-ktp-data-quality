@@ -4,21 +4,65 @@ Authentication gate for the DQ Investigator.
 Simple password-based login. Not full enterprise auth - just a gate
 to prevent accidental access. For real enterprise deployment, swap
 this for SSO/OAuth.
+
+Credentials are loaded from the DQ_USERS environment variable:
+
+    DQ_USERS=admin:s3cur3pass,analyst:an4lyst99,demo:d3m0pass
+
+Each entry is username:password separated by commas. Passwords are
+hashed with SHA-256 at startup — plain text is never stored in memory.
+
+If DQ_USERS is not set the app refuses to start in production
+(when DQ_ENV=production). In development it falls back to safe
+defaults so local runs still work without any config.
 """
 
 import hashlib
+import os
 import streamlit as st
-
-# Default users. Override via environment or config file.
-_USERS = {
-    "admin": hashlib.sha256("admin123".encode()).hexdigest(),
-    "analyst": hashlib.sha256("dq2026".encode()).hexdigest(),
-    "demo": hashlib.sha256("demo".encode()).hexdigest(),
-}
 
 
 def _hash(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
+
+
+def _load_users() -> dict[str, str]:
+    """
+    Build the username → hashed-password map from DQ_USERS env var.
+    Falls back to dev defaults only when DQ_ENV != 'production'.
+    """
+    raw = os.environ.get("DQ_USERS", "").strip()
+    if raw:
+        users = {}
+        for entry in raw.split(","):
+            entry = entry.strip()
+            if ":" not in entry:
+                continue
+            username, _, password = entry.partition(":")
+            username = username.strip()
+            password = password.strip()
+            if username and password:
+                users[username] = _hash(password)
+        if users:
+            return users
+
+    # In production, refuse to run with no credentials configured
+    if os.environ.get("DQ_ENV", "").lower() == "production":
+        raise RuntimeError(
+            "DQ_USERS environment variable is not set. "
+            "Set DQ_USERS=user1:pass1,user2:pass2 in your ECS task definition "
+            "or AWS Secrets Manager before deploying."
+        )
+
+    # Dev fallback — only reachable locally when DQ_ENV is not 'production'
+    return {
+        "admin":   _hash("admin123"),
+        "analyst": _hash("dq2026"),
+        "demo":    _hash("demo"),
+    }
+
+
+_USERS = _load_users()
 
 
 def check_auth() -> bool:
