@@ -77,16 +77,20 @@ with create_tab:
 
     # Add step interface
     with st.expander("Add Step", expanded=True):
+        _STEP_LABELS = {
+            "validate":          "Validation — rule-based issue detection",
+            "clean":             "Cleaning — whitespace, case, punctuation",
+            "corpus_standardize":"Corpus Standardisation — canonical value mapping",
+            "deduplicate":       "Deduplication — fuzzy duplicate removal",
+            "trim":              "Column Trimming — drop low-value columns",
+            "ai_enrichment":     "AI Enrichment — smart rules, triage, executive summary",
+            "pii_detection":     "PII Detection — scan for personal data",
+        }
+
         step_type = st.selectbox(
             "Step Type",
-            ["validate", "clean", "corpus_standardize", "deduplicate", "trim"],
-            format_func=lambda x: {
-                "validate": "Validation",
-                "clean": "Cleaning",
-                "corpus_standardize": "Corpus Standardisation",
-                "deduplicate": "Deduplication",
-                "trim": "Column Trimming",
-            }[x],
+            list(_STEP_LABELS.keys()),
+            format_func=lambda x: _STEP_LABELS[x],
             key="step_type_select",
         )
 
@@ -127,6 +131,18 @@ with create_tab:
             with c2:
                 high_missing = st.slider("High missing threshold", 0.5, 1.0, 0.8, 0.05)
             step_config = {"low_info_threshold": low_info, "high_missing_threshold": high_missing, "protected_columns": []}
+
+        elif step_type == "ai_enrichment":
+            provider_type = st.session_state.get("ai_provider_type", "anthropic")
+            st.caption(f"Uses AI provider from Settings: **{provider_type}**")
+            if provider_type == "anthropic" and not st.session_state.get("anthropic_api_key"):
+                st.warning("No Anthropic API key set — go to Settings first.")
+            step_config = {"provider_type": provider_type}
+
+        elif step_type == "pii_detection":
+            pii_threshold = st.slider("Confidence threshold", 0.5, 1.0, 0.7, 0.05, key="pii_step_threshold")
+            st.caption("Scans all text columns for personal data (names, emails, phone numbers, etc.)")
+            step_config = {"threshold": pii_threshold}
 
         if st.button("Add Step to Pipeline", type="primary"):
             st.session_state["current_pipeline_steps"].append({
@@ -307,32 +323,134 @@ with execute_tab:
                 m3.metric("Output Rows", len(results["df_output"]), delta=len(results["df_output"]) - len(df_raw))
                 m4.metric("Saved to DB", "Yes")
 
-                with st.expander("Step Results", expanded=True):
-                    for step in results["steps_executed"]:
-                        details = step.get("details", {})
-                        rows_in  = step.get("rows_in", "—")
-                        rows_out = step.get("rows_out", "—")
-                        s3_uri   = step.get("s3_uri", "")
+                section_header("// Step Results")
+                for step in results["steps_executed"]:
+                    details   = step.get("details", {})
+                    rows_in   = step.get("rows_in", "—")
+                    rows_out  = step.get("rows_out", "—")
+                    s3_uri    = step.get("s3_uri", "")
+                    stype     = step["type"]
+                    df_snap   = step.get("df_snapshot")
+                    diff      = step.get("diff_sample", [])
 
-                        col_a, col_b = st.columns([3, 1])
-                        with col_a:
-                            if details.get("skipped"):
-                                st.markdown(f"**Step {step['step_number']}: {step['type'].title()}** — Skipped")
-                                st.caption(details.get("reason", ""))
-                            else:
-                                st.markdown(
-                                    f"**Step {step['step_number']}: {step['type'].title()}** — "
-                                    f"{rows_in} rows in → {rows_out} rows out"
-                                )
-                                if details:
-                                    st.json(details)
-                        with col_b:
+                    # Header label
+                    _type_label = {
+                        "validate":          "Validation",
+                        "clean":             "Cleaning",
+                        "corpus_standardize":"Corpus Standardisation",
+                        "deduplicate":       "Deduplication",
+                        "trim":              "Column Trimming",
+                        "ai_enrichment":     "AI Enrichment",
+                        "pii_detection":     "PII Detection",
+                    }.get(stype, stype.title())
+
+                    _skipped = details.get("skipped", False)
+                    _header  = (
+                        f"Step {step['step_number']}: {_type_label}"
+                        + (" — Skipped" if _skipped else f" — {rows_in} → {rows_out} rows")
+                    )
+
+                    with st.expander(_header, expanded=not _skipped):
+                        if _skipped:
+                            st.caption(details.get("reason", ""))
+                        else:
+                            # ── Per-step structured display ────────────────
+                            if stype == "validate":
+                                issues_count = details.get("issues_found", 0)
+                                st.markdown(f"**{issues_count}** issues found")
+                                issues_records = details.get("issues", [])
+                                if issues_records:
+                                    st.dataframe(
+                                        pd.DataFrame(issues_records),
+                                        use_container_width=True,
+                                        hide_index=True,
+                                        height=min(300, 40 + 35 * len(issues_records)),
+                                    )
+
+                            elif stype in ("clean", "corpus_standardize"):
+                                changed = details.get("values_changed", 0)
+                                st.markdown(f"**{changed}** cell values changed")
+                                if diff:
+                                    st.caption(f"Sample of changes (up to 50 shown):")
+                                    st.dataframe(
+                                        pd.DataFrame(diff),
+                                        use_container_width=True,
+                                        hide_index=True,
+                                        height=min(250, 40 + 35 * len(diff)),
+                                    )
+
+                            elif stype == "deduplicate":
+                                c1, c2, c3 = st.columns(3)
+                                c1.metric("Duplicate pairs", details.get("duplicates_found", 0))
+                                c2.metric("Rows removed",   details.get("duplicates_removed", 0))
+                                c3.metric("Clusters",       details.get("clusters", 0))
+                                if details.get("sampled_to"):
+                                    st.caption(f"Dataset capped at {details['sampled_to']:,} rows for performance.")
+
+                            elif stype == "trim":
+                                c1, c2 = st.columns(2)
+                                c1.metric("Columns removed", details.get("columns_removed", 0))
+                                c2.metric("Columns kept",    details.get("columns_kept", 0))
+
+                            elif stype == "ai_enrichment":
+                                c1, c2, c3, c4 = st.columns(4)
+                                c1.metric("Smart Rules",      details.get("smart_rules_count", 0))
+                                c2.metric("Cross-Column",     details.get("cross_column_count", 0))
+                                c3.metric("Triage Items",     details.get("triage_count", 0))
+                                c4.metric("AI Time",          f"{details.get('ai_time_seconds', 0)}s")
+
+                                summary = details.get("executive_summary", "")
+                                if summary:
+                                    st.markdown("**Executive Summary**")
+                                    st.info(summary)
+
+                                triage = details.get("triage", [])
+                                if triage:
+                                    with st.expander("Triage — Priority Action Plan", expanded=True):
+                                        st.dataframe(pd.DataFrame(triage), use_container_width=True, hide_index=True)
+
+                                smart_rules = details.get("smart_rules", [])
+                                if smart_rules:
+                                    with st.expander(f"Smart Rules ({len(smart_rules)})", expanded=False):
+                                        st.dataframe(pd.DataFrame(smart_rules), use_container_width=True, hide_index=True)
+
+                                cross = details.get("cross_column_issues", [])
+                                if cross:
+                                    with st.expander(f"Cross-Column Issues ({len(cross)})", expanded=False):
+                                        st.dataframe(pd.DataFrame(cross), use_container_width=True, hide_index=True)
+
+                            elif stype == "pii_detection":
+                                c1, c2 = st.columns(2)
+                                c1.metric("PII Findings",      details.get("pii_findings", 0))
+                                c2.metric("Flagged Columns",   len(details.get("flagged_columns", [])))
+                                flagged = details.get("flagged_columns", [])
+                                if flagged:
+                                    st.caption("Flagged columns: " + ", ".join(flagged))
+                                entity_types = details.get("entity_types", {})
+                                if entity_types:
+                                    st.dataframe(
+                                        pd.DataFrame(
+                                            [{"Entity Type": k, "Count": v}
+                                             for k, v in sorted(entity_types.items(), key=lambda x: -x[1])]
+                                        ),
+                                        use_container_width=True,
+                                        hide_index=True,
+                                    )
+
+                            # ── Data preview at this step ──────────────────
+                            if df_snap is not None:
+                                with st.expander(f"Data at this point ({len(df_snap):,} rows × {len(df_snap.columns)} cols)", expanded=False):
+                                    st.dataframe(df_snap.head(100), use_container_width=True, hide_index=True)
+                                    st.download_button(
+                                        f"Download step {step['step_number']} output (CSV)",
+                                        df_snap.to_csv(index=False).encode("utf-8"),
+                                        file_name=f"step_{step['step_number']}_{stype}.csv",
+                                        mime="text/csv",
+                                        key=f"dl_step_{step['step_number']}",
+                                    )
+
                             if s3_uri:
-                                st.markdown(
-                                    f'<p style="color:#00e5ff;font-family:Share Tech Mono;font-size:0.72rem;">'
-                                    f'S3: {s3_uri.split("/")[-1]}</p>',
-                                    unsafe_allow_html=True,
-                                )
+                                st.caption(f"Saved to S3: `{s3_uri}`")
 
                 st.download_button(
                     "Download Final Output (CSV)",

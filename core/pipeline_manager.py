@@ -361,6 +361,24 @@ class PipelineExecutor:
                             step["type"], current_df, s3_bucket, s3_region,
                         )
 
+                    # Compute cell-level diff for cleaning/standardise steps
+                    df_before = df if step["type"] in ("clean", "corpus_standardize") else None
+                    diff_sample = []
+                    if df_before is not None and rows_in == rows_out:
+                        try:
+                            changed = (df_before.reset_index(drop=True) != current_df.reset_index(drop=True))
+                            for r_idx, c_name in zip(*changed.to_numpy().nonzero()):
+                                diff_sample.append({
+                                    "row": int(r_idx),
+                                    "column": str(df_before.columns[c_name]),
+                                    "before": str(df_before.iloc[r_idx, c_name]),
+                                    "after":  str(current_df.iloc[r_idx, c_name]),
+                                })
+                                if len(diff_sample) >= 50:
+                                    break
+                        except Exception:
+                            diff_sample = []
+
                     results["steps_executed"].append({
                         "step_number": step["step_number"],
                         "type": step["type"],
@@ -370,6 +388,8 @@ class PipelineExecutor:
                         "rows_out": rows_out,
                         "s3_uri": s3_uri,
                         "details": step_result.get("details", {}),
+                        "diff_sample": diff_sample,
+                        "df_snapshot": current_df.copy(),
                     })
                 else:
                     results["errors"].append({
@@ -430,6 +450,12 @@ class PipelineExecutor:
 
             elif step_type == "trim":
                 result = self._execute_trim(df, config)
+
+            elif step_type == "ai_enrichment":
+                result = self._execute_ai_enrichment(df, config)
+
+            elif step_type == "pii_detection":
+                result = self._execute_pii_detection(df, config)
 
             else:
                 result["error"] = f"Unknown step type: {step_type}"
@@ -630,6 +656,94 @@ class PipelineExecutor:
                 "sampled_to": 50_000 if sampled else None,
             }
         }
+
+    def _execute_ai_enrichment(self, df: pd.DataFrame, config: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute AI enrichment step — 5 targeted LLM calls."""
+        result = {"success": True, "df_output": df.copy(), "details": {}}
+
+        provider_type = config.get("provider_type") or self.state.get("ai_provider_type", "anthropic")
+
+        try:
+            from dq_engine.orchestrators.ai_enrichment import AIEnrichment
+
+            if provider_type == "anthropic":
+                from dq_engine.orchestrators.ai_enrichment import AnthropicProvider
+                api_key = config.get("api_key") or self.state.get("anthropic_api_key", "")
+                if not api_key:
+                    result["details"] = {"skipped": True, "reason": "No Anthropic API key — set it in Settings."}
+                    return result
+                model = self.state.get("anthropic_model", "claude-sonnet-4-6")
+                provider = AnthropicProvider(api_key=api_key, model=model)
+            else:
+                from dq_engine.orchestrators.ai_enrichment import OllamaProvider
+                model = self.state.get("ollama_model", "phi3:mini")
+                url = self.state.get("ollama_url", "http://localhost:11434")
+                provider = OllamaProvider(model=model, base_url=url)
+
+            # Use validation issues from session state if available
+            issues_report = self.state.get("unified_issues_report") or pd.DataFrame()
+
+            enricher = AIEnrichment(provider)
+            enrichment = enricher.run_all(df, issues_report)
+
+            result["details"] = {
+                "smart_rules_count":    len(enrichment.smart_rules),
+                "cross_column_count":   len(enrichment.cross_column_issues),
+                "triage_count":         len(enrichment.triage),
+                "ai_time_seconds":      round(enrichment.total_time_seconds, 1),
+                "executive_summary":    enrichment.executive_summary or "",
+                "smart_rules":          enrichment.smart_rules,
+                "cross_column_issues":  enrichment.cross_column_issues,
+                "triage":               enrichment.triage,
+            }
+
+        except Exception as e:
+            result["success"] = False
+            result["error"] = str(e)
+
+        return result
+
+    def _execute_pii_detection(self, df: pd.DataFrame, config: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute PII detection step — scan string columns using Presidio."""
+        result = {"success": True, "df_output": df.copy(), "details": {}}
+
+        threshold = config.get("threshold", 0.7)
+
+        try:
+            from presidio_analyzer import AnalyzerEngine
+            analyzer = AnalyzerEngine()
+        except ImportError:
+            result["details"] = {"skipped": True, "reason": "presidio-analyzer not installed."}
+            return result
+
+        try:
+            columns = df.select_dtypes(include="object").columns.tolist()
+            entity_counts: Dict[str, int] = {}
+            flagged_columns = []
+            total_findings = 0
+
+            for col in columns:
+                col_count = 0
+                for val in df[col].dropna().astype(str).head(500):
+                    for r in analyzer.analyze(text=val, language="en"):
+                        if r.score >= threshold:
+                            col_count += 1
+                            entity_counts[r.entity_type] = entity_counts.get(r.entity_type, 0) + 1
+                if col_count > 0:
+                    flagged_columns.append(col)
+                    total_findings += col_count
+
+            result["details"] = {
+                "pii_findings":    total_findings,
+                "flagged_columns": flagged_columns,
+                "entity_types":    entity_counts,
+            }
+
+        except Exception as e:
+            result["success"] = False
+            result["error"] = str(e)
+
+        return result
 
     def _execute_trim(self, df: pd.DataFrame, config: Dict[str, Any]) -> Dict[str, Any]:
         """Execute column trimming step"""
