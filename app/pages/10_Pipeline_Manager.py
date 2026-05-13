@@ -406,17 +406,19 @@ with execute_tab:
 
                                 triage = details.get("triage", [])
                                 if triage:
-                                    with st.expander("Triage — Priority Action Plan", expanded=True):
-                                        st.dataframe(pd.DataFrame(triage), use_container_width=True, hide_index=True)
+                                    st.markdown("**Triage — Priority Action Plan**")
+                                    st.dataframe(pd.DataFrame(triage), use_container_width=True, hide_index=True)
 
                                 smart_rules = details.get("smart_rules", [])
                                 if smart_rules:
-                                    with st.expander(f"Smart Rules ({len(smart_rules)})", expanded=False):
+                                    show_rules = st.checkbox(f"Show Smart Rules ({len(smart_rules)})", key=f"show_rules_{step['step_number']}", value=False)
+                                    if show_rules:
                                         st.dataframe(pd.DataFrame(smart_rules), use_container_width=True, hide_index=True)
 
                                 cross = details.get("cross_column_issues", [])
                                 if cross:
-                                    with st.expander(f"Cross-Column Issues ({len(cross)})", expanded=False):
+                                    show_cross = st.checkbox(f"Show Cross-Column Issues ({len(cross)})", key=f"show_cross_{step['step_number']}", value=False)
+                                    if show_cross:
                                         st.dataframe(pd.DataFrame(cross), use_container_width=True, hide_index=True)
 
                             elif stype == "pii_detection":
@@ -439,15 +441,21 @@ with execute_tab:
 
                             # ── Data preview at this step ──────────────────
                             if df_snap is not None:
-                                with st.expander(f"Data at this point ({len(df_snap):,} rows × {len(df_snap.columns)} cols)", expanded=False):
+                                st.markdown("---")
+                                show_preview = st.checkbox(
+                                    f"Show data at this point ({len(df_snap):,} rows × {len(df_snap.columns)} cols)",
+                                    key=f"preview_step_{step['step_number']}",
+                                    value=False,
+                                )
+                                if show_preview:
                                     st.dataframe(df_snap.head(100), use_container_width=True, hide_index=True)
-                                    st.download_button(
-                                        f"Download step {step['step_number']} output (CSV)",
-                                        df_snap.to_csv(index=False).encode("utf-8"),
-                                        file_name=f"step_{step['step_number']}_{stype}.csv",
-                                        mime="text/csv",
-                                        key=f"dl_step_{step['step_number']}",
-                                    )
+                                st.download_button(
+                                    f"Download step {step['step_number']} output (CSV)",
+                                    df_snap.to_csv(index=False).encode("utf-8"),
+                                    file_name=f"step_{step['step_number']}_{stype}.csv",
+                                    mime="text/csv",
+                                    key=f"dl_step_{step['step_number']}",
+                                )
 
                             if s3_uri:
                                 st.caption(f"Saved to S3: `{s3_uri}`")

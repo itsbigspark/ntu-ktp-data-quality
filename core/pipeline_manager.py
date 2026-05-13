@@ -681,7 +681,9 @@ class PipelineExecutor:
                 provider = OllamaProvider(model=model, base_url=url)
 
             # Use validation issues from session state if available
-            issues_report = self.state.get("unified_issues_report") or pd.DataFrame()
+            issues_report = self.state.get("unified_issues_report")
+            if not isinstance(issues_report, pd.DataFrame):
+                issues_report = pd.DataFrame()
 
             enricher = AIEnrichment(provider)
             enrichment = enricher.run_all(df, issues_report)
