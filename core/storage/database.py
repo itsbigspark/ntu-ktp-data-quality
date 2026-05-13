@@ -370,6 +370,10 @@ def save_results_to_db(
                 "source": "rule",
             }
             bulk = issues_df.rename(columns=_col_map).copy()
+            # Drop duplicate columns that can appear when issues_df already has
+            # both "column" and "column_name" — rename would create two "column_name"
+            # columns, causing df["column_name"] to return a DataFrame not a Series.
+            bulk = bulk.loc[:, ~bulk.columns.duplicated(keep="first")]
             bulk["batch_id"] = result["batch_id"]
 
             # Ensure required columns exist, truncate long strings
