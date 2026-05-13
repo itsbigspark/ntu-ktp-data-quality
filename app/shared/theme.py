@@ -342,6 +342,116 @@ def terminal_block(text: str):
     st.markdown(f'<div class="terminal-block">{text}</div>', unsafe_allow_html=True)
 
 
+def aggrid_issues(df, height: int = 400):
+    """
+    Render an issues DataFrame using AG Grid with severity colour coding.
+    Falls back to st.dataframe if streamlit-aggrid is not installed.
+    """
+    try:
+        from st_aggrid import AgGrid, GridOptionsBuilder, JsCode
+        from st_aggrid.shared import GridUpdateMode
+
+        _sev_col = next((c for c in ["severity", "Severity"] if c in df.columns), None)
+
+        gb = GridOptionsBuilder.from_dataframe(df)
+        gb.configure_default_column(
+            resizable=True,
+            sortable=True,
+            filter=True,
+            wrapText=False,
+            autoHeight=False,
+        )
+        gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=20)
+        gb.configure_side_bar(filters_panel=True, columns_panel=False)
+
+        if _sev_col:
+            sev_style = JsCode("""
+            function(params) {
+                const sev = (params.value || '').toLowerCase();
+                if (sev === 'critical') return {'color': '#ff1744', 'fontWeight': 'bold', 'background': 'rgba(255,23,68,0.12)'};
+                if (sev === 'high')     return {'color': '#ff9100', 'fontWeight': 'bold', 'background': 'rgba(255,145,0,0.10)'};
+                if (sev === 'medium')   return {'color': '#ffea00', 'background': 'rgba(255,234,0,0.08)'};
+                if (sev === 'low')      return {'color': '#00e5ff', 'background': 'rgba(0,229,255,0.06)'};
+                return {};
+            }
+            """)
+            gb.configure_column(_sev_col, cellStyle=sev_style)
+
+        row_style = JsCode("""
+        function(params) {
+            const sev = (params.data.severity || params.data.Severity || '').toLowerCase();
+            if (sev === 'critical') return {'borderLeft': '3px solid #ff1744'};
+            if (sev === 'high')     return {'borderLeft': '3px solid #ff9100'};
+            if (sev === 'medium')   return {'borderLeft': '3px solid #ffea00'};
+            if (sev === 'low')      return {'borderLeft': '3px solid #00e5ff'};
+            return {};
+        }
+        """)
+
+        go = gb.build()
+        go["getRowStyle"] = row_style
+        go["rowHeight"] = 32
+        go["headerHeight"] = 36
+
+        AgGrid(
+            df,
+            gridOptions=go,
+            height=height,
+            update_mode=GridUpdateMode.NO_UPDATE,
+            allow_unsafe_jscode=True,
+            theme="alpine",
+            custom_css={
+                ".ag-root-wrapper": {"background": "#000f02", "border": "1px solid rgba(0,255,65,0.2)", "border-radius": "8px"},
+                ".ag-header": {"background": "#000f02", "border-bottom": "1px solid rgba(0,255,65,0.3)"},
+                ".ag-header-cell-label": {"color": "#00e5ff", "font-family": "Share Tech Mono", "font-size": "0.72rem", "letter-spacing": "1px"},
+                ".ag-row": {"background": "#000f02", "border-bottom": "1px solid rgba(0,255,65,0.06)", "font-family": "Share Tech Mono", "font-size": "0.75rem", "color": "#b0ffb8"},
+                ".ag-row-hover": {"background": "rgba(0,255,65,0.05) !important"},
+                ".ag-cell": {"border-right": "1px solid rgba(0,255,65,0.04)"},
+                ".ag-paging-panel": {"background": "#000f02", "color": "#4a7a4f", "font-family": "Share Tech Mono", "font-size": "0.7rem"},
+                ".ag-filter-toolpanel": {"background": "#000f02"},
+                ".ag-side-bar": {"background": "#000f02", "border-left": "1px solid rgba(0,255,65,0.15)"},
+            },
+        )
+    except ImportError:
+        st.dataframe(df, use_container_width=True, hide_index=True, height=height)
+
+
+def aggrid_plain(df, height: int = 350, page_size: int = 20):
+    """
+    Render a plain DataFrame using AG Grid (no severity colouring).
+    Falls back to st.dataframe if streamlit-aggrid is not installed.
+    """
+    try:
+        from st_aggrid import AgGrid, GridOptionsBuilder
+        from st_aggrid.shared import GridUpdateMode
+
+        gb = GridOptionsBuilder.from_dataframe(df)
+        gb.configure_default_column(resizable=True, sortable=True, filter=True)
+        gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=page_size)
+        go = gb.build()
+        go["rowHeight"] = 32
+        go["headerHeight"] = 36
+
+        AgGrid(
+            df,
+            gridOptions=go,
+            height=height,
+            update_mode=GridUpdateMode.NO_UPDATE,
+            allow_unsafe_jscode=True,
+            theme="alpine",
+            custom_css={
+                ".ag-root-wrapper": {"background": "#000f02", "border": "1px solid rgba(0,255,65,0.2)", "border-radius": "8px"},
+                ".ag-header": {"background": "#000f02", "border-bottom": "1px solid rgba(0,255,65,0.3)"},
+                ".ag-header-cell-label": {"color": "#00e5ff", "font-family": "Share Tech Mono", "font-size": "0.72rem", "letter-spacing": "1px"},
+                ".ag-row": {"background": "#000f02", "border-bottom": "1px solid rgba(0,255,65,0.06)", "font-family": "Share Tech Mono", "font-size": "0.75rem", "color": "#b0ffb8"},
+                ".ag-row-hover": {"background": "rgba(0,255,65,0.05) !important"},
+                ".ag-paging-panel": {"background": "#000f02", "color": "#4a7a4f", "font-family": "Share Tech Mono", "font-size": "0.7rem"},
+            },
+        )
+    except ImportError:
+        st.dataframe(df, use_container_width=True, hide_index=True, height=height)
+
+
 def workflow_breadcrumb(steps: list[tuple[str, bool]]):
     """
     Render a horizontal pipeline breadcrumb.

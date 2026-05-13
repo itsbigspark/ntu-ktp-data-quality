@@ -12,7 +12,7 @@ import pandas as pd
 import streamlit as st
 from shared.auth import require_auth
 from shared.theme import (
-    apply_theme, page_header, section_header,
+    apply_theme, page_header, section_header, aggrid_plain,
     MATRIX_GREEN, MATRIX_CYAN, MATRIX_RED, MATRIX_ORANGE,
     MATRIX_BG, MATRIX_GRID, MATRIX_BORDER, MATRIX_TEXT, MATRIX_TEXT_DIM,
 )
@@ -193,51 +193,13 @@ section_header("// Batch Records")
 
 DIMS = ["completeness", "uniqueness", "consistency", "validity", "accuracy", "timeliness"]
 
-def _colour_pass(val):
-    if str(val).lower() in ("true", "1", "yes"):
-        return f"color: {MATRIX_GREEN}; font-weight: bold"
-    return f"color: {MATRIX_RED}; font-weight: bold"
-
-
-def _colour_score(val):
-    try:
-        v = float(val)
-        if v >= 85:
-            return f"color: {MATRIX_GREEN}"
-        if v >= 70:
-            return f"color: {MATRIX_ORANGE}"
-        return f"color: {MATRIX_RED}"
-    except (TypeError, ValueError):
-        return ""
-
-
 col_display = [
     "batch_id", "timestamp", "source_file", "rows_processed",
     "overall_score", "pass", "issues_count",
 ] + DIMS
 
 present_cols = [c for c in col_display if c in display_df.columns]
-styled = (
-    display_df[present_cols]
-    .style
-    .applymap(_colour_pass, subset=["pass"] if "pass" in present_cols else [])
-    .applymap(
-        _colour_score,
-        subset=[c for c in ["overall_score"] + DIMS if c in present_cols],
-    )
-    .format(
-        {c: "{:.1f}" for c in ["overall_score"] + DIMS if c in present_cols},
-        na_rep="N/A",
-    )
-    .set_properties(**{
-        "font-family": "'Share Tech Mono', monospace",
-        "font-size": "0.78rem",
-        "background-color": "rgba(0,15,2,0.6)",
-        "color": MATRIX_TEXT,
-    })
-)
-
-st.dataframe(styled, use_container_width=True, height=420)
+aggrid_plain(display_df[present_cols], height=420)
 
 st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
 
@@ -304,7 +266,7 @@ else:
             )
 
             with st.expander("Preview issues (first 50 rows)"):
-                st.dataframe(issues_df.head(50), use_container_width=True)
+                aggrid_plain(issues_df.head(50), height=350)
 
 # ---------------------------------------------------------------------------
 # Export all visible batches

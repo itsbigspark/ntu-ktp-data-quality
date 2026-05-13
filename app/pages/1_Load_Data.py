@@ -10,7 +10,7 @@ if _ROOT not in sys.path:
 import streamlit as st
 import pandas as pd
 from shared.auth import require_auth
-from shared.theme import apply_theme, page_header, section_header, terminal_block
+from shared.theme import apply_theme, page_header, section_header, terminal_block, aggrid_plain
 from shared.state import init_state
 
 init_state()
@@ -873,7 +873,7 @@ if df_raw is not None:
 
     # Data preview
     section_header("// Data Preview")
-    st.dataframe(df_show.head(50), use_container_width=True, hide_index=False, height=400)
+    aggrid_plain(df_show.head(50), height=400)
 
     # Column types
     with st.expander("Column Types", expanded=False):
@@ -884,7 +884,7 @@ if df_raw is not None:
             "Null %": (df_show.isna().mean() * 100).round(1).values,
             "Unique": df_show.nunique().values,
         })
-        st.dataframe(dtype_df, use_container_width=True, hide_index=True)
+        aggrid_plain(dtype_df, height=300)
 
 else:
     terminal_block(
