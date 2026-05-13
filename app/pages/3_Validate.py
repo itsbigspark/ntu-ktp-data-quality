@@ -270,13 +270,17 @@ if st.button("RUN VALIDATION", key="run_validation", use_container_width=True):
             ],
         }
         save_results_to_db(db_result, db_config, source_file=source_file)
-
-        if result.ai_enrichment:
-            save_ai_enrichment(batch_id, result.ai_enrichment, db_config)
-
         st.info(f"Results saved — batch: `{batch_id}` | Score: {overall_score}%")
     except Exception as e:
-        st.warning(f"Could not save to database: {e}")
+        st.warning(f"Could not save results to database: {e}")
+
+    # Save AI enrichment separately so a results-save failure doesn't lose AI data
+    if result.ai_enrichment:
+        try:
+            from core.storage.database import save_ai_enrichment
+            save_ai_enrichment(batch_id, result.ai_enrichment, {})
+        except Exception as e:
+            st.warning(f"Could not save AI enrichment to database: {e}")
 
     # ── Save results to S3 (if S3 output is configured) ──────────────────
     s3_out_bucket = st.session_state.get("s3_output_bucket", "")
