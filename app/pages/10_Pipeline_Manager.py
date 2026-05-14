@@ -182,6 +182,8 @@ with create_tab:
                 pipeline = Pipeline(name=pipeline_name, description=pipeline_desc, steps=steps)
                 filepath = pm.save_pipeline(pipeline)
                 st.success(f"Pipeline '{pipeline_name}' saved to {filepath}")
+                st.session_state["new_pipeline_name"] = ""
+                st.session_state["new_pipeline_desc"] = ""
                 st.session_state["current_pipeline_steps"] = []
                 st.rerun()
     else:
@@ -220,7 +222,9 @@ with library_tab:
                 with a1:
                     if st.button("Execute", key=f"exec_{pipeline_info['name']}"):
                         st.session_state["pipeline_to_execute"] = pipeline_info["name"]
-                        st.info("Switch to Execute Pipeline tab to run")
+                        st.session_state["active_tab_hint"] = "execute"
+                        st.info("Pipeline selected. Switch to the **Execute Pipeline** tab to run it.")
+                        st.success("Go to the Execute Pipeline tab above to start execution.")
                 with a2:
                     if pipeline:
                         st.download_button(
@@ -234,23 +238,23 @@ with library_tab:
                         st.success(f"Deleted: {pipeline_info['name']}")
                         st.rerun()
 
-        st.markdown("---")
-        section_header("// Import Pipeline")
-        import_file = st.file_uploader("Upload pipeline JSON", type=["json"], key="import_pipeline_file")
-        if import_file:
-            try:
-                import tempfile
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as tmp:
-                    tmp.write(import_file.read())
-                    tmp_path = tmp.name
-                imported = pm.import_pipeline(tmp_path)
-                if imported:
-                    st.success(f"Imported: {imported.name}")
-                    st.rerun()
-                else:
-                    st.error("Failed to import pipeline")
-            except Exception as e:
-                st.error(f"Error importing: {e}")
+    st.markdown("---")
+    section_header("// Import Pipeline")
+    import_file = st.file_uploader("Upload pipeline JSON", type=["json"], key="import_pipeline_file")
+    if import_file:
+        try:
+            import tempfile
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as tmp:
+                tmp.write(import_file.read())
+                tmp_path = tmp.name
+            imported = pm.import_pipeline(tmp_path)
+            if imported:
+                st.success(f"Imported: {imported.name}")
+                st.rerun()
+            else:
+                st.error("Failed to import pipeline")
+        except Exception as e:
+            st.error(f"Error importing: {e}")
 
 # ======================== EXECUTE TAB ========================
 with execute_tab:
@@ -321,7 +325,7 @@ with execute_tab:
                 m1.metric("Steps Executed", len(results["steps_executed"]))
                 m2.metric("Input Rows", len(df_raw))
                 m3.metric("Output Rows", len(results["df_output"]), delta=len(results["df_output"]) - len(df_raw))
-                m4.metric("Saved to DB", "Yes")
+                m4.metric("Saved to DB", "Yes" if results.get("db_saved") else "No")
 
                 section_header("// Step Results")
                 for step in results["steps_executed"]:
@@ -459,6 +463,10 @@ with execute_tab:
 
                             if s3_uri:
                                 st.caption(f"Saved to S3: `{s3_uri}`")
+
+                disabled_steps = [s for s in pipeline.steps if not s.get("enabled", True)]
+                if disabled_steps:
+                    st.caption(f"Skipped (disabled): {', '.join(s['description'] or s['type'] for s in disabled_steps)}")
 
                 st.download_button(
                     "Download Final Output (CSV)",

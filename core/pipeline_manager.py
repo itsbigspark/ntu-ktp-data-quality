@@ -38,7 +38,7 @@ def _save_step_to_s3(pipeline_run_id: str, step_number: int, step_type: str,
 
 def _save_pipeline_run_to_db(pipeline_run_id: str, pipeline_name: str,
                               steps_executed: list, source_rows: int,
-                              output_rows: int, success: bool) -> None:
+                              output_rows: int, success: bool) -> bool:
     """Persist a pipeline run summary + per-step records to PostgreSQL/SQLite."""
     try:
         from core.storage.database import get_engine
@@ -117,8 +117,10 @@ def _save_pipeline_run_to_db(pipeline_run_id: str, pipeline_name: str,
                 })
             conn.commit()
         logger.info("Pipeline run %s saved to DB", pipeline_run_id)
+        return True
     except Exception as exc:
         logger.warning("Could not save pipeline run to DB: %s", exc)
+        return False
 
 
 class Pipeline:
@@ -186,7 +188,12 @@ class Pipeline:
 class PipelineManager:
     """Manages pipeline storage and retrieval"""
 
-    def __init__(self, pipelines_dir: str = "pipelines"):
+    def __init__(self, pipelines_dir: str = None):
+        if pipelines_dir is None:
+            pipelines_dir = os.path.join(
+                os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                "pipelines"
+            )
         self.pipelines_dir = Path(pipelines_dir)
         self.pipelines_dir.mkdir(exist_ok=True)
 
@@ -347,6 +354,7 @@ class PipelineExecutor:
             rows_in = len(current_df)
 
             try:
+                df_before_step = current_df.copy()
                 step_result = self._execute_step(step, current_df)
 
                 if step_result["success"]:
@@ -362,7 +370,7 @@ class PipelineExecutor:
                         )
 
                     # Compute cell-level diff for cleaning/standardise steps
-                    df_before = df if step["type"] in ("clean", "corpus_standardize") else None
+                    df_before = df_before_step if step["type"] in ("clean", "corpus_standardize") else None
                     diff_sample = []
                     if df_before is not None and rows_in == rows_out:
                         try:
@@ -412,7 +420,7 @@ class PipelineExecutor:
         results["df_output"] = current_df
 
         # Persist run summary + step records to DB (silently skips if DB unavailable)
-        _save_pipeline_run_to_db(
+        db_saved = _save_pipeline_run_to_db(
             pipeline_run_id=pipeline_run_id,
             pipeline_name=pipeline.name,
             steps_executed=results["steps_executed"],
@@ -420,6 +428,7 @@ class PipelineExecutor:
             output_rows=len(current_df),
             success=results["success"],
         )
+        results["db_saved"] = db_saved
 
         return results
 
@@ -700,8 +709,9 @@ class PipelineExecutor:
             }
 
         except Exception as e:
-            result["success"] = False
-            result["error"] = str(e)
+            result["success"] = True  # non-fatal — pipeline continues
+            result["details"]["skipped"] = True
+            result["details"]["reason"] = f"AI enrichment failed: {e}"
 
         return result
 
@@ -752,9 +762,8 @@ class PipelineExecutor:
         from core.trimming import compute_kept_columns, apply_trimming
 
         # Get configuration (using correct parameter names matching compute_kept_columns signature)
-        low_threshold = config.get("low_threshold", 0.01)
-        high_threshold = config.get("high_threshold", 0.99)
-        missing_threshold = config.get("missing_threshold", 0.80)
+        low_threshold = config.get("low_info_threshold", 0.01)
+        missing_threshold = config.get("high_missing_threshold", 0.80)
         correlation_threshold = config.get("correlation_threshold", 0.90)
         protected_columns = config.get("protected_columns", [])
 
@@ -762,7 +771,6 @@ class PipelineExecutor:
         df_trimmed, kept_cols = apply_trimming(
             df,
             low_thresh=low_threshold,
-            high_thresh=high_threshold,
             missing_thresh=missing_threshold,
             corr_thresh=correlation_threshold,
             protect=protected_columns
