@@ -313,6 +313,11 @@ if user_input := st.chat_input("Ask about your data, run validation, review fixe
 
         st.markdown(response)
 
+        # Render any chart the agent generated (stored as PNG bytes in session state)
+        _chart_bytes = st.session_state.pop("_chat_chart", None)
+        if _chart_bytes:
+            st.image(_chart_bytes, use_container_width=True)
+
         if tools_called:
             st.caption("Tools executed: " + " > ".join(f"`{t}`" for t in tools_called))
         else:
