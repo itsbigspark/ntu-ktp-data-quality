@@ -5,7 +5,44 @@ Shared across all pages. Call apply_theme() at the top of each page
 to get consistent styling.
 """
 
+import base64
+import os
 import streamlit as st
+
+_LOGO_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+    "assets", "logos",
+)
+
+def _img_b64(filename: str) -> str:
+    try:
+        with open(os.path.join(_LOGO_DIR, filename), "rb") as f:
+            return "data:image/png;base64," + base64.b64encode(f.read()).decode()
+    except FileNotFoundError:
+        return ""
+
+def logo_strip_html(height: int = 32, justify: str = "center") -> str:
+    """Return HTML for the three partner logos on a white pill background."""
+    logos = [
+        (_img_b64("bigspark_logo.png"),    "bigspark"),
+        (_img_b64("NTU_Primary_logo.png"), "NTU"),
+        (_img_b64("UKRI_logo.png"),        "Innovate UK"),
+    ]
+    parts = []
+    for src, alt in logos:
+        if src:
+            parts.append(
+                f'<div style="background:#fff;border-radius:6px;padding:4px 10px;'
+                f'display:flex;align-items:center;">'
+                f'<img src="{src}" alt="{alt}" style="height:{height}px;width:auto;">'
+                f'</div>'
+            )
+    return (
+        f'<div style="display:flex;gap:10px;align-items:center;'
+        f'justify-content:{justify};flex-wrap:wrap;margin-top:4px;">'
+        + "".join(parts) +
+        f'</div>'
+    )
 
 # ---------------------------------------------------------------------------
 # Colour Palette
@@ -253,6 +290,74 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stApp"] {
     border: 1px solid rgba(0,255,65,0.2) !important;
     color: #00ff41 !important;
 }
+
+/* ---- selectbox / dropdown ---- */
+[data-baseweb="select"] > div:first-child {
+    background: rgba(0,5,1,0.8) !important;
+    border: 1px solid rgba(0,255,65,0.2) !important;
+    color: #00ff41 !important;
+    font-family: 'Share Tech Mono', monospace !important;
+}
+[data-baseweb="menu"] {
+    background: #000f02 !important;
+    border: 1px solid rgba(0,255,65,0.2) !important;
+}
+[data-baseweb="menu"] li {
+    background: #000f02 !important;
+    color: #b0ffb8 !important;
+    font-family: 'Share Tech Mono', monospace !important;
+    font-size: 0.82rem !important;
+}
+[data-baseweb="menu"] li:hover {
+    background: rgba(0,255,65,0.08) !important;
+    color: #00ff41 !important;
+}
+
+/* ---- metric widgets ---- */
+[data-testid="stMetric"] {
+    background: rgba(0,15,2,0.55);
+    border: 1px solid rgba(0,255,65,0.12);
+    border-radius: 8px;
+    padding: 12px 16px;
+}
+[data-testid="stMetricValue"] > div {
+    color: #00ff41 !important;
+    font-family: 'Orbitron', sans-serif !important;
+    text-shadow: 0 0 10px rgba(0,255,65,0.4);
+}
+[data-testid="stMetricDelta"] > div {
+    color: #00e5ff !important;
+    font-family: 'Share Tech Mono', monospace !important;
+    font-size: 0.75rem !important;
+}
+[data-testid="stMetricLabel"] > div {
+    color: #4a7a4f !important;
+    font-family: 'Share Tech Mono', monospace !important;
+    font-size: 0.7rem !important;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+/* ---- slider ---- */
+[data-testid="stSlider"] [role="slider"] {
+    background-color: #00ff41 !important;
+    border-color: #00ff41 !important;
+    box-shadow: 0 0 6px rgba(0,255,65,0.5);
+}
+[data-testid="stSlider"] [data-testid="stTickBar"] > div {
+    background: rgba(0,255,65,0.25) !important;
+}
+
+/* ---- checkbox & radio ---- */
+[data-testid="stCheckbox"] svg, [data-testid="stRadio"] svg {
+    color: #00ff41 !important;
+    fill: #00ff41 !important;
+}
+[data-baseweb="checkbox"] [data-checked="true"] > div,
+[data-baseweb="radio"] [data-checked="true"] > div {
+    background-color: #00ff41 !important;
+    border-color: #00ff41 !important;
+}
 </style>
 """
 
@@ -298,7 +403,7 @@ def apply_theme(show_rain: bool = False):
         css += _MATRIX_RAIN
     st.markdown(css, unsafe_allow_html=True)
 
-    # Sidebar: show logged-in user and logout button on every page
+    # Sidebar: show logged-in user, logout button, and partner logos on every page
     user = st.session_state.get("auth_user")
     if user:
         with st.sidebar:
@@ -311,6 +416,16 @@ def apply_theme(show_rain: bool = False):
                 st.session_state["authenticated"] = False
                 st.session_state["auth_user"] = None
                 st.rerun()
+            st.markdown(
+                '<hr style="border:none;border-top:1px solid rgba(0,255,65,0.1);margin:12px 0 8px 0;">',
+                unsafe_allow_html=True,
+            )
+            st.markdown(logo_strip_html(height=26), unsafe_allow_html=True)
+            st.markdown(
+                '<p style="color:#4a7a4f;font-family:Share Tech Mono;font-size:0.6rem;'
+                'text-align:center;letter-spacing:1px;margin-top:6px;">KTP PARTNERSHIP</p>',
+                unsafe_allow_html=True,
+            )
 
 
 def page_header(title: str, subtitle: str = ""):

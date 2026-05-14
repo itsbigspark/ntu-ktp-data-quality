@@ -78,14 +78,23 @@ def check_auth() -> bool:
 
 def login_page():
     """Render the login page. Call this from Home.py when not authenticated."""
+    from shared.theme import logo_strip_html
     st.markdown(
-        "<div style='text-align:center;padding-top:60px;'>"
+        "<div style='text-align:center;padding-top:48px;'>"
         "<h1 style='font-family:Orbitron,sans-serif;color:#00ff41;"
         "text-shadow:0 0 20px #00ff4180;letter-spacing:3px;'>"
         "AI POWERED DQ INVESTIGATOR</h1>"
         "<p style='color:#4a7a4f;font-family:monospace;letter-spacing:4px;"
         "font-size:0.85rem;'>ENTERPRISE DATA QUALITY PLATFORM</p>"
         "</div>",
+        unsafe_allow_html=True,
+    )
+    st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
+    st.markdown(logo_strip_html(height=40), unsafe_allow_html=True)
+    st.markdown(
+        "<p style='text-align:center;color:#4a7a4f;font-family:Share Tech Mono,monospace;"
+        "font-size:0.65rem;letter-spacing:2px;margin-top:8px;'>"
+        "BIGSPARK · NOTTINGHAM TRENT UNIVERSITY · INNOVATE UK KTP</p>",
         unsafe_allow_html=True,
     )
 
