@@ -151,6 +151,10 @@ jobs:
           env.append({'name': 'DATABASE_URL',  'value': '${{ secrets.DATABASE_URL }}'})
           td['containerDefinitions'][0]['environment'] = env
 
+          # Bump task-level CPU and memory for 200k-row workloads
+          td['cpu'] = '1024'
+          td['memory'] = '2048'
+
           with open('/tmp/td_new.json', 'w') as f:
               json.dump(td, f)
           print("Task definition prepared.")

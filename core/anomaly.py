@@ -1,8 +1,11 @@
 # core/validator/anomaly.py
 from __future__ import annotations
 from typing import Dict, Any, List, Tuple, Optional
+import logging
 import numpy as np
 import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 # Optional: sklearn for stronger numeric + ML anomaly detection
 try:
@@ -229,9 +232,19 @@ def ml_anomaly_report(
     if not isinstance(df_unclean, pd.DataFrame) or df_unclean.empty:
         return pd.DataFrame(columns=["row_id","column","issue","detail","severity","value","score","expected","rule"])
 
+    # ── Row cap: TF-IDF char n-grams on full data is O(n*vocab) — hard cap at 20k rows ──
+    ML_ROW_CAP = 20_000
+    sampled_for_ml = len(df_unclean) > ML_ROW_CAP
+    if sampled_for_ml:
+        df_unclean = df_unclean.sample(n=ML_ROW_CAP, random_state=42).reset_index(drop=True)
+        logger.info("ml_anomaly_report: dataset sampled to %d rows for ML fitting", ML_ROW_CAP)
+
     txt_unclean = _row_concat(df_unclean)
     X_train_text = txt_unclean
     if use_reference and isinstance(df_ref, pd.DataFrame) and not df_ref.empty:
+        # Also cap reference data
+        if len(df_ref) > ML_ROW_CAP:
+            df_ref = df_ref.sample(n=ML_ROW_CAP, random_state=42)
         txt_ref = _row_concat(df_ref)
         X_train_text = txt_ref
 
