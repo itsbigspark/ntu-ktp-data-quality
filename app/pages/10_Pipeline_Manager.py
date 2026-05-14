@@ -376,11 +376,12 @@ with execute_tab:
                                 st.markdown(f"**{issues_count}** issues found")
                                 issues_records = details.get("issues", [])
                                 if issues_records:
+                                    # Fixed height + no use_container_width to avoid
+                                    # React #185 measurement loop inside expander.
                                     st.dataframe(
                                         pd.DataFrame(issues_records),
-                                        use_container_width=True,
                                         hide_index=True,
-                                        height=min(300, 40 + 35 * len(issues_records)),
+                                        height=300,
                                     )
 
                             elif stype in ("clean", "corpus_standardize"):
@@ -390,9 +391,8 @@ with execute_tab:
                                     st.caption(f"Sample of changes (up to 50 shown):")
                                     st.dataframe(
                                         pd.DataFrame(diff),
-                                        use_container_width=True,
                                         hide_index=True,
-                                        height=min(250, 40 + 35 * len(diff)),
+                                        height=250,
                                     )
 
                             elif stype == "deduplicate":
@@ -423,19 +423,19 @@ with execute_tab:
                                 triage = details.get("triage", [])
                                 if triage:
                                     st.markdown("**Triage — Priority Action Plan**")
-                                    st.dataframe(pd.DataFrame(triage), use_container_width=True, hide_index=True)
+                                    st.dataframe(pd.DataFrame(triage), hide_index=True, height=300)
 
                                 smart_rules = details.get("smart_rules", [])
                                 if smart_rules:
                                     show_rules = st.checkbox(f"Show Smart Rules ({len(smart_rules)})", key=f"show_rules_{step['step_number']}", value=False)
                                     if show_rules:
-                                        st.dataframe(pd.DataFrame(smart_rules), use_container_width=True, hide_index=True)
+                                        st.dataframe(pd.DataFrame(smart_rules), hide_index=True, height=300)
 
                                 cross = details.get("cross_column_issues", [])
                                 if cross:
                                     show_cross = st.checkbox(f"Show Cross-Column Issues ({len(cross)})", key=f"show_cross_{step['step_number']}", value=False)
                                     if show_cross:
-                                        st.dataframe(pd.DataFrame(cross), use_container_width=True, hide_index=True)
+                                        st.dataframe(pd.DataFrame(cross), hide_index=True, height=300)
 
                             elif stype == "pii_detection":
                                 c1, c2 = st.columns(2)
@@ -451,8 +451,8 @@ with execute_tab:
                                             [{"Entity Type": k, "Count": v}
                                              for k, v in sorted(entity_types.items(), key=lambda x: -x[1])]
                                         ),
-                                        use_container_width=True,
                                         hide_index=True,
+                                        height=300,
                                     )
 
                             # ── Data preview at this step ──────────────────
@@ -464,7 +464,7 @@ with execute_tab:
                                     value=False,
                                 )
                                 if show_preview:
-                                    st.dataframe(df_snap.head(100), use_container_width=True, hide_index=True)
+                                    st.dataframe(df_snap.head(100), hide_index=True, height=400)
                                 st.download_button(
                                     f"Download step {step['step_number']} output (CSV)",
                                     df_snap.to_csv(index=False).encode("utf-8"),
