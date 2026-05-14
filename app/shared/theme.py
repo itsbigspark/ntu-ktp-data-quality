@@ -528,7 +528,7 @@ def aggrid_issues(df, height: int = 400):
                 ".ag-side-bar": {"background": "#000f02", "border-left": "1px solid rgba(0,255,65,0.15)"},
             },
         )
-    except ImportError:
+    except Exception:
         st.dataframe(df, use_container_width=True, hide_index=True, height=height)
 
 
@@ -565,7 +565,7 @@ def aggrid_plain(df, height: int = 350, page_size: int = 20):
                 ".ag-paging-panel": {"background": "#000f02", "color": "#5a9a5a", "font-family": "Share Tech Mono", "font-size": "0.7rem"},
             },
         )
-    except ImportError:
+    except Exception:
         st.dataframe(df, use_container_width=True, hide_index=True, height=height)
 
 
