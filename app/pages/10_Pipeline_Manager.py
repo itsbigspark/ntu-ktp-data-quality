@@ -33,6 +33,15 @@ if st.session_state.get("pipeline_manager") is None:
 
 pm = st.session_state["pipeline_manager"]
 
+# Cache loaded pipelines per page-render to avoid disk I/O storms inside
+# the Library tab's expander loop. Streamlit reruns the whole script on
+# every interaction, so this dict acts as a 1-render memo.
+_pipeline_cache: dict = {}
+def _cached_load(name: str):
+    if name not in _pipeline_cache:
+        _pipeline_cache[name] = pm.load_pipeline(name)
+    return _pipeline_cache[name]
+
 # ---------------------------------------------------------------------------
 # Tabs
 # ---------------------------------------------------------------------------
@@ -216,7 +225,7 @@ with library_tab:
                     modified = pipeline_info["last_modified"][:10] if pipeline_info["last_modified"] else "Unknown"
                     st.markdown(f"**Created:** {created} | **Modified:** {modified}")
 
-                pipeline = pm.load_pipeline(pipeline_info["name"])
+                pipeline = _cached_load(pipeline_info["name"])
                 if pipeline:
                     for step in pipeline.steps:
                         st.markdown(f"{step['step_number']}. **{step['type'].title()}**: {step['description']}")
@@ -282,7 +291,7 @@ with execute_tab:
         default_idx = pipeline_names.index(st.session_state["pipeline_to_execute"])
 
     selected_name = st.selectbox("Select Pipeline", pipeline_names, index=default_idx, key="pipeline_execute_select")
-    pipeline = pm.load_pipeline(selected_name)
+    pipeline = _cached_load(selected_name)
 
     if pipeline:
         st.caption(f"Description: {pipeline.description or 'No description'}")
