@@ -360,6 +360,7 @@ def aggrid_issues(df, height: int = 400):
             filter=True,
             wrapText=False,
             autoHeight=False,
+            minWidth=120,
         )
         gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=20)
         gb.configure_side_bar(filters_panel=True, columns_panel=False)
@@ -375,7 +376,7 @@ def aggrid_issues(df, height: int = 400):
                 return {};
             }
             """)
-            gb.configure_column(_sev_col, cellStyle=sev_style)
+            gb.configure_column(_sev_col, cellStyle=sev_style, minWidth=100, maxWidth=120)
 
         row_style = JsCode("""
         function(params) {
@@ -392,6 +393,7 @@ def aggrid_issues(df, height: int = 400):
         go["getRowStyle"] = row_style
         go["rowHeight"] = 32
         go["headerHeight"] = 36
+        go["suppressColumnVirtualisation"] = True
 
         AgGrid(
             df,
@@ -426,11 +428,12 @@ def aggrid_plain(df, height: int = 350, page_size: int = 20):
         from st_aggrid.shared import GridUpdateMode
 
         gb = GridOptionsBuilder.from_dataframe(df)
-        gb.configure_default_column(resizable=True, sortable=True, filter=True)
+        gb.configure_default_column(resizable=True, sortable=True, filter=True, minWidth=120)
         gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=page_size)
         go = gb.build()
         go["rowHeight"] = 32
         go["headerHeight"] = 36
+        go["suppressColumnVirtualisation"] = True
 
         AgGrid(
             df,
