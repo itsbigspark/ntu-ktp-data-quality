@@ -84,7 +84,7 @@ def login_page():
         "<h1 style='font-family:Orbitron,sans-serif;color:#00ff41;"
         "text-shadow:0 0 20px #00ff4180;letter-spacing:3px;'>"
         "AI POWERED DQ INVESTIGATOR</h1>"
-        "<p style='color:#4a7a4f;font-family:monospace;letter-spacing:4px;"
+        "<p style='color:#5a9a5a;font-family:monospace;letter-spacing:4px;"
         "font-size:0.85rem;'>ENTERPRISE DATA QUALITY PLATFORM</p>"
         "</div>",
         unsafe_allow_html=True,
@@ -92,7 +92,7 @@ def login_page():
     st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
     st.markdown(logo_strip_html(height=40), unsafe_allow_html=True)
     st.markdown(
-        "<p style='text-align:center;color:#4a7a4f;font-family:Share Tech Mono,monospace;"
+        "<p style='text-align:center;color:#5a9a5a;font-family:Share Tech Mono,monospace;"
         "font-size:0.65rem;letter-spacing:2px;margin-top:8px;'>"
         "BIGSPARK · NOTTINGHAM TRENT UNIVERSITY · INNOVATE UK KTP</p>",
         unsafe_allow_html=True,
@@ -121,7 +121,7 @@ def login_page():
                     st.error("ACCESS DENIED - Invalid credentials")
 
         st.markdown(
-            "<p style='color:#4a7a4f;font-family:monospace;font-size:0.65rem;"
+            "<p style='color:#5a9a5a;font-family:monospace;font-size:0.65rem;"
             "text-align:center;margin-top:20px;letter-spacing:1px;'>"
             "Contact your administrator for access credentials.</p>",
             unsafe_allow_html=True,

@@ -116,7 +116,7 @@ if engine is None:
         '<div class="glass-card" style="text-align:center;padding:60px 20px;">'
         '<p style="font-family:Orbitron,sans-serif;font-size:1.2rem;color:#00ff41;">'
         '// DATABASE UNAVAILABLE</p>'
-        '<p style="color:#4a7a4f;font-family:Share Tech Mono;">Could not connect to the database. '
+        '<p style="color:#5a9a5a;font-family:Share Tech Mono;">Could not connect to the database. '
         'Ensure DATABASE_URL is set or the SQLite output file exists.</p>'
         '</div>',
         unsafe_allow_html=True,
@@ -376,7 +376,7 @@ st.dataframe(styled_table, use_container_width=True)
 
 st.markdown(
     '<div style="margin-top:16px;font-family:Share Tech Mono;font-size:0.72rem;'
-    'color:#4a7a4f;display:flex;gap:20px;align-items:center;">'
+    'color:#5a9a5a;display:flex;gap:20px;align-items:center;">'
     f'<span style="color:{MATRIX_GREEN};">&#9632; &gt;= 85% PASS</span>'
     f'<span style="color:{MATRIX_ORANGE};">&#9632; 70-84% WARN</span>'
     f'<span style="color:{MATRIX_RED};">&#9632; &lt; 70% FAIL</span>'

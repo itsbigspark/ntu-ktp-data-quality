@@ -71,7 +71,7 @@ else:
     if not st.session_state.get("ai_enrichment_result"):
         terminal_block(
             "// NO AI RESULTS IN CURRENT SESSION<br>"
-            "<span style='color:#4a7a4f;'>Run validation with AI enrichment enabled, or switch to Historical view.</span>"
+            "<span style='color:#5a9a5a;'>Run validation with AI enrichment enabled, or switch to Historical view.</span>"
         )
 
 st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
@@ -158,7 +158,7 @@ if cross_data:
                 f' <span style="font-size:0.62rem;color:{sev_color};letter-spacing:1px;text-transform:uppercase;'
                 f'border:1px solid {sev_color};padding:1px 6px;border-radius:4px;">{sev}</span>'
                 f'<br><span style="color:#b0ffb8;font-size:0.78rem;">{desc}</span>'
-                f'<div style="color:#4a7a4f;font-size:0.7rem;margin-top:6px;">'
+                f'<div style="color:#5a9a5a;font-size:0.7rem;margin-top:6px;">'
                 f'CHECK: {check_t} | QUERY: {query}</div></div>',
                 unsafe_allow_html=True,
             )
@@ -206,7 +206,7 @@ st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
 section_header("// AI Agent Chat")
 
 st.markdown(
-    '<p style="color:#4a7a4f;font-family:Share Tech Mono;font-size:0.75rem;">'
+    '<p style="color:#5a9a5a;font-family:Share Tech Mono;font-size:0.75rem;">'
     'Agentic chat — the AI can run validation, count issues, explain rows, apply fixes, and more. '
     'Configure your AI provider in Settings first.</p>',
     unsafe_allow_html=True,
@@ -352,5 +352,5 @@ if chat_history:
 if not enrichment and not db_data:
     terminal_block(
         "// TIP: AI enrichment results will appear above once you run validation with AI enabled.<br>"
-        "<span style='color:#4a7a4f;'>The agent chat works independently — you can use it even without AI enrichment results.</span>"
+        "<span style='color:#5a9a5a;'>The agent chat works independently — you can use it even without AI enrichment results.</span>"
     )

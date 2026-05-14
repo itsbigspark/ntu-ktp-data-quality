@@ -132,11 +132,11 @@ elif source_mode == "AWS S3 Bucket":
             sel_main = st.selectbox("Main dataset", file_options, key="s3_sel_main", label_visibility="collapsed")
 
         with sel_col2:
-            st.markdown('<p style="color:#4a7a4f;font-family:Share Tech Mono;font-size:0.72rem;">REFERENCE DATA (optional)</p>', unsafe_allow_html=True)
+            st.markdown('<p style="color:#5a9a5a;font-family:Share Tech Mono;font-size:0.72rem;">REFERENCE DATA (optional)</p>', unsafe_allow_html=True)
             sel_ref = st.selectbox("Reference dataset", file_options, key="s3_sel_ref", label_visibility="collapsed")
 
         with sel_col3:
-            st.markdown('<p style="color:#4a7a4f;font-family:Share Tech Mono;font-size:0.72rem;">RULES JSON (optional)</p>', unsafe_allow_html=True)
+            st.markdown('<p style="color:#5a9a5a;font-family:Share Tech Mono;font-size:0.72rem;">RULES JSON (optional)</p>', unsafe_allow_html=True)
             # Filter to only JSON files for rules
             json_options = ["(none)"] + [f"{f['key']}  ({f['size_kb']} KB)" for f in file_list if f["key"].endswith(".json")]
             sel_rules = st.selectbox("Rules JSON", json_options, key="s3_sel_rules", label_visibility="collapsed")
@@ -731,7 +731,7 @@ if _demo_available:
             )
         with col_desc:
             st.markdown(
-                '<p style="color:#4a7a4f;font-family:monospace;font-size:0.78rem;line-height:1.7;">'
+                '<p style="color:#5a9a5a;font-family:monospace;font-size:0.78rem;line-height:1.7;">'
                 "Loads all demo assets in one click:<br>"
                 "&nbsp;&nbsp;• <b style='color:#00ff41'>500-row</b> financial transactions dataset (with intentional errors)<br>"
                 "&nbsp;&nbsp;• <b style='color:#00ff41'>Reference</b> known-fraudulent merchants list<br>"
@@ -860,12 +860,12 @@ if df_raw is not None:
             f'<div class="glass-card">'
             f'<p style="color:#00ff41;font-family:Orbitron;font-size:0.85rem;letter-spacing:2px;">DATASET SUMMARY</p>'
             f'<table style="font-family:Share Tech Mono;font-size:0.8rem;color:#b0ffb8;width:100%;">'
-            f'<tr><td style="color:#4a7a4f;">Rows:</td><td>{len(df_show):,}</td>'
-            f'<td style="color:#4a7a4f;">Columns:</td><td>{len(df_show.columns)}</td></tr>'
-            f'<tr><td style="color:#4a7a4f;">Missing cells:</td><td>{int(df_show.isna().sum().sum()):,}</td>'
-            f'<td style="color:#4a7a4f;">Duplicates:</td><td>{int(df_show.duplicated().sum()):,}</td></tr>'
-            f'<tr><td style="color:#4a7a4f;">Memory:</td><td>{df_show.memory_usage(deep=True).sum() / 1024:.1f} KB</td>'
-            f'<td style="color:#4a7a4f;">Full dataset:</td><td>{total_rows:,} rows</td></tr>'
+            f'<tr><td style="color:#5a9a5a;">Rows:</td><td>{len(df_show):,}</td>'
+            f'<td style="color:#5a9a5a;">Columns:</td><td>{len(df_show.columns)}</td></tr>'
+            f'<tr><td style="color:#5a9a5a;">Missing cells:</td><td>{int(df_show.isna().sum().sum()):,}</td>'
+            f'<td style="color:#5a9a5a;">Duplicates:</td><td>{int(df_show.duplicated().sum()):,}</td></tr>'
+            f'<tr><td style="color:#5a9a5a;">Memory:</td><td>{df_show.memory_usage(deep=True).sum() / 1024:.1f} KB</td>'
+            f'<td style="color:#5a9a5a;">Full dataset:</td><td>{total_rows:,} rows</td></tr>'
             f'</table>'
             f'</div>',
             unsafe_allow_html=True,
@@ -889,5 +889,5 @@ if df_raw is not None:
 else:
     terminal_block(
         "// AWAITING DATA UPLOAD<br>"
-        "<span style='color:#4a7a4f;'>Upload a CSV, Parquet, or Excel file to begin analysis.</span>"
+        "<span style='color:#5a9a5a;'>Upload a CSV, Parquet, or Excel file to begin analysis.</span>"
     )

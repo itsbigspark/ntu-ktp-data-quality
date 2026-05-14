@@ -95,7 +95,7 @@ if engine is None:
         '<div class="glass-card" style="text-align:center;padding:60px 20px;">'
         '<p style="font-family:Orbitron,sans-serif;font-size:1.2rem;color:#00ff41;">'
         '// DATABASE UNAVAILABLE</p>'
-        '<p style="color:#4a7a4f;font-family:Share Tech Mono;">Could not connect to the database. '
+        '<p style="color:#5a9a5a;font-family:Share Tech Mono;">Could not connect to the database. '
         'Ensure DATABASE_URL is set or the SQLite output file exists.</p>'
         '</div>',
         unsafe_allow_html=True,
@@ -108,7 +108,7 @@ if not _table_exists(engine, "ai_audit_log"):
         '<div class="glass-card" style="text-align:center;padding:60px 20px;">'
         '<p style="font-family:Orbitron,sans-serif;font-size:1.2rem;color:#00ff41;">'
         '// NO AI AUDIT RECORDS YET</p>'
-        '<p style="color:#4a7a4f;font-family:Share Tech Mono;">'
+        '<p style="color:#5a9a5a;font-family:Share Tech Mono;">'
         'The ai_audit_log table will be created automatically when the first AI enrichment runs. '
         'Enable AI enrichment and run a validation pipeline to populate this log.</p>'
         '</div>',
@@ -308,7 +308,7 @@ with tab_detail:
     if df_all.empty:
         st.markdown(
             '<div class="glass-card" style="text-align:center;padding:40px 20px;">'
-            '<p style="color:#4a7a4f;font-family:Share Tech Mono;">'
+            '<p style="color:#5a9a5a;font-family:Share Tech Mono;">'
             '// No AI calls recorded yet. Run a pipeline with AI enrichment enabled.</p>'
             '</div>',
             unsafe_allow_html=True,
@@ -453,7 +453,7 @@ with tab_export:
 
         if df_export.empty:
             st.markdown(
-                '<p style="color:#4a7a4f;font-family:Share Tech Mono;">'
+                '<p style="color:#5a9a5a;font-family:Share Tech Mono;">'
                 '// No AI calls recorded in the selected date range.</p>',
                 unsafe_allow_html=True,
             )

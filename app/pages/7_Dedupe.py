@@ -29,7 +29,7 @@ df = next(
     None,
 )
 if df is None:
-    terminal_block("// NO DATA LOADED<br><span style='color:#4a7a4f;'>Go to Load Data first.</span>")
+    terminal_block("// NO DATA LOADED<br><span style='color:#5a9a5a;'>Go to Load Data first.</span>")
     st.stop()
 
 FUZZY_ROW_CAP = 50_000
@@ -127,7 +127,7 @@ if run_mode == "NxN (full)" and len(df) > 5_000:
 block_cols = []
 if run_mode in ("Blocking + KNN", "Blocking"):
     st.markdown(
-        '<p style="color:#4a7a4f;font-family:Share Tech Mono;font-size:0.75rem;margin:10px 0 2px 0;">'
+        '<p style="color:#5a9a5a;font-family:Share Tech Mono;font-size:0.75rem;margin:10px 0 2px 0;">'
         'BLOCK KEY COLUMNS — records are only compared within the same bucket '
         '(e.g. same country, same product category). Pick low-cardinality columns.</p>',
         unsafe_allow_html=True,
@@ -228,7 +228,7 @@ else:
     _est = f"~{_working_rows * topk:,} candidate pairs"
 
 st.markdown(
-    f'<p style="color:#4a7a4f;font-family:Share Tech Mono;font-size:0.72rem;margin:6px 0;">'
+    f'<p style="color:#5a9a5a;font-family:Share Tech Mono;font-size:0.72rem;margin:6px 0;">'
     f'Candidate pairs: {_est}</p>',
     unsafe_allow_html=True,
 )

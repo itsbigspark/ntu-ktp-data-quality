@@ -35,7 +35,7 @@ workflow_breadcrumb([
 
 df_raw = st.session_state.get("df_raw")
 if df_raw is None:
-    terminal_block("// NO DATA LOADED<br><span style='color:#4a7a4f;'>Go to Load Data first.</span>")
+    terminal_block("// NO DATA LOADED<br><span style='color:#5a9a5a;'>Go to Load Data first.</span>")
     st.stop()
 
 # ---------------------------------------------------------------------------
@@ -265,7 +265,7 @@ if pii_results is not None:
                 f'<span style="color:{MATRIX_GREEN};font-size:0.82rem;">{row["entity_type"]}</span>'
                 f'<span style="font-size:0.62rem;color:{sev_color};border:1px solid {sev_color};'
                 f'padding:1px 7px;border-radius:4px;letter-spacing:1px;">{row["severity"]}</span>'
-                f'<span style="color:#4a7a4f;font-size:0.72rem;">columns: {row["columns"]}</span>'
+                f'<span style="color:#5a9a5a;font-size:0.72rem;">columns: {row["columns"]}</span>'
                 f'<span style="color:{MATRIX_CYAN};font-size:0.82rem;font-weight:bold;">'
                 f'{row["count"]} finding{"s" if row["count"] != 1 else ""}</span>'
                 f'</div>',
@@ -315,7 +315,7 @@ if pii_results is not None:
         section_header("// Anonymise Data")
 
         st.markdown(
-            '<p style="color:#4a7a4f;font-family:Share Tech Mono;font-size:0.75rem;">'
+            '<p style="color:#5a9a5a;font-family:Share Tech Mono;font-size:0.75rem;">'
             'Replace detected PII with anonymised tokens. Original data is never modified — '
             'a new anonymised copy is created.</p>',
             unsafe_allow_html=True,
@@ -427,7 +427,7 @@ if pii_results is not None:
                     )
 
             st.markdown(
-                '<p style="color:#4a7a4f;font-family:Share Tech Mono;font-size:0.7rem;margin-top:4px;">'
+                '<p style="color:#5a9a5a;font-family:Share Tech Mono;font-size:0.7rem;margin-top:4px;">'
                 'SET AS WORKING DATASET replaces the active dataset for all pages. '
                 'Original raw data is not affected — reload it from Load Data if needed.</p>',
                 unsafe_allow_html=True,
@@ -437,5 +437,5 @@ if pii_results is not None:
 elif pii_results is None:
     terminal_block(
         "// RUN A SCAN TO SEE PII FINDINGS<br>"
-        "<span style='color:#4a7a4f;'>Select columns above and click RUN PII SCAN.</span>"
+        "<span style='color:#5a9a5a;'>Select columns above and click RUN PII SCAN.</span>"
     )

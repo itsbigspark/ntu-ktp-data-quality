@@ -25,7 +25,7 @@ df_ref = st.session_state.get("df_ref")
 rules_json = st.session_state.get("rules_json")
 
 if df_raw is None:
-    terminal_block("// NO DATA LOADED<br><span style='color:#4a7a4f;'>Go to Load Data first.</span>")
+    terminal_block("// NO DATA LOADED<br><span style='color:#5a9a5a;'>Go to Load Data first.</span>")
     st.stop()
 
 # ---------------------------------------------------------------------------
@@ -87,7 +87,7 @@ def _render_rule(rule: dict, key: str) -> bool:
     with col_info:
         meta = ""
         if coverage is not None:
-            meta += f'<span style="color:#4a7a4f;">cov {coverage*100:.0f}%</span>'
+            meta += f'<span style="color:#5a9a5a;">cov {coverage*100:.0f}%</span>'
         if quality is not None:
             qcol = "#00ff41" if quality >= 90 else "#ffd700" if quality >= 70 else "#ff4444"
             meta += f'  <span style="color:{qcol};">q{quality}</span>'
@@ -222,7 +222,7 @@ if generated:
 else:
     terminal_block(
         "// NO RULES GENERATED YET<br>"
-        "<span style='color:#4a7a4f;'>Click GENERATE STATISTICAL RULES above to discover validation rules from your data.</span>"
+        "<span style='color:#5a9a5a;'>Click GENERATE STATISTICAL RULES above to discover validation rules from your data.</span>"
     )
 
 # ---------------------------------------------------------------------------
@@ -418,7 +418,7 @@ if ai_rules:
                     st.markdown(
                         f'{_rule_badge(rule_type)}&nbsp;&nbsp;'
                         f'<span style="color:#b0ffb8;font-family:Share Tech Mono;font-size:0.78rem;">{description}</span>'
-                        f'<br><span style="color:#4a7a4f;font-size:0.72rem;">{json.dumps(rule_data)}</span>',
+                        f'<br><span style="color:#5a9a5a;font-size:0.72rem;">{json.dumps(rule_data)}</span>',
                         unsafe_allow_html=True,
                     )
                 st.markdown("<hr style='border-color:rgba(0,229,255,0.08);margin:4px 0;'>", unsafe_allow_html=True)

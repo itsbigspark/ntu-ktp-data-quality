@@ -30,7 +30,7 @@ workflow_breadcrumb([
 ])
 
 if df_raw is None:
-    terminal_block("// NO DATA LOADED<br><span style='color:#4a7a4f;'>Go to Load Data first.</span>")
+    terminal_block("// NO DATA LOADED<br><span style='color:#5a9a5a;'>Go to Load Data first.</span>")
     st.stop()
 
 # ---------------------------------------------------------------------------
@@ -100,14 +100,14 @@ if report is not None and isinstance(report, pd.DataFrame) and not report.empty:
     )
 
     if _sug_col is None:
-        terminal_block("// NO FIX SUGGESTIONS AVAILABLE<br><span style='color:#4a7a4f;'>Run validation with rules or corpus enabled to generate suggestions.</span>")
+        terminal_block("// NO FIX SUGGESTIONS AVAILABLE<br><span style='color:#5a9a5a;'>Run validation with rules or corpus enabled to generate suggestions.</span>")
     else:
         fixable = report[
             report[_sug_col].notna() & (report[_sug_col].astype(str).str.strip() != "")
         ].copy().reset_index(drop=True)
 
         if fixable.empty:
-            terminal_block("// NO FIXABLE ISSUES FOUND<br><span style='color:#4a7a4f;'>All issues detected require manual review — no automatic suggestions available.</span>")
+            terminal_block("// NO FIXABLE ISSUES FOUND<br><span style='color:#5a9a5a;'>All issues detected require manual review — no automatic suggestions available.</span>")
         else:
             st.markdown(
                 f'<p style="color:#00e5ff;font-family:Share Tech Mono;font-size:0.78rem;">'
@@ -173,7 +173,7 @@ if report is not None and isinstance(report, pd.DataFrame) and not report.empty:
 
             # ── Editable review table ───────────────────────────────────────
             st.markdown(
-                '<p style="color:#4a7a4f;font-family:Share Tech Mono;font-size:0.72rem;">'
+                '<p style="color:#5a9a5a;font-family:Share Tech Mono;font-size:0.72rem;">'
                 'Toggle the Approve checkbox on each row to include or exclude it from the fix batch.</p>',
                 unsafe_allow_html=True,
             )
@@ -270,4 +270,4 @@ if export_df is not None:
     st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
     st.dataframe(export_df.head(50), use_container_width=True, hide_index=False, height=300)
 else:
-    terminal_block("// NO CLEANED DATA YET<br><span style='color:#4a7a4f;'>Apply cleaning or fixes above.</span>")
+    terminal_block("// NO CLEANED DATA YET<br><span style='color:#5a9a5a;'>Apply cleaning or fixes above.</span>")

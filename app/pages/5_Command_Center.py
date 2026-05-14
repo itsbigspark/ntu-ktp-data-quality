@@ -68,7 +68,7 @@ if not _db_available():
         '<div class="glass-card" style="text-align:center;padding:60px 20px;">'
         '<p style="font-family:Orbitron,sans-serif;font-size:1.2rem;color:#00ff41;">'
         '// NO DATA FEED DETECTED</p>'
-        '<p style="color:#4a7a4f;font-family:Share Tech Mono;">Run a validation pipeline to populate the database.</p>'
+        '<p style="color:#5a9a5a;font-family:Share Tech Mono;">Run a validation pipeline to populate the database.</p>'
         '</div>',
         unsafe_allow_html=True,
     )
@@ -95,7 +95,7 @@ if batches.empty:
     st.markdown(
         '<div class="glass-card" style="text-align:center;padding:60px 20px;">'
         '<p style="font-family:Orbitron;font-size:1.2rem;color:#00ff41;">// DATABASE EMPTY</p>'
-        '<p style="color:#4a7a4f;font-family:Share Tech Mono;">Execute pipeline to generate data stream.</p>'
+        '<p style="color:#5a9a5a;font-family:Share Tech Mono;">Execute pipeline to generate data stream.</p>'
         '</div>',
         unsafe_allow_html=True,
     )
@@ -427,7 +427,7 @@ with dash_tab:
 
             st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
             st.markdown(
-                '<p style="color:#4a7a4f;font-family:Share Tech Mono;font-size:0.82rem;'
+                '<p style="color:#5a9a5a;font-family:Share Tech Mono;font-size:0.82rem;'
                 'letter-spacing:2px;">// FULL ISSUE LOG</p>',
                 unsafe_allow_html=True,
             )
@@ -463,7 +463,7 @@ with dash_tab:
     if not ai_batches:
         st.markdown(
             '<div style="background:rgba(0,5,1,0.6);border:1px dashed rgba(0,229,255,0.2);border-radius:8px;'
-            'padding:30px;text-align:center;font-family:Share Tech Mono;color:#4a7a4f;font-size:0.82rem;letter-spacing:2px;">'
+            'padding:30px;text-align:center;font-family:Share Tech Mono;color:#5a9a5a;font-size:0.82rem;letter-spacing:2px;">'
             '// NO AI ENRICHMENT DATA<br>'
             '<span style="font-size:0.72rem;">Run validation with AI enrichment enabled to generate intelligence feeds.</span>'
             '</div>',
@@ -533,7 +533,7 @@ with dash_tab:
                         f'<div style="font-size:0.7rem;color:{MATRIX_TEXT_DIM};margin-top:4px;">'
                         f'EFFORT: <span style="color:{effort_color};">{effort.upper()}</span>'
                         f' | SEVERITY: <span style="color:{sev_color};">{sev.upper()}</span></div>'
-                        f'<div style="font-size:0.72rem;color:#4a7a4f;margin-top:4px;">REC: {rec}</div>'
+                        f'<div style="font-size:0.72rem;color:#5a9a5a;margin-top:4px;">REC: {rec}</div>'
                         f'</div>',
                         unsafe_allow_html=True,
                     )
@@ -570,7 +570,7 @@ with dash_tab:
                         f'<br><span style="color:#b0ffb8;font-size:0.78rem;">{desc}</span>'
                         f'<div style="height:4px;background:rgba(0,255,65,0.1);border-radius:2px;margin-top:6px;overflow:hidden;">'
                         f'<div style="height:100%;width:{conf_pct}%;background:linear-gradient(90deg,#00e5ff,#00ff41);border-radius:2px;"></div></div>'
-                        f'<span style="color:#4a7a4f;font-size:0.65rem;">CONFIDENCE: {conf_pct}%</span>'
+                        f'<span style="color:#5a9a5a;font-size:0.65rem;">CONFIDENCE: {conf_pct}%</span>'
                         f'</div>',
                         unsafe_allow_html=True,
                     )
@@ -592,7 +592,7 @@ with dash_tab:
     if _df_raw is None or _report is None or not isinstance(_report, pd.DataFrame) or _report.empty:
         st.markdown(
             '<div style="background:rgba(0,5,1,0.6);border:1px dashed rgba(255,145,0,0.2);border-radius:8px;'
-            'padding:24px;text-align:center;font-family:Share Tech Mono;color:#4a7a4f;font-size:0.82rem;">'
+            'padding:24px;text-align:center;font-family:Share Tech Mono;color:#5a9a5a;font-size:0.82rem;">'
             '// NO ACTIVE SESSION DATA<br>'
             '<span style="font-size:0.72rem;">Load a dataset and run validation to see pending fix suggestions here.</span>'
             '</div>',
@@ -605,7 +605,7 @@ with dash_tab:
         if _sug_col is None:
             st.markdown(
                 '<div style="background:rgba(0,5,1,0.6);border:1px dashed rgba(255,145,0,0.2);border-radius:8px;'
-                'padding:20px;font-family:Share Tech Mono;color:#4a7a4f;font-size:0.78rem;">'
+                'padding:20px;font-family:Share Tech Mono;color:#5a9a5a;font-size:0.78rem;">'
                 '// No fix suggestions in current validation report. Re-run validation with rules or corpus enabled.'
                 '</div>',
                 unsafe_allow_html=True,
@@ -625,7 +625,7 @@ with dash_tab:
                 )
             else:
                 _already_applied = _df_corrected is not None
-                _status_color = "#4a7a4f" if _already_applied else "#ff9100"
+                _status_color = "#5a9a5a" if _already_applied else "#ff9100"
                 _status_text = "FIXES APPLIED" if _already_applied else "AWAITING REVIEW"
 
                 st.markdown(
@@ -634,7 +634,7 @@ with dash_tab:
                     f'<span style="color:{_status_color};border:1px solid {_status_color};'
                     f'padding:3px 12px;border-radius:4px;letter-spacing:2px;">{_status_text}</span>'
                     f'<span style="color:#b0ffb8;">{len(_fixable)} suggested fixes in current session</span>'
-                    f'<span style="color:#4a7a4f;">Dataset: {len(_df_raw):,} rows</span>'
+                    f'<span style="color:#5a9a5a;">Dataset: {len(_df_raw):,} rows</span>'
                     f'</div>',
                     unsafe_allow_html=True,
                 )
@@ -805,7 +805,7 @@ with research_tab:
     if _res_batch is None or _res_issues.empty:
         st.markdown(
             '<div style="background:rgba(0,5,1,0.6);border:1px dashed rgba(0,255,65,0.2);border-radius:8px;'
-            'padding:30px;text-align:center;font-family:Share Tech Mono;color:#4a7a4f;font-size:0.82rem;">'
+            'padding:30px;text-align:center;font-family:Share Tech Mono;color:#5a9a5a;font-size:0.82rem;">'
             '// NO BATCH DATA FOUND<br>'
             '<span style="font-size:0.72rem;">Run a validation pipeline to populate the issues feed.</span>'
             '</div>',
@@ -909,7 +909,7 @@ with research_tab:
 
                 # Sample affected rows
                 st.markdown(
-                    '<p style="color:#4a7a4f;font-family:Share Tech Mono;font-size:0.78rem;'
+                    '<p style="color:#5a9a5a;font-family:Share Tech Mono;font-size:0.78rem;'
                     'letter-spacing:2px;margin-top:8px;">// SAMPLE AFFECTED ROWS (first 20)</p>',
                     unsafe_allow_html=True,
                 )
@@ -931,7 +931,7 @@ with research_tab:
     if _res_batch is None:
         st.markdown(
             '<div style="background:rgba(0,5,1,0.6);border:1px dashed rgba(0,229,255,0.15);border-radius:8px;'
-            'padding:20px;font-family:Share Tech Mono;color:#4a7a4f;font-size:0.82rem;">'
+            'padding:20px;font-family:Share Tech Mono;color:#5a9a5a;font-size:0.82rem;">'
             '// Run a validation pipeline first to see root cause analysis.'
             '</div>',
             unsafe_allow_html=True,
@@ -966,7 +966,7 @@ with research_tab:
         if _ai_expl.empty:
             st.markdown(
                 '<div style="background:rgba(0,5,1,0.6);border:1px dashed rgba(0,229,255,0.2);border-radius:8px;'
-                'padding:20px;font-family:Share Tech Mono;color:#4a7a4f;font-size:0.82rem;">'
+                'padding:20px;font-family:Share Tech Mono;color:#5a9a5a;font-size:0.82rem;">'
                 '// No AI explanations found for this batch/column.<br>'
                 '<span style="font-size:0.72rem;">Run AI Investigation (page 4) to generate root cause analysis for this batch.</span>'
                 '</div>',
@@ -1019,7 +1019,7 @@ with research_tab:
 
         if not _cc_issues.empty:
             st.markdown(
-                '<p style="color:#4a7a4f;font-family:Share Tech Mono;font-size:0.78rem;'
+                '<p style="color:#5a9a5a;font-family:Share Tech Mono;font-size:0.78rem;'
                 'letter-spacing:2px;margin-top:16px;">// CROSS-COLUMN ISSUES</p>',
                 unsafe_allow_html=True,
             )
@@ -1040,7 +1040,7 @@ with research_tab:
                     f'<br><span style="font-size:0.76rem;">{_cc_desc}</span>'
                     + (
                         f'<div style="margin-top:6px;padding:6px 10px;background:rgba(0,0,0,0.4);'
-                        f'border-radius:4px;font-size:0.7rem;color:#4a7a4f;font-family:Courier New,monospace;">'
+                        f'border-radius:4px;font-size:0.7rem;color:#5a9a5a;font-family:Courier New,monospace;">'
                         f'{_cc_query}</div>'
                         if _cc_query and _cc_query != "None" else ""
                     )
@@ -1058,7 +1058,7 @@ with research_tab:
     if _res_batch is None:
         st.markdown(
             '<div style="background:rgba(0,5,1,0.6);border:1px dashed rgba(255,145,0,0.15);border-radius:8px;'
-            'padding:20px;font-family:Share Tech Mono;color:#4a7a4f;font-size:0.82rem;">'
+            'padding:20px;font-family:Share Tech Mono;color:#5a9a5a;font-size:0.82rem;">'
             '// No batch loaded. Run a validation pipeline to generate an action plan.'
             '</div>',
             unsafe_allow_html=True,
@@ -1082,7 +1082,7 @@ with research_tab:
         if _ap_triage.empty:
             st.markdown(
                 '<div style="background:rgba(0,5,1,0.6);border:1px dashed rgba(255,145,0,0.2);border-radius:8px;'
-                'padding:20px;font-family:Share Tech Mono;color:#4a7a4f;font-size:0.82rem;">'
+                'padding:20px;font-family:Share Tech Mono;color:#5a9a5a;font-size:0.82rem;">'
                 '// No triage data found for this batch.<br>'
                 '<span style="font-size:0.72rem;">Run AI Investigation (page 4) to generate an action plan.</span>'
                 '</div>',
@@ -1124,7 +1124,7 @@ with research_tab:
                         f'padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);">'
                         f'<strong style="color:{_bcolor};">{_tr_cat}</strong>'
                         f'<br><span style="font-size:0.76rem;">{_tr_desc}</span>'
-                        f'<div style="margin-top:5px;font-size:0.72rem;color:#4a7a4f;">'
+                        f'<div style="margin-top:5px;font-size:0.72rem;color:#5a9a5a;">'
                         f'ACTION: <span style="color:#b0ffb8;">{_tr_action}</span>'
                         + (f' &nbsp;|&nbsp; EFFORT: <span style="color:{MATRIX_YELLOW};">{_tr_effort}</span>' if _tr_effort and _tr_effort != "None" else "")
                         + (f'<br>IMPACT: {_tr_impact}' if _tr_impact and _tr_impact != "None" else "")
@@ -1137,7 +1137,7 @@ with research_tab:
 
         # Quick action buttons
         st.markdown(
-            '<p style="color:#4a7a4f;font-family:Share Tech Mono;font-size:0.78rem;'
+            '<p style="color:#5a9a5a;font-family:Share Tech Mono;font-size:0.78rem;'
             'letter-spacing:2px;margin-bottom:10px;">// QUICK ACTIONS</p>',
             unsafe_allow_html=True,
         )
@@ -1147,7 +1147,7 @@ with research_tab:
                 '<div style="background:rgba(0,10,2,0.6);border:1px solid rgba(0,255,65,0.2);'
                 'border-radius:8px;padding:14px 16px;font-family:Share Tech Mono;font-size:0.8rem;color:#b0ffb8;">'
                 '<span style="color:#00ff41;font-weight:bold;">GO TO CLEANING PAGE</span><br>'
-                '<span style="color:#4a7a4f;font-size:0.72rem;">Navigate to page 3 (Cleaning) in the sidebar to apply corrections.</span>'
+                '<span style="color:#5a9a5a;font-size:0.72rem;">Navigate to page 3 (Cleaning) in the sidebar to apply corrections.</span>'
                 '</div>',
                 unsafe_allow_html=True,
             )
@@ -1164,7 +1164,7 @@ with research_tab:
             else:
                 st.markdown(
                     '<div style="background:rgba(0,5,1,0.5);border:1px dashed rgba(0,255,65,0.15);'
-                    'border-radius:8px;padding:14px 16px;font-family:Share Tech Mono;font-size:0.78rem;color:#4a7a4f;">'
+                    'border-radius:8px;padding:14px 16px;font-family:Share Tech Mono;font-size:0.78rem;color:#5a9a5a;">'
                     '// No issues data available to download.'
                     '</div>',
                     unsafe_allow_html=True,

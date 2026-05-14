@@ -211,7 +211,7 @@ with connector_tab1:
             st.error("S3 connection failed. Check your bucket name, region, and AWS credentials.")
 
     st.markdown(
-        '<p style="color:#4a7a4f;font-family:Share Tech Mono;font-size:0.72rem;margin-top:8px;">'
+        '<p style="color:#5a9a5a;font-family:Share Tech Mono;font-size:0.72rem;margin-top:8px;">'
         'When set, validation results (issue log, quality report) are automatically saved to this bucket '
         'under reports/ and corrected/ prefixes.</p>',
         unsafe_allow_html=True,
@@ -383,7 +383,7 @@ for label, value in info_items:
     st.markdown(
         f'<div style="display:flex;justify-content:space-between;padding:6px 0;'
         f'border-bottom:1px solid rgba(0,255,65,0.06);font-family:Share Tech Mono;font-size:0.78rem;">'
-        f'<span style="color:#4a7a4f;">{label}</span>'
+        f'<span style="color:#5a9a5a;">{label}</span>'
         f'<span style="color:#b0ffb8;">{value}</span></div>',
         unsafe_allow_html=True,
     )

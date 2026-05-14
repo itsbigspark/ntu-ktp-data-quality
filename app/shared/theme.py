@@ -61,7 +61,7 @@ MATRIX_BORDER = "rgba(0, 255, 65, 0.2)"
 MATRIX_BORDER_BRIGHT = "rgba(0, 255, 65, 0.5)"
 MATRIX_GRID = "rgba(0, 255, 65, 0.08)"
 MATRIX_TEXT = "#b0ffb8"
-MATRIX_TEXT_DIM = "#4a7a4f"
+MATRIX_TEXT_DIM = "#5a9a5a"
 
 # ---------------------------------------------------------------------------
 # CSS
@@ -92,7 +92,7 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stApp"] {
 
 /* ---- sidebar nav links ---- */
 [data-testid="stSidebarNav"] a {
-    color: #4a7a4f !important;
+    color: #5a9a5a !important;
     font-family: 'Share Tech Mono', monospace !important;
     letter-spacing: 1px;
     font-size: 0.85rem;
@@ -120,7 +120,7 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stApp"] {
 .page-subtitle {
     font-family: 'Share Tech Mono', monospace;
     font-size: 0.78rem;
-    color: #4a7a4f;
+    color: #5a9a5a;
     letter-spacing: 3px;
     text-transform: uppercase;
     margin-bottom: 20px;
@@ -187,7 +187,7 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stApp"] {
 .kpi-label {
     font-family: 'Share Tech Mono', monospace;
     font-size: 0.68rem;
-    color: #4a7a4f;
+    color: #5a9a5a;
     text-transform: uppercase;
     letter-spacing: 2px;
     margin-top: 8px;
@@ -241,7 +241,7 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stApp"] {
     padding: 10px;
 }
 [data-testid="stFileUploader"] label {
-    color: #4a7a4f !important;
+    color: #5a9a5a !important;
     font-family: 'Share Tech Mono', monospace !important;
 }
 
@@ -268,7 +268,7 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stApp"] {
     padding: 4px;
 }
 .stTabs [data-baseweb="tab"] {
-    color: #4a7a4f !important;
+    color: #5a9a5a !important;
     font-family: 'Share Tech Mono', monospace !important;
     border-radius: 6px;
 }
@@ -331,7 +331,7 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stApp"] {
     font-size: 0.75rem !important;
 }
 [data-testid="stMetricLabel"] > div {
-    color: #4a7a4f !important;
+    color: #5a9a5a !important;
     font-family: 'Share Tech Mono', monospace !important;
     font-size: 0.7rem !important;
     letter-spacing: 1px;
@@ -408,7 +408,7 @@ def apply_theme(show_rain: bool = False):
     if user:
         with st.sidebar:
             st.markdown(
-                f'<p style="color:#4a7a4f;font-family:Share Tech Mono;font-size:0.7rem;'
+                f'<p style="color:#5a9a5a;font-family:Share Tech Mono;font-size:0.7rem;'
                 f'letter-spacing:1px;margin:0;padding:4px 0;">USER: {user.upper()}</p>',
                 unsafe_allow_html=True,
             )
@@ -422,7 +422,7 @@ def apply_theme(show_rain: bool = False):
             )
             st.markdown(logo_strip_html(height=26), unsafe_allow_html=True)
             st.markdown(
-                '<p style="color:#4a7a4f;font-family:Share Tech Mono;font-size:0.6rem;'
+                '<p style="color:#5a9a5a;font-family:Share Tech Mono;font-size:0.6rem;'
                 'text-align:center;letter-spacing:1px;margin-top:6px;">KTP PARTNERSHIP</p>',
                 unsafe_allow_html=True,
             )
@@ -524,7 +524,7 @@ def aggrid_issues(df, height: int = 400):
                 ".ag-row": {"background": "#000f02", "border-bottom": "1px solid rgba(0,255,65,0.06)", "font-family": "Share Tech Mono", "font-size": "0.75rem", "color": "#b0ffb8"},
                 ".ag-row-hover": {"background": "rgba(0,255,65,0.05) !important"},
                 ".ag-cell": {"border-right": "1px solid rgba(0,255,65,0.04)"},
-                ".ag-paging-panel": {"background": "#000f02", "color": "#4a7a4f", "font-family": "Share Tech Mono", "font-size": "0.7rem"},
+                ".ag-paging-panel": {"background": "#000f02", "color": "#5a9a5a", "font-family": "Share Tech Mono", "font-size": "0.7rem"},
                 ".ag-filter-toolpanel": {"background": "#000f02"},
                 ".ag-side-bar": {"background": "#000f02", "border-left": "1px solid rgba(0,255,65,0.15)"},
             },
@@ -563,7 +563,7 @@ def aggrid_plain(df, height: int = 350, page_size: int = 20):
                 ".ag-header-cell-label": {"color": "#00e5ff", "font-family": "Share Tech Mono", "font-size": "0.72rem", "letter-spacing": "1px"},
                 ".ag-row": {"background": "#000f02", "border-bottom": "1px solid rgba(0,255,65,0.06)", "font-family": "Share Tech Mono", "font-size": "0.75rem", "color": "#b0ffb8"},
                 ".ag-row-hover": {"background": "rgba(0,255,65,0.05) !important"},
-                ".ag-paging-panel": {"background": "#000f02", "color": "#4a7a4f", "font-family": "Share Tech Mono", "font-size": "0.7rem"},
+                ".ag-paging-panel": {"background": "#000f02", "color": "#5a9a5a", "font-family": "Share Tech Mono", "font-size": "0.7rem"},
             },
         )
     except ImportError:
@@ -578,7 +578,7 @@ def workflow_breadcrumb(steps: list[tuple[str, bool]]):
     """
     parts = []
     for i, (label, done) in enumerate(steps):
-        color = "#00ff41" if done else "#4a7a4f"
+        color = "#00ff41" if done else "#5a9a5a"
         border = "rgba(0,255,65,0.4)" if done else "rgba(74,122,79,0.3)"
         bg = "rgba(0,255,65,0.06)" if done else "rgba(0,5,1,0.4)"
         tick = " ✓" if done else ""
@@ -589,7 +589,7 @@ def workflow_breadcrumb(steps: list[tuple[str, bool]]):
         )
         if i < len(steps) - 1:
             parts.append(
-                '<div style="color:#4a7a4f;font-size:0.8rem;padding:0 2px;align-self:center;">→</div>'
+                '<div style="color:#5a9a5a;font-size:0.8rem;padding:0 2px;align-self:center;">→</div>'
             )
     html = (
         '<div style="display:flex;gap:6px;align-items:center;'

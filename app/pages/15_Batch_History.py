@@ -76,7 +76,7 @@ if engine is None:
         '<div class="glass-card" style="text-align:center;padding:60px 20px;">'
         '<p style="font-family:Orbitron,sans-serif;font-size:1.2rem;color:#00ff41;">'
         '// DATABASE UNAVAILABLE</p>'
-        '<p style="color:#4a7a4f;font-family:Share Tech Mono;">Could not connect to the database. '
+        '<p style="color:#5a9a5a;font-family:Share Tech Mono;">Could not connect to the database. '
         'Ensure DATABASE_URL is set or the SQLite output file exists.</p>'
         '</div>',
         unsafe_allow_html=True,
@@ -98,7 +98,7 @@ if batches.empty:
         '<div class="glass-card" style="text-align:center;padding:60px 20px;">'
         '<p style="font-family:Orbitron,sans-serif;font-size:1.2rem;color:#00ff41;">'
         '// NO BATCH RECORDS FOUND</p>'
-        '<p style="color:#4a7a4f;font-family:Share Tech Mono;">'
+        '<p style="color:#5a9a5a;font-family:Share Tech Mono;">'
         'Run a validation pipeline to record your first batch.</p>'
         '</div>',
         unsafe_allow_html=True,
@@ -241,7 +241,7 @@ else:
 
         if issues_df.empty:
             st.markdown(
-                '<p style="color:#4a7a4f;font-family:Share Tech Mono;font-size:0.82rem;">'
+                '<p style="color:#5a9a5a;font-family:Share Tech Mono;font-size:0.82rem;">'
                 '// No issues recorded for this batch.</p>',
                 unsafe_allow_html=True,
             )

@@ -40,7 +40,7 @@ workflow_breadcrumb([
 ])
 
 if df_raw is None:
-    terminal_block("// NO DATA LOADED<br><span style='color:#4a7a4f;'>Go to Load Data first.</span>")
+    terminal_block("// NO DATA LOADED<br><span style='color:#5a9a5a;'>Go to Load Data first.</span>")
     st.stop()
 
 # Session status bar — shows what's ready
@@ -49,7 +49,7 @@ _has_corpus = _corpus_mgr is not None and hasattr(_corpus_mgr, "list_corpora") a
 _status_items = [
     ("Data", f"{len(df_raw):,} rows", "#00ff41"),
     ("Rules", f"{sum(len(v) for v in rules.values() if isinstance(v, list))} rules" if rules else "None (inferred)", "#00ff41" if rules else "#ff9100"),
-    ("Corpus", "Loaded" if _has_corpus else "Not loaded", "#00ff41" if _has_corpus else "#4a7a4f"),
+    ("Corpus", "Loaded" if _has_corpus else "Not loaded", "#00ff41" if _has_corpus else "#5a9a5a"),
     ("AI", st.session_state.get("ai_provider_type", "ollama").upper(), "#00e5ff"),
 ]
 st.markdown(
@@ -57,7 +57,7 @@ st.markdown(
     + "".join(
         f'<div style="background:rgba(0,5,1,0.7);border:1px solid rgba(0,255,65,0.15);'
         f'border-radius:6px;padding:6px 14px;font-family:Share Tech Mono;font-size:0.72rem;">'
-        f'<span style="color:#4a7a4f;">{label}: </span>'
+        f'<span style="color:#5a9a5a;">{label}: </span>'
         f'<span style="color:{color};">{value}</span></div>'
         for label, value, color in _status_items
     )
@@ -87,7 +87,7 @@ with col_cfg2:
     if use_ai:
         provider_type = st.session_state.get("ai_provider_type", "ollama")
         st.markdown(
-            f'<p style="color:#4a7a4f;font-family:Share Tech Mono;font-size:0.72rem;">'
+            f'<p style="color:#5a9a5a;font-family:Share Tech Mono;font-size:0.72rem;">'
             f'AI Provider: {provider_type.upper()} -- Configure in Settings page</p>',
             unsafe_allow_html=True,
         )
@@ -418,7 +418,7 @@ if result is not None:
             if _sev_col:
                 sev_counts = rpt[_sev_col].value_counts()
                 _sev_colors = {"critical": "#ff1744", "high": "#ff9100",
-                               "medium": "#ffea00", "low": "#00e5ff", "info": "#4a7a4f"}
+                               "medium": "#ffea00", "low": "#00e5ff", "info": "#5a9a5a"}
                 for sev, count in sev_counts.items():
                     color = _sev_colors.get(str(sev).lower(), "#b0ffb8")
                     pct = count / len(rpt) * 100
@@ -495,12 +495,12 @@ if result is not None:
             + (f'<p style="color:#b0ffb8;font-size:0.75rem;margin:4px 0;">→ <b>Cleaning</b> — '
                f'{rpt["suggested_fix"].notna().sum()} auto-fix suggestions ready to review and apply</p>'
                if _has_fixes else
-               '<p style="color:#4a7a4f;font-size:0.75rem;margin:4px 0;">→ <b>Cleaning</b> — manually review and correct issues</p>')
+               '<p style="color:#5a9a5a;font-size:0.75rem;margin:4px 0;">→ <b>Cleaning</b> — manually review and correct issues</p>')
             + ('<p style="color:#b0ffb8;font-size:0.75rem;margin:4px 0;">→ <b>AI Investigation</b> — AI enrichment results ready, including executive summary</p>'
                if _has_ai else
-               '<p style="color:#4a7a4f;font-size:0.75rem;margin:4px 0;">→ <b>AI Investigation</b> — re-run with AI Enrichment enabled for deeper insights</p>')
+               '<p style="color:#5a9a5a;font-size:0.75rem;margin:4px 0;">→ <b>AI Investigation</b> — re-run with AI Enrichment enabled for deeper insights</p>')
             + '<p style="color:#b0ffb8;font-size:0.75rem;margin:4px 0;">→ <b>Command Center</b> — full dashboard with quality scores and trend charts</p>'
-            + f'<p style="color:#4a7a4f;font-size:0.7rem;margin-top:10px;">Batch: {st.session_state.get("current_batch_id","—")}</p>'
+            + f'<p style="color:#5a9a5a;font-size:0.7rem;margin-top:10px;">Batch: {st.session_state.get("current_batch_id","—")}</p>'
             + '</div>',
             unsafe_allow_html=True,
         )
@@ -530,7 +530,7 @@ if result is not None:
             )
 
         st.markdown(
-            '<p style="color:#4a7a4f;font-family:Share Tech Mono;font-size:0.7rem;margin-top:12px;">'
+            '<p style="color:#5a9a5a;font-family:Share Tech Mono;font-size:0.7rem;margin-top:12px;">'
             'Full AI insights available on the Command Center dashboard and AI Investigation page.</p>',
             unsafe_allow_html=True,
         )
@@ -538,5 +538,5 @@ if result is not None:
 elif not st.session_state.get("validation_completed"):
     terminal_block(
         "// READY TO VALIDATE<br>"
-        "<span style='color:#4a7a4f;'>Configure options above and click RUN VALIDATION.</span>"
+        "<span style='color:#5a9a5a;'>Configure options above and click RUN VALIDATION.</span>"
     )
