@@ -22,7 +22,7 @@ def _img_b64(filename: str) -> str:
         return ""
 
 def logo_strip_html(height: int = 32, justify: str = "center") -> str:
-    """Return HTML for the three partner logos on a white pill background."""
+    """Return HTML for the three partner logos as white silhouettes on dark background."""
     logos = [
         (_img_b64("bigspark_logo.png"),    "bigspark"),
         (_img_b64("NTU_Primary_logo.png"), "NTU"),
@@ -32,13 +32,12 @@ def logo_strip_html(height: int = 32, justify: str = "center") -> str:
     for src, alt in logos:
         if src:
             parts.append(
-                f'<div style="background:#fff;border-radius:6px;padding:4px 10px;'
-                f'display:flex;align-items:center;">'
-                f'<img src="{src}" alt="{alt}" style="height:{height}px;width:auto;">'
-                f'</div>'
+                f'<img src="{src}" alt="{alt}" '
+                f'style="height:{height}px;width:auto;'
+                f'filter:brightness(0) invert(1);opacity:0.75;">'
             )
     return (
-        f'<div style="display:flex;gap:10px;align-items:center;'
+        f'<div style="display:flex;gap:16px;align-items:center;'
         f'justify-content:{justify};flex-wrap:wrap;margin-top:4px;">'
         + "".join(parts) +
         f'</div>'
