@@ -17,7 +17,6 @@ from shared.auth import require_auth
 from shared.theme import (
     apply_theme, page_header, section_header, terminal_block,
     kpi_card, workflow_breadcrumb,
-    aggrid_issues,
     MATRIX_GREEN, MATRIX_CYAN, MATRIX_RED, MATRIX_ORANGE, MATRIX_TEXT_DIM,
 )
 from shared.state import init_state
@@ -474,7 +473,7 @@ if result is not None:
 
         # ── Full issue table ─────────────────────────────────────────────────
         section_header("// Full Issue Report")
-        aggrid_issues(rpt)
+        st.dataframe(rpt, use_container_width=True, hide_index=True, height=400)
 
         csv = rpt.to_csv(index=False).encode("utf-8")
         st.download_button(
