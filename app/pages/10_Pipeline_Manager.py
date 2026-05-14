@@ -65,6 +65,11 @@ with create_tab:
                 del st.session_state["pending_pipeline_step"]
                 st.rerun()
 
+    # Clear form keys BEFORE widgets are instantiated (avoids StreamlitAPIException)
+    if st.session_state.pop("_reset_pipeline_form", False):
+        for _k in ("new_pipeline_name", "new_pipeline_desc", "current_pipeline_steps"):
+            st.session_state.pop(_k, None)
+
     # Pipeline metadata
     col1, col2 = st.columns(2)
     with col1:
@@ -182,9 +187,7 @@ with create_tab:
                 pipeline = Pipeline(name=pipeline_name, description=pipeline_desc, steps=steps)
                 filepath = pm.save_pipeline(pipeline)
                 st.success(f"Pipeline '{pipeline_name}' saved to {filepath}")
-                st.session_state["new_pipeline_name"] = ""
-                st.session_state["new_pipeline_desc"] = ""
-                st.session_state["current_pipeline_steps"] = []
+                st.session_state["_reset_pipeline_form"] = True
                 st.rerun()
     else:
         st.info("No steps added yet. Use the Add Step section above to build your pipeline.")
