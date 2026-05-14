@@ -22,22 +22,28 @@ def _img_b64(filename: str) -> str:
         return ""
 
 def logo_strip_html(height: int = 32, justify: str = "center") -> str:
-    """Return HTML for the three partner logos as white silhouettes on dark background."""
+    """
+    Return HTML for the three partner logos on a dark background.
+
+    bigspark has a transparent PNG → brightness(0) invert(1) → clean white silhouette.
+    NTU and UKRI have white-background PNGs → invert(1) only turns the white bg
+    black/transparent and keeps logo content visible in inverted colours.
+    """
     logos = [
-        (_img_b64("bigspark_logo.png"),    "bigspark"),
-        (_img_b64("NTU_Primary_logo.png"), "NTU"),
-        (_img_b64("UKRI_logo.png"),        "Innovate UK"),
+        (_img_b64("bigspark_logo.png"),    "bigspark",    "brightness(0) invert(1)", "0.85"),
+        (_img_b64("NTU_Primary_logo.png"), "NTU",         "invert(1)",               "0.90"),
+        (_img_b64("UKRI_logo.png"),        "Innovate UK", "invert(1)",               "0.90"),
     ]
     parts = []
-    for src, alt in logos:
+    for src, alt, css_filter, opacity in logos:
         if src:
             parts.append(
                 f'<img src="{src}" alt="{alt}" '
                 f'style="height:{height}px;width:auto;'
-                f'filter:brightness(0) invert(1);opacity:0.75;">'
+                f'filter:{css_filter};opacity:{opacity};">'
             )
     return (
-        f'<div style="display:flex;gap:16px;align-items:center;'
+        f'<div style="display:flex;gap:20px;align-items:center;'
         f'justify-content:{justify};flex-wrap:wrap;margin-top:4px;">'
         + "".join(parts) +
         f'</div>'
