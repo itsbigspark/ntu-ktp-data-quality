@@ -10,7 +10,11 @@ if _ROOT not in sys.path:
 import streamlit as st
 import pandas as pd
 from shared.auth import require_auth
-from shared.theme import apply_theme, page_header, section_header
+from shared.theme import (
+    apply_theme, page_header, section_header,
+    SEVERITY_COLORS, SEVERITY_BG, STEP_TYPE_COLORS,
+    heatmap_styler, diff_styler, severity_dot,
+)
 from shared.state import init_state
 
 init_state()
@@ -366,6 +370,15 @@ with execute_tab:
                         + (" — Skipped" if _skipped else f" — {rows_in} → {rows_out} rows")
                     )
 
+                    # Step-type coloured accent strip above the expander
+                    _accent = STEP_TYPE_COLORS.get(stype, "#5a9a5a")
+                    st.markdown(
+                        f'<div style="height:3px;border-radius:2px;margin:8px 0 2px 0;'
+                        f'background:linear-gradient(90deg,{_accent} 0%,{_accent}40 60%,transparent 100%);'
+                        f'box-shadow:0 0 8px {_accent}40;"></div>',
+                        unsafe_allow_html=True,
+                    )
+
                     with st.expander(_header, expanded=not _skipped):
                         if _skipped:
                             st.caption(details.get("reason", ""))
@@ -373,27 +386,58 @@ with execute_tab:
                             # ── Per-step structured display ────────────────
                             if stype == "validate":
                                 issues_count = details.get("issues_found", 0)
-                                st.markdown(f"**{issues_count}** issues found")
+                                # Severity rollup with coloured dots
                                 issues_records = details.get("issues", [])
+                                _sev_rollup_html = ""
                                 if issues_records:
-                                    # Fixed height + no use_container_width to avoid
-                                    # React #185 measurement loop inside expander.
-                                    st.dataframe(
-                                        pd.DataFrame(issues_records),
-                                        hide_index=True,
-                                        height=300,
-                                    )
+                                    _idf = pd.DataFrame(issues_records)
+                                    _sev_col = next((c for c in ("severity", "Severity") if c in _idf.columns), None)
+                                    if _sev_col:
+                                        _sev_counts = _idf[_sev_col].astype(str).str.lower().value_counts()
+                                        _sev_rollup_html = " · ".join(
+                                            f'{severity_dot(s)}<span style="color:{SEVERITY_COLORS.get(s, "#b0ffb8")};font-size:0.78rem;">{s.upper()} {n}</span>'
+                                            for s, n in _sev_counts.items()
+                                        )
+                                st.markdown(
+                                    f'<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">'
+                                    f'<span style="color:#b0ffb8;font-weight:600;">{issues_count} issues found</span>'
+                                    f'{_sev_rollup_html}</div>',
+                                    unsafe_allow_html=True,
+                                )
+                                if issues_records:
+                                    # Style: colour the severity column itself
+                                    _idf = pd.DataFrame(issues_records)
+                                    _sev_col = next((c for c in ("severity", "Severity") if c in _idf.columns), None)
+                                    if _sev_col:
+                                        def _sev_color(v):
+                                            c = SEVERITY_COLORS.get(str(v).lower(), "#b0ffb8")
+                                            bg = SEVERITY_BG.get(str(v).lower(), "")
+                                            return f"color: {c}; background-color: {bg}; font-weight: 600;"
+                                        try:
+                                            _styled_issues = _idf.style.map(_sev_color, subset=[_sev_col])
+                                            st.dataframe(_styled_issues, hide_index=True, height=300)
+                                        except Exception:
+                                            st.dataframe(_idf, hide_index=True, height=300)
+                                    else:
+                                        st.dataframe(_idf, hide_index=True, height=300)
 
                             elif stype in ("clean", "corpus_standardize"):
                                 changed = details.get("values_changed", 0)
                                 st.markdown(f"**{changed}** cell values changed")
                                 if diff:
                                     st.caption(f"Sample of changes (up to 50 shown):")
-                                    st.dataframe(
-                                        pd.DataFrame(diff),
-                                        hide_index=True,
-                                        height=250,
-                                    )
+                                    _diff_df = pd.DataFrame(diff)
+                                    # Find the before/after column names (vary by step)
+                                    _before_col = next((c for c in ("before", "original", "old", "from") if c in _diff_df.columns), None)
+                                    _after_col  = next((c for c in ("after", "fixed", "new", "to") if c in _diff_df.columns), None)
+                                    try:
+                                        if _before_col and _after_col:
+                                            _styled = diff_styler(_diff_df, _before_col, _after_col)
+                                            st.dataframe(_styled, hide_index=True, height=250)
+                                        else:
+                                            st.dataframe(_diff_df, hide_index=True, height=250)
+                                    except Exception:
+                                        st.dataframe(_diff_df, hide_index=True, height=250)
 
                             elif stype == "deduplicate":
                                 c1, c2, c3 = st.columns(3)
@@ -464,7 +508,26 @@ with execute_tab:
                                     value=False,
                                 )
                                 if show_preview:
-                                    st.dataframe(df_snap.head(100), hide_index=True, height=400)
+                                    # Heat-map cells with issues if this is a validate step
+                                    _issues_for_heatmap = None
+                                    if stype == "validate":
+                                        _ir = details.get("issues", [])
+                                        if _ir:
+                                            _issues_for_heatmap = pd.DataFrame(_ir)
+                                    try:
+                                        styled = heatmap_styler(
+                                            df_snap, _issues_for_heatmap, max_rows=200
+                                        )
+                                        st.markdown(
+                                            '<p style="color:#5a9a5a;font-family:Share Tech Mono;'
+                                            'font-size:0.7rem;margin-bottom:6px;">'
+                                            'Red = flagged · Yellow = caution · Cyan = info · '
+                                            'Grey = missing · Showing top 200 rows</p>',
+                                            unsafe_allow_html=True,
+                                        )
+                                        st.dataframe(styled, hide_index=True, height=400)
+                                    except Exception:
+                                        st.dataframe(df_snap.head(100), hide_index=True, height=400)
                                 st.download_button(
                                     f"Download step {step['step_number']} output (CSV)",
                                     df_snap.to_csv(index=False).encode("utf-8"),

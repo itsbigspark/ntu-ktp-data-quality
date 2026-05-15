@@ -69,6 +69,125 @@ MATRIX_TEXT = "#b0ffb8"
 MATRIX_TEXT_DIM = "#5a9a5a"
 
 # ---------------------------------------------------------------------------
+# Unified Severity Palette
+# Use these EVERYWHERE (KPI cards, bars, badges, cell highlights, expanders)
+# so users learn to read by colour within 5 seconds.
+# All transparent on dark backgrounds — solid hex for text/badge accents.
+# ---------------------------------------------------------------------------
+SEVERITY_COLORS = {
+    "critical": "#ff1744",
+    "high":     "#ff9100",
+    "medium":   "#ffea00",
+    "low":      "#00e5ff",
+    "info":     "#00ff41",
+    "ok":       "#00ff41",
+    "warning":  "#ff9100",
+}
+
+# Transparent backgrounds that sit cleanly over the Matrix-black canvas.
+SEVERITY_BG = {
+    "critical": "rgba(255, 23, 68, 0.18)",
+    "high":     "rgba(255, 145, 0, 0.16)",
+    "medium":   "rgba(255, 234, 0, 0.14)",
+    "low":      "rgba(0, 229, 255, 0.14)",
+    "info":     "rgba(0, 255, 65, 0.12)",
+    "ok":       "rgba(0, 255, 65, 0.10)",
+    "missing":  "rgba(180, 180, 180, 0.10)",   # null/NaN cells
+    "fixed":    "rgba(0, 255, 65, 0.18)",      # corpus / cleaning corrected
+    "changed":  "rgba(0, 229, 255, 0.16)",     # diff highlight
+}
+
+# Pipeline Manager step-type accent colours (used for expander left-border)
+STEP_TYPE_COLORS = {
+    "validate":           "#ff9100",   # orange — issue-finding
+    "clean":              "#00e5ff",   # cyan — cleaning
+    "corpus_standardize": "#c050ff",   # purple — corpus
+    "deduplicate":        "#ffea00",   # yellow — dedupe
+    "trim":               "#ff6b6b",   # coral — destructive trim
+    "ai_enrichment":      "#00ff41",   # green — AI
+    "pii_detection":      "#ff1744",   # red — security
+}
+
+
+def severity_dot(severity: str, size: int = 8) -> str:
+    """Inline coloured dot for severity labels."""
+    c = SEVERITY_COLORS.get(str(severity).lower(), MATRIX_TEXT_DIM)
+    return (
+        f'<span style="display:inline-block;width:{size}px;height:{size}px;'
+        f'background:{c};border-radius:50%;box-shadow:0 0 6px {c};'
+        f'margin-right:6px;vertical-align:middle;"></span>'
+    )
+
+
+def heatmap_styler(df, issues_df, max_rows: int = 200):
+    """
+    Return a Pandas Styler that highlights cells with issues on a dark
+    Matrix background. Transparent colours so the underlying theme shows
+    through; text colour bumped to stay readable.
+
+    issues_df must have columns: row_id (int), column (str), severity (str).
+    Missing/None cells get a dim grey overlay. Cells with issues get a
+    severity-coloured glow. Capped at `max_rows` because Pandas Styler
+    becomes slow over a few hundred rows.
+    """
+    import pandas as _pd
+    sample = df.head(max_rows).copy()
+
+    if issues_df is None or (hasattr(issues_df, "empty") and issues_df.empty):
+        issue_lookup = {}
+    else:
+        issue_lookup = {}
+        for _, row in issues_df.iterrows():
+            try:
+                rid = int(row.get("row_id", -1))
+            except (ValueError, TypeError):
+                continue
+            col = row.get("column") or row.get("column_name")
+            sev = str(row.get("severity", "medium")).lower()
+            if rid < 0 or not col or col not in sample.columns:
+                continue
+            # Keep the most severe issue per cell
+            existing = issue_lookup.get((rid, col))
+            sev_rank = {"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}
+            if existing is None or sev_rank.get(sev, 5) < sev_rank.get(existing, 5):
+                issue_lookup[(rid, col)] = sev
+
+    def _cell_style(val, ridx, cname):
+        # Missing / null
+        try:
+            is_null = val is None or (isinstance(val, float) and val != val) or str(val).strip() == ""
+        except Exception:
+            is_null = False
+        if is_null and (ridx, cname) not in issue_lookup:
+            return f"background-color: {SEVERITY_BG['missing']}; color: #6a6a6a;"
+        sev = issue_lookup.get((ridx, cname))
+        if sev:
+            bg = SEVERITY_BG.get(sev, SEVERITY_BG["medium"])
+            fg = SEVERITY_COLORS.get(sev, "#ffffff")
+            return f"background-color: {bg}; color: {fg}; font-weight: 600;"
+        return ""
+
+    def _row_apply(row):
+        return [_cell_style(val, row.name, col) for col, val in row.items()]
+
+    return sample.style.apply(_row_apply, axis=1)
+
+
+def diff_styler(diff_df, before_col: str = "before", after_col: str = "after"):
+    """
+    Style a before/after diff dataframe: red on the `before` column,
+    green on the `after` column. Use for cleaning / corpus / dedupe
+    "Sample of changes" tables.
+    """
+    def _color_cols(col):
+        if col.name == before_col:
+            return [f"background-color: {SEVERITY_BG['critical']}; color: #ff8080;"] * len(col)
+        if col.name == after_col:
+            return [f"background-color: {SEVERITY_BG['fixed']}; color: #80ff95;"] * len(col)
+        return [""] * len(col)
+    return diff_df.style.apply(_color_cols, axis=0)
+
+# ---------------------------------------------------------------------------
 # CSS
 # ---------------------------------------------------------------------------
 _BASE_CSS = """

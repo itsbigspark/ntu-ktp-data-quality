@@ -23,6 +23,7 @@ from shared.theme import (
     MATRIX_GREEN, MATRIX_GREEN_DIM, MATRIX_CYAN, MATRIX_RED,
     MATRIX_ORANGE, MATRIX_YELLOW, MATRIX_BG, MATRIX_GRID,
     MATRIX_BORDER, MATRIX_TEXT, MATRIX_TEXT_DIM,
+    SEVERITY_COLORS, SEVERITY_BG, severity_dot, heatmap_styler,
 )
 from shared.state import init_state
 
@@ -125,7 +126,7 @@ with dash_tab:
     now = time.strftime("%Y-%m-%d %H:%M:%S")
     st.markdown(
         f'<div style="background:rgba(0,15,2,0.6);border:1px solid rgba(0,255,65,0.15);border-radius:4px;'
-        f'padding:6px 14px;margin-bottom:20px;font-family:Share Tech Mono;font-size:0.72rem;color:#00ff41;'
+        f'padding:6px 14px;margin-bottom:12px;font-family:Share Tech Mono;font-size:0.72rem;color:#00ff41;'
         f'display:flex;gap:20px;align-items:center;">'
         f'<span><span style="display:inline-block;width:7px;height:7px;background:#00ff41;border-radius:50%;'
         f'box-shadow:0 0 8px #00ff41;margin-right:6px;"></span>SYSTEM ONLINE</span>'
@@ -135,6 +136,44 @@ with dash_tab:
         f'</div>',
         unsafe_allow_html=True,
     )
+
+    # -----------------------------------------------------------------------
+    # Drill-down breadcrumb (feature E)
+    # State keys: cc_drill_batch, cc_drill_column, cc_drill_issue_row_id
+    # Cleared by the "All Batches" link.
+    # -----------------------------------------------------------------------
+    _drill_batch  = st.session_state.get("cc_drill_batch")
+    _drill_column = st.session_state.get("cc_drill_column")
+    _drill_issue  = st.session_state.get("cc_drill_issue_row_id")
+
+    def _clear_drill(reset_keys):
+        for k in reset_keys:
+            st.session_state.pop(k, None)
+
+    bc_cols = st.columns([6, 1])
+    with bc_cols[0]:
+        crumbs = ['<span style="color:#5a9a5a;">All Batches</span>']
+        if _drill_batch:
+            crumbs[0] = '<a href="#" style="color:#00e5ff;text-decoration:none;">All Batches</a>'
+            crumbs.append(f'<span style="color:#b0ffb8;">{_drill_batch}</span>')
+        if _drill_column:
+            crumbs.append(f'<span style="color:#00ff41;">{_drill_column}</span>')
+        if _drill_issue is not None:
+            crumbs.append(f'<span style="color:#ff9100;">row #{_drill_issue}</span>')
+
+        st.markdown(
+            '<div style="font-family:Share Tech Mono;font-size:0.78rem;'
+            'padding:8px 14px;background:rgba(0,5,1,0.6);border:1px solid rgba(0,229,255,0.15);'
+            'border-radius:4px;margin-bottom:16px;">'
+            + ' <span style="color:#5a9a5a;">›</span> '.join(crumbs)
+            + '</div>',
+            unsafe_allow_html=True,
+        )
+    with bc_cols[1]:
+        if _drill_batch or _drill_column or _drill_issue is not None:
+            if st.button("← Back to all", key="cc_clear_drill", use_container_width=True):
+                _clear_drill(["cc_drill_batch", "cc_drill_column", "cc_drill_issue_row_id"])
+                st.rerun()
 
     # -----------------------------------------------------------------------
     # KPI row
@@ -278,7 +317,8 @@ with dash_tab:
     display_df.columns = _display_names
     display_df["Pass"] = display_df["Pass"].map({True: "PASS", 1: "PASS", False: "FAIL", 0: "FAIL"})
 
-    st.dataframe(
+    st.caption("Click a row to drill into that batch →")
+    _bh_event = st.dataframe(
         display_df, use_container_width=True, hide_index=True,
         height=min(350, 40 + 35 * len(display_df)),
         column_config={
@@ -286,7 +326,22 @@ with dash_tab:
             "Batch ID": st.column_config.TextColumn("Batch ID", width="medium"),
             "Pass": st.column_config.TextColumn("Status", width="small"),
         },
+        on_select="rerun",
+        selection_mode="single-row",
+        key="cc_batch_history_table",
     )
+    # Wire row-click → drill into selected batch
+    try:
+        _sel_rows = _bh_event.selection.rows if hasattr(_bh_event, "selection") else []
+    except Exception:
+        _sel_rows = []
+    if _sel_rows:
+        _picked_batch = display_df.iloc[_sel_rows[0]]["Batch ID"]
+        if st.session_state.get("cc_drill_batch") != _picked_batch:
+            st.session_state["cc_drill_batch"] = _picked_batch
+            st.session_state.pop("cc_drill_column", None)
+            st.session_state.pop("cc_drill_issue_row_id", None)
+            st.rerun()
 
     st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
 
@@ -361,12 +416,23 @@ with dash_tab:
     st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
 
     # -----------------------------------------------------------------------
-    # Batch Drill-Down
+    # Batch Drill-Down — honours cc_drill_batch state from row-click above
     # -----------------------------------------------------------------------
     section_header("// Deep Scan : Batch Drill-Down")
 
     batch_ids = batches["batch_id"].tolist()
-    selected_drill = st.selectbox("SELECT BATCH FOR ANALYSIS", batch_ids, index=0, key="drill_batch")
+    _drill_state = st.session_state.get("cc_drill_batch")
+    _default_idx = batch_ids.index(_drill_state) if (_drill_state in batch_ids) else 0
+    selected_drill = st.selectbox(
+        "SELECT BATCH FOR ANALYSIS", batch_ids,
+        index=_default_idx, key="drill_batch",
+    )
+    # Keep state in sync with the dropdown choice
+    if selected_drill != _drill_state:
+        st.session_state["cc_drill_batch"] = selected_drill
+        # Selecting a new batch invalidates deeper drills
+        st.session_state.pop("cc_drill_column", None)
+        st.session_state.pop("cc_drill_issue_row_id", None)
 
     if selected_drill:
         try:
@@ -403,6 +469,22 @@ with dash_tab:
                 st.markdown('<div class="chart-container">', unsafe_allow_html=True)
                 st.plotly_chart(fig_col, use_container_width=True, config={"displayModeBar": False})
                 st.markdown('</div>', unsafe_allow_html=True)
+                # Click-through table beneath the chart (feature A)
+                st.caption("Click a column to view its health profile →")
+                _bc_event = st.dataframe(
+                    by_col, hide_index=True, height=min(220, 40 + 32 * len(by_col)),
+                    on_select="rerun", selection_mode="single-row",
+                    key="cc_by_col_click",
+                )
+                try:
+                    _sel = _bc_event.selection.rows if hasattr(_bc_event, "selection") else []
+                except Exception:
+                    _sel = []
+                if _sel:
+                    _picked_col = by_col.iloc[_sel[0]]["Column"]
+                    if st.session_state.get("cc_drill_column") != _picked_col:
+                        st.session_state["cc_drill_column"] = _picked_col
+                        st.rerun()
 
             with drill_right:
                 by_type = drill_issues["issue_type"].value_counts().reset_index()
@@ -428,12 +510,79 @@ with dash_tab:
             st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
             st.markdown(
                 '<p style="color:#5a9a5a;font-family:Share Tech Mono;font-size:0.82rem;'
-                'letter-spacing:2px;">// FULL ISSUE LOG</p>',
+                'letter-spacing:2px;">// FULL ISSUE LOG — click a row to see surrounding data context</p>',
                 unsafe_allow_html=True,
             )
-            st.dataframe(drill_issues, use_container_width=True, hide_index=True, height=360)
+            # Optional pre-filter by column when user has drilled into one
+            _drill_col_active = st.session_state.get("cc_drill_column")
+            _issues_view = (
+                drill_issues[drill_issues["column_name"] == _drill_col_active]
+                if _drill_col_active and "column_name" in drill_issues.columns
+                else drill_issues
+            )
+            if _drill_col_active:
+                st.caption(f"Filtered to column: **{_drill_col_active}**")
 
-            csv_export = drill_issues.to_csv(index=False).encode("utf-8")
+            # Style severity column inline
+            def _sev_cell_style(v):
+                c = SEVERITY_COLORS.get(str(v).lower(), "#b0ffb8")
+                bg = SEVERITY_BG.get(str(v).lower(), "")
+                return f"color: {c}; background-color: {bg}; font-weight: 600;"
+            try:
+                _issues_view_styled = _issues_view.style.map(_sev_cell_style, subset=["severity"]) \
+                    if "severity" in _issues_view.columns else _issues_view
+            except Exception:
+                _issues_view_styled = _issues_view
+
+            _issue_event = st.dataframe(
+                _issues_view_styled, hide_index=True, height=360,
+                on_select="rerun", selection_mode="single-row",
+                key="cc_issue_log_click",
+            )
+            try:
+                _isel = _issue_event.selection.rows if hasattr(_issue_event, "selection") else []
+            except Exception:
+                _isel = []
+            if _isel:
+                _picked_row = _issues_view.iloc[_isel[0]]
+                _row_id = _picked_row.get("row_id")
+                if _row_id is not None:
+                    st.session_state["cc_drill_issue_row_id"] = int(_row_id)
+
+            # ── Issue-row context drill (feature C) ────────────────────────
+            _row_id_ctx = st.session_state.get("cc_drill_issue_row_id")
+            if _row_id_ctx is not None:
+                with st.expander(f"// Row Context — row #{_row_id_ctx} in batch {selected_drill}", expanded=True):
+                    # Find all issues for this row
+                    _row_issues = drill_issues[drill_issues["row_id"] == _row_id_ctx] \
+                        if "row_id" in drill_issues.columns else pd.DataFrame()
+                    if _row_issues.empty:
+                        st.caption("No issues recorded for this row id.")
+                    else:
+                        st.markdown(
+                            f'<p style="color:#ff9100;font-family:Share Tech Mono;font-size:0.78rem;">'
+                            f'{len(_row_issues)} issue(s) on this row:</p>',
+                            unsafe_allow_html=True,
+                        )
+                        for _, _ri in _row_issues.iterrows():
+                            _sev = str(_ri.get("severity", "medium")).lower()
+                            _col_n = _ri.get("column_name", "?")
+                            _itype = _ri.get("issue_type", "?")
+                            _det = _ri.get("description", "") or _ri.get("detail", "")
+                            st.markdown(
+                                f'<div style="background:{SEVERITY_BG.get(_sev,"")};border-left:3px solid {SEVERITY_COLORS.get(_sev,"#b0ffb8")};'
+                                f'padding:8px 12px;margin:4px 0;font-family:Share Tech Mono;font-size:0.78rem;">'
+                                f'{severity_dot(_sev)}<b style="color:{SEVERITY_COLORS.get(_sev,"#b0ffb8")};">{_sev.upper()}</b> '
+                                f'<span style="color:#00e5ff;">{_col_n}</span> '
+                                f'<span style="color:#5a9a5a;">· {_itype}</span><br>'
+                                f'<span style="color:#b0ffb8;">{_det}</span></div>',
+                                unsafe_allow_html=True,
+                            )
+                    if st.button("Clear row context", key="cc_clear_row_ctx"):
+                        st.session_state.pop("cc_drill_issue_row_id", None)
+                        st.rerun()
+
+            csv_export = _issues_view.to_csv(index=False).encode("utf-8")
             st.download_button(
                 label="EXPORT ISSUES [CSV]",
                 data=csv_export,
@@ -748,6 +897,195 @@ with dash_tab:
 
                 if _already_applied:
                     st.info("Fixes have already been applied this session. Go to Cleaning to download the corrected dataset.")
+
+    # -----------------------------------------------------------------------
+    # Column Health Profile (feature B) — appears when a column is drilled
+    # -----------------------------------------------------------------------
+    _drill_col = st.session_state.get("cc_drill_column")
+    if _drill_col:
+        st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
+        section_header(f"// Column Health Profile : {_drill_col}")
+        try:
+            _eng = get_engine()
+            _q = text("""
+                SELECT i.batch_id, b.timestamp, COUNT(*) AS issue_count,
+                       SUM(CASE WHEN LOWER(i.severity)='critical' THEN 1 ELSE 0 END) AS critical_n,
+                       SUM(CASE WHEN LOWER(i.severity)='high'     THEN 1 ELSE 0 END) AS high_n,
+                       SUM(CASE WHEN LOWER(i.severity)='medium'   THEN 1 ELSE 0 END) AS medium_n,
+                       SUM(CASE WHEN LOWER(i.severity)='low'      THEN 1 ELSE 0 END) AS low_n
+                FROM issues i
+                JOIN batch_runs b ON b.batch_id = i.batch_id
+                WHERE i.column_name = :col
+                GROUP BY i.batch_id, b.timestamp
+                ORDER BY b.timestamp DESC
+                LIMIT 40
+            """)
+            with _eng.connect() as conn:
+                _col_hist = pd.read_sql(_q, conn, params={"col": _drill_col})
+        except Exception as exc:
+            _col_hist = pd.DataFrame()
+            st.warning(f"Could not load column history: {exc}")
+
+        if _col_hist.empty:
+            st.info(f"No historical issues recorded for column `{_drill_col}` yet.")
+        else:
+            # KPI strip for the column
+            _ck1, _ck2, _ck3, _ck4 = st.columns(4, gap="medium")
+            _ck1.metric("Batches with issues", len(_col_hist))
+            _ck2.metric("Total issues all-time", int(_col_hist["issue_count"].sum()))
+            _ck3.metric("Avg issues per batch", f"{_col_hist['issue_count'].mean():.1f}")
+            _ck4.metric("Worst batch (count)", int(_col_hist["issue_count"].max()))
+
+            # Trend chart: stacked severity bars over time
+            _col_hist_chart = _col_hist.sort_values("timestamp")
+            fig_colhist = go.Figure()
+            for _sev_name, _color in [
+                ("critical_n", SEVERITY_COLORS["critical"]),
+                ("high_n",     SEVERITY_COLORS["high"]),
+                ("medium_n",   SEVERITY_COLORS["medium"]),
+                ("low_n",      SEVERITY_COLORS["low"]),
+            ]:
+                if _col_hist_chart[_sev_name].sum() > 0:
+                    fig_colhist.add_trace(go.Bar(
+                        x=_col_hist_chart["batch_id"], y=_col_hist_chart[_sev_name],
+                        name=_sev_name.replace("_n", "").upper(),
+                        marker=dict(color=_color, line=dict(color=_color, width=1)),
+                        hovertemplate="<b>%{x}</b><br>%{y} issues<extra></extra>",
+                    ))
+            _layout_ch = _chart_layout(height=320, show_legend=True)
+            _layout_ch["barmode"] = "stack"
+            _layout_ch["yaxis"]["title"] = dict(text="Issue count", font=dict(color=MATRIX_TEXT_DIM, size=11))
+            fig_colhist.update_layout(**_layout_ch)
+            st.markdown('<div class="chart-container">', unsafe_allow_html=True)
+            st.plotly_chart(fig_colhist, use_container_width=True, config={"displayModeBar": False})
+            st.markdown('</div>', unsafe_allow_html=True)
+
+            # Trend slope text
+            if len(_col_hist_chart) >= 3:
+                _first_half = _col_hist_chart.iloc[:len(_col_hist_chart)//2]["issue_count"].mean()
+                _second_half = _col_hist_chart.iloc[len(_col_hist_chart)//2:]["issue_count"].mean()
+                _delta = _second_half - _first_half
+                if _delta > 0.5:
+                    _verdict = f'<span style="color:{SEVERITY_COLORS["high"]};">↗ Getting worse: +{_delta:.1f} issues/batch over time</span>'
+                elif _delta < -0.5:
+                    _verdict = f'<span style="color:{SEVERITY_COLORS["info"]};">↘ Improving: −{abs(_delta):.1f} issues/batch over time</span>'
+                else:
+                    _verdict = f'<span style="color:{MATRIX_CYAN};">→ Stable: no clear trend</span>'
+                st.markdown(
+                    f'<p style="font-family:Share Tech Mono;font-size:0.82rem;padding:8px 0;">{_verdict}</p>',
+                    unsafe_allow_html=True,
+                )
+
+            with st.expander("Recent batches affecting this column"):
+                st.dataframe(_col_hist, hide_index=True, height=300)
+
+        if st.button("← Clear column drill", key="cc_clear_col_drill"):
+            st.session_state.pop("cc_drill_column", None)
+            st.rerun()
+
+    # -----------------------------------------------------------------------
+    # Compare Batches (feature D)
+    # -----------------------------------------------------------------------
+    st.markdown("<div style='height:24px'></div>", unsafe_allow_html=True)
+    section_header("// Compare Batches")
+    st.caption("Pick 2–3 batches to see their dimension scores and issue counts side-by-side.")
+
+    _cmp_picks = st.multiselect(
+        "Select batches to compare", batch_ids,
+        default=batch_ids[:min(2, len(batch_ids))],
+        max_selections=3, key="cc_cmp_picks",
+    )
+    if len(_cmp_picks) >= 2:
+        _cmp_df = batches[batches["batch_id"].isin(_cmp_picks)].copy()
+        _dims = ["completeness", "uniqueness", "consistency", "validity", "accuracy", "timeliness"]
+        _present_dims = [d for d in _dims if d in _cmp_df.columns]
+
+        # Side-by-side metric cards per batch
+        _cmp_cols = st.columns(len(_cmp_picks), gap="medium")
+        for _i, _bid in enumerate(_cmp_picks):
+            _r = _cmp_df[_cmp_df["batch_id"] == _bid].iloc[0]
+            _passed = bool(_r.get("pass", False))
+            _border = SEVERITY_COLORS["info"] if _passed else SEVERITY_COLORS["high"]
+            with _cmp_cols[_i]:
+                st.markdown(
+                    f'<div style="border:1px solid {_border}40;background:rgba(0,5,1,0.7);'
+                    f'border-radius:8px;padding:14px 16px;border-left:3px solid {_border};">'
+                    f'<p style="color:{_border};font-family:Share Tech Mono;font-size:0.7rem;'
+                    f'letter-spacing:1px;margin:0;">{_bid}</p>'
+                    f'<p style="color:#b0ffb8;font-family:Orbitron;font-size:1.6rem;margin:6px 0 0 0;">'
+                    f'{float(_r.get("overall_score", 0)):.1f}%</p>'
+                    f'<p style="color:#5a9a5a;font-family:Share Tech Mono;font-size:0.7rem;margin:0;">'
+                    f'{int(_r.get("issues_count", 0))} issues · {int(_r.get("rows_processed", 0))} rows · '
+                    f'{"PASS" if _passed else "FAIL"}</p></div>',
+                    unsafe_allow_html=True,
+                )
+
+        # Dimension comparison radar (overlay)
+        if _present_dims:
+            st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
+            _palette = [MATRIX_GREEN, MATRIX_CYAN, MATRIX_ORANGE]
+            fig_cmp = go.Figure()
+            for _idx, _bid in enumerate(_cmp_picks):
+                _r = _cmp_df[_cmp_df["batch_id"] == _bid].iloc[0]
+                _vals = [float(_r.get(d, 0)) for d in _present_dims]
+                _c = _palette[_idx % len(_palette)]
+                fig_cmp.add_trace(go.Scatterpolar(
+                    r=_vals + [_vals[0]],
+                    theta=[d.upper() for d in _present_dims] + [_present_dims[0].upper()],
+                    fill="toself", name=_bid,
+                    line=dict(color=_c, width=2),
+                    fillcolor=_c + "20",
+                    hovertemplate=f"<b>{_bid}</b><br>%{{theta}}: %{{r:.1f}}%<extra></extra>",
+                ))
+            fig_cmp.update_layout(
+                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                font=dict(color=MATRIX_TEXT, family="'Share Tech Mono', monospace", size=11),
+                height=420, showlegend=True,
+                polar=dict(
+                    bgcolor="rgba(0, 10, 2, 0.5)",
+                    radialaxis=dict(visible=True, range=[0, 100],
+                                    gridcolor="rgba(0,255,65,0.08)",
+                                    tickfont=dict(color=MATRIX_TEXT_DIM, size=9)),
+                    angularaxis=dict(gridcolor="rgba(0,255,65,0.1)",
+                                     tickfont=dict(color=MATRIX_GREEN, size=10, family="Share Tech Mono")),
+                ),
+                margin=dict(l=70, r=70, t=30, b=30),
+                legend=dict(font=dict(color=MATRIX_TEXT, size=10), orientation="h",
+                            yanchor="bottom", y=-0.15, xanchor="center", x=0.5),
+            )
+            st.markdown('<div class="chart-container">', unsafe_allow_html=True)
+            st.plotly_chart(fig_cmp, use_container_width=True, config={"displayModeBar": False})
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        # Tabular delta if exactly 2 selected
+        if len(_cmp_picks) == 2:
+            _a = _cmp_df[_cmp_df["batch_id"] == _cmp_picks[0]].iloc[0]
+            _b = _cmp_df[_cmp_df["batch_id"] == _cmp_picks[1]].iloc[0]
+            _delta_rows = []
+            for _d in _present_dims + ["overall_score", "issues_count"]:
+                _av = float(_a.get(_d, 0))
+                _bv = float(_b.get(_d, 0))
+                _delta_rows.append({
+                    "Metric": _d.replace("_", " ").title(),
+                    _cmp_picks[0]: _av, _cmp_picks[1]: _bv,
+                    "Δ": _bv - _av,
+                })
+            _delta_df = pd.DataFrame(_delta_rows)
+            def _color_delta(v):
+                try:
+                    v = float(v)
+                except Exception:
+                    return ""
+                if v > 0:   return f"color: {SEVERITY_COLORS['info']};"
+                if v < 0:   return f"color: {SEVERITY_COLORS['high']};"
+                return ""
+            try:
+                _styled_delta = _delta_df.style.map(_color_delta, subset=["Δ"])
+                st.dataframe(_styled_delta, hide_index=True, height=300)
+            except Exception:
+                st.dataframe(_delta_df, hide_index=True, height=300)
+    else:
+        st.caption("Select at least 2 batches to compare.")
 
     # Footer
     st.markdown(
