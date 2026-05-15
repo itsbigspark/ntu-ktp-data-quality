@@ -258,6 +258,11 @@ with library_tab:
     section_header("// Import Pipeline")
     import_file = st.file_uploader("Upload pipeline JSON", type=["json"], key="import_pipeline_file")
     if import_file:
+        # Do the import inside try/except, but DON'T call st.rerun() in there —
+        # st.rerun() raises RerunData to unwind the script, and a bare
+        # `except Exception` would swallow it as a fake "Error importing".
+        _imported_name = None
+        _import_error = None
         try:
             import tempfile
             with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as tmp:
@@ -265,12 +270,17 @@ with library_tab:
                 tmp_path = tmp.name
             imported = pm.import_pipeline(tmp_path)
             if imported:
-                st.success(f"Imported: {imported.name}")
-                st.rerun()
+                _imported_name = imported.name
             else:
-                st.error("Failed to import pipeline")
+                _import_error = "Failed to import pipeline"
         except Exception as e:
-            st.error(f"Error importing: {e}")
+            _import_error = f"Error importing: {e}"
+
+        if _imported_name:
+            st.success(f"Imported: {_imported_name}")
+            st.rerun()
+        elif _import_error:
+            st.error(_import_error)
 
 # ======================== EXECUTE TAB ========================
 with execute_tab:
