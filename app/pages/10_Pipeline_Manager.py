@@ -313,6 +313,9 @@ with execute_tab:
                 key="pipeline_save_s3",
             )
 
+        # Run executor only when the button is freshly clicked. Persist
+        # results into session_state so they survive checkbox toggles and
+        # navigation back to this page.
         if st.button("Execute Pipeline", type="primary", use_container_width=True):
             executor = PipelineExecutor(st.session_state)
             progress_bar = st.progress(0)
@@ -332,15 +335,27 @@ with execute_tab:
                 )
 
             progress_bar.progress(1.0)
+            # Persist results so a subsequent rerun (eg ticking a checkbox)
+            # doesn't lose them.
+            st.session_state["pipeline_last_results"] = results
+            st.session_state["pipeline_last_results_for"] = selected_name
+            st.session_state["pipeline_last_input_rows"] = len(df_raw)
 
+        # Render results from session_state (works after the initial run AND
+        # on every subsequent rerun caused by checkbox/expander toggles).
+        results = st.session_state.get("pipeline_last_results")
+        _last_for = st.session_state.get("pipeline_last_results_for")
+        _last_input_rows = st.session_state.get("pipeline_last_input_rows", len(df_raw))
+
+        if results and _last_for == selected_name:
             if results["success"]:
-                status_text.success(f"Pipeline complete — Run ID: `{results.get('pipeline_run_id', '')}`")
+                st.success(f"Pipeline complete — Run ID: `{results.get('pipeline_run_id', '')}`")
                 st.session_state["df_pipeline_output"] = results["df_output"]
 
                 m1, m2, m3, m4 = st.columns(4)
                 m1.metric("Steps Executed", len(results["steps_executed"]))
-                m2.metric("Input Rows", len(df_raw))
-                m3.metric("Output Rows", len(results["df_output"]), delta=len(results["df_output"]) - len(df_raw))
+                m2.metric("Input Rows", _last_input_rows)
+                m3.metric("Output Rows", len(results["df_output"]), delta=len(results["df_output"]) - _last_input_rows)
                 m4.metric("Saved to DB", "Yes" if results.get("db_saved") else "No")
 
                 section_header("// Step Results")
@@ -549,7 +564,12 @@ with execute_tab:
                     f"{selected_name}_output.csv", "text/csv",
                     use_container_width=True,
                 )
+
+                if st.button("Clear results (run a fresh pipeline)", key="pipeline_clear_results"):
+                    for _k in ("pipeline_last_results", "pipeline_last_results_for", "pipeline_last_input_rows"):
+                        st.session_state.pop(_k, None)
+                    st.rerun()
             else:
-                status_text.error("Pipeline execution failed")
+                st.error("Pipeline execution failed")
                 for error in results["errors"]:
                     st.error(f"Step {error['step_number']} ({error['type']}): {error['error']}")

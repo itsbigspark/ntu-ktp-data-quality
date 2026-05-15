@@ -45,6 +45,20 @@ def _db_available() -> bool:
     return os.path.isfile(DB_CONFIG["output"]["database"]["path"])
 
 
+def _hex_to_rgba(hex_color: str, alpha: float = 0.2) -> str:
+    """Convert #RRGGBB (or #RGB) to rgba(r,g,b,a) — Plotly fillcolor compatible."""
+    h = (hex_color or "").lstrip("#")
+    if len(h) == 3:
+        h = "".join(c * 2 for c in h)
+    if len(h) != 6:
+        return f"rgba(0,255,65,{alpha})"
+    try:
+        r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+    except ValueError:
+        return f"rgba(0,255,65,{alpha})"
+    return f"rgba({r},{g},{b},{alpha})"
+
+
 def _chart_layout(height=350, show_legend=False):
     return dict(
         paper_bgcolor="rgba(0,0,0,0)",
@@ -317,7 +331,7 @@ with dash_tab:
     display_df.columns = _display_names
     display_df["Pass"] = display_df["Pass"].map({True: "PASS", 1: "PASS", False: "FAIL", 0: "FAIL"})
 
-    st.caption("Click a row to drill into that batch →")
+    st.caption("Tip: click the empty space on the left edge of any row to select it, then press ‘Drill into selected batch’ below — or use the dropdown.")
     _bh_event = st.dataframe(
         display_df, use_container_width=True, hide_index=True,
         height=min(350, 40 + 35 * len(display_df)),
@@ -335,13 +349,32 @@ with dash_tab:
         _sel_rows = _bh_event.selection.rows if hasattr(_bh_event, "selection") else []
     except Exception:
         _sel_rows = []
-    if _sel_rows:
-        _picked_batch = display_df.iloc[_sel_rows[0]]["Batch ID"]
-        if st.session_state.get("cc_drill_batch") != _picked_batch:
-            st.session_state["cc_drill_batch"] = _picked_batch
-            st.session_state.pop("cc_drill_column", None)
-            st.session_state.pop("cc_drill_issue_row_id", None)
-            st.rerun()
+
+    _bh_pick_cols = st.columns([3, 2, 2])
+    with _bh_pick_cols[0]:
+        _bh_pick_drop = st.selectbox(
+            "Or pick a batch from this list",
+            options=display_df["Batch ID"].tolist(),
+            index=(_sel_rows[0] if _sel_rows else 0),
+            key="cc_bh_dropdown_pick",
+        )
+    with _bh_pick_cols[1]:
+        st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
+        if st.button("Drill into selected batch", key="cc_bh_drill_btn", type="primary", use_container_width=True):
+            _target = display_df.iloc[_sel_rows[0]]["Batch ID"] if _sel_rows else _bh_pick_drop
+            if _target and st.session_state.get("cc_drill_batch") != _target:
+                st.session_state["cc_drill_batch"] = _target
+                st.session_state.pop("cc_drill_column", None)
+                st.session_state.pop("cc_drill_issue_row_id", None)
+                st.rerun()
+    with _bh_pick_cols[2]:
+        st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
+        if st.session_state.get("cc_drill_batch"):
+            if st.button("Clear drill", key="cc_bh_clear_btn", use_container_width=True):
+                st.session_state.pop("cc_drill_batch", None)
+                st.session_state.pop("cc_drill_column", None)
+                st.session_state.pop("cc_drill_issue_row_id", None)
+                st.rerun()
 
     st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
 
@@ -1034,7 +1067,7 @@ with dash_tab:
                     theta=[d.upper() for d in _present_dims] + [_present_dims[0].upper()],
                     fill="toself", name=_bid,
                     line=dict(color=_c, width=2),
-                    fillcolor=_c + "20",
+                    fillcolor=_hex_to_rgba(_c, 0.18),
                     hovertemplate=f"<b>{_bid}</b><br>%{{theta}}: %{{r:.1f}}%<extra></extra>",
                 ))
             fig_cmp.update_layout(
