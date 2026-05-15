@@ -278,9 +278,31 @@ if st.button("RUN VALIDATION", key="run_validation", use_container_width=True):
     if result.ai_enrichment:
         try:
             from core.storage.database import save_ai_enrichment
-            save_ai_enrichment(batch_id, result.ai_enrichment, {})
+            _ai_counts = save_ai_enrichment(batch_id, result.ai_enrichment, {})
+            _total_ai_rows = sum(_ai_counts.values()) if isinstance(_ai_counts, dict) else 0
+            if _total_ai_rows == 0:
+                st.warning(
+                    "AI enrichment ran but produced no rows to save. The provider "
+                    "returned empty payloads — check Settings (provider, model, API key)."
+                )
+            else:
+                st.success(
+                    f"AI enrichment saved: {_ai_counts.get('ai_smart_rules', 0)} rules · "
+                    f"{_ai_counts.get('ai_cross_column', 0)} cross-col · "
+                    f"{_ai_counts.get('ai_triage', 0)} triage · "
+                    f"{_ai_counts.get('ai_executive_summary', 0)} summary"
+                )
         except Exception as e:
-            st.warning(f"Could not save AI enrichment to database: {e}")
+            st.error(f"Could not save AI enrichment to database: {e}")
+    elif use_ai:
+        # User requested AI but no enrichment came back — flag it loudly.
+        st.error(
+            "AI Enrichment was requested but did NOT run. Likely causes: "
+            "(a) provider unreachable (Ollama on localhost won't work in production), "
+            "(b) missing API key for Anthropic/OpenAI in Settings, "
+            "(c) provider returned an error mid-run. "
+            "Check the Settings page and the logs."
+        )
 
     # ── Save results to S3 (if S3 output is configured) ──────────────────
     s3_out_bucket = st.session_state.get("s3_output_bucket", "")

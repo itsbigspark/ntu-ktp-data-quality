@@ -651,6 +651,37 @@ with dash_tab:
             '</div>',
             unsafe_allow_html=True,
         )
+        # Diagnostic peek — shows whether the AI tables exist and how many
+        # rows each holds. Critical for debugging silent-save failures.
+        with st.expander("🔧 Diagnostic: peek at AI tables", expanded=False):
+            try:
+                _diag_eng = get_engine()
+                _ai_tables = [
+                    "ai_smart_rules", "ai_cross_column", "ai_explanations",
+                    "ai_triage", "ai_executive_summary",
+                ]
+                _rows = []
+                with _diag_eng.connect() as _c:
+                    for _t in _ai_tables:
+                        try:
+                            _n = _c.execute(text(f"SELECT COUNT(*) FROM {_t}")).scalar() or 0
+                            _last = _c.execute(text(f"SELECT MAX(batch_id) FROM {_t}")).scalar() or "—"
+                        except Exception as _e:
+                            _n = f"table missing? {_e}"
+                            _last = "—"
+                        _rows.append({"Table": _t, "Rows": _n, "Latest batch_id": _last})
+                _diag_df = pd.DataFrame(_rows)
+                st.dataframe(_diag_df, hide_index=True, height=240)
+                st.caption(
+                    "If all tables have 0 rows: AI enrichment never wrote to the DB "
+                    "(provider unreachable or returned empty). If only "
+                    "ai_executive_summary is 0 but others have rows: the provider "
+                    "skipped the summary step but produced the others — Command "
+                    "Center keys on ai_executive_summary, so still no batches "
+                    "appear in the dropdown above."
+                )
+            except Exception as _diag_e:
+                st.warning(f"Diagnostic query failed: {_diag_e}")
     else:
         ai_batch = st.selectbox("SELECT AI-ENRICHED BATCH", ai_batches, index=0, key="ai_batch")
 
