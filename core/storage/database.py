@@ -727,12 +727,21 @@ def get_ai_executive_summary(config: Dict[str, Any], batch_id: str) -> Optional[
 
 
 def get_batches_with_ai(config: Dict[str, Any], limit: int = 20) -> List[str]:
-    """Get batch IDs that have AI enrichment data."""
+    """
+    Get batch IDs that have AI enrichment data, newest first.
+
+    PostgreSQL strict mode rejects `SELECT DISTINCT col ORDER BY other_col`
+    (the ORDER BY column must be in the SELECT list when DISTINCT is used).
+    SQLite is permissive and accepts it, which is why this only bit in
+    production. Use GROUP BY + MAX(created_at) so it works on both backends.
+    """
     engine = get_engine(config)
     from sqlalchemy import text
     query = text("""
-        SELECT DISTINCT batch_id FROM ai_executive_summary
-        ORDER BY created_at DESC
+        SELECT batch_id
+        FROM ai_executive_summary
+        GROUP BY batch_id
+        ORDER BY MAX(created_at) DESC
         LIMIT :limit
     """)
     df = pd.read_sql(query, engine, params={"limit": limit})

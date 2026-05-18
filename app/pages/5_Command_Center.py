@@ -637,10 +637,18 @@ with dash_tab:
         unsafe_allow_html=True,
     )
 
+    _ai_batches_err = None
     try:
         ai_batches = get_batches_with_ai(DB_CONFIG)
-    except Exception:
+    except Exception as _e:
         ai_batches = []
+        _ai_batches_err = str(_e)
+    if _ai_batches_err:
+        st.error(
+            f"Could not load AI batches: {_ai_batches_err}. "
+            "This is likely a DB-engine SQL-dialect difference. "
+            "Open the diagnostic below to see the underlying tables."
+        )
 
     if not ai_batches:
         st.markdown(
