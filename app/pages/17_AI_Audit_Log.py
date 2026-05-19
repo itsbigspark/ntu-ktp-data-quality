@@ -240,7 +240,7 @@ with tab_overview:
                 "color": MATRIX_TEXT,
             })
         )
-        st.dataframe(styled, use_container_width=True, height=360)
+        st.dataframe(styled, hide_index=True, height=360)
 
         # Expandable row detail
         st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
@@ -490,8 +490,8 @@ with tab_export:
                         "background-color": "rgba(0,15,2,0.6)",
                         "color": MATRIX_TEXT,
                     }),
-                    use_container_width=True,
-                    height=min(200, 40 + len(breakdown) * 35),
+                    hide_index=True,
+                    height=200,
                 )
 
             st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
