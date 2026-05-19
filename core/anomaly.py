@@ -13,6 +13,7 @@ try:
     from sklearn.svm import OneClassSVM
     from sklearn.neighbors import LocalOutlierFactor
     from sklearn.feature_extraction.text import TfidfVectorizer
+    from sklearn.mixture import GaussianMixture
     _HAVE_SK = True
 except Exception:
     _HAVE_SK = False
@@ -213,6 +214,144 @@ def _fit_and_score_model(model_name: str, X_train, X_score) -> np.ndarray:
     return (s - s.min()) / (s.max() - s.min() + 1e-9)
 
 
+def _principled_threshold(score: np.ndarray) -> tuple:
+    """
+    Find a principled anomaly threshold using a 2-component GMM.
+
+    Strategy (from diagnostic results):
+      1. Fit GaussianMixture(n_components=2) to the score distribution.
+      2. If the two component means are separated by > 0.1, find the
+         valley (antimode) between them — that is the natural decision
+         boundary between the "normal" and "anomalous" clusters.
+      3. If GMM fails or the gap is too small (unimodal), fall back to
+         the 90th percentile (more conservative than the old 85th).
+
+    Returns: (threshold_float, method_description_str)
+    """
+    if not _HAVE_SK or len(score) < 20:
+        thr = float(np.quantile(score, 0.90))
+        return thr, "fallback_quantile_90 (too few rows for GMM)"
+
+    try:
+        gmm = GaussianMixture(n_components=2, random_state=42, max_iter=300,
+                              n_init=5)
+        gmm.fit(score.reshape(-1, 1))
+        means = gmm.means_.flatten()
+        mu_low, mu_high = float(means.min()), float(means.max())
+
+        if mu_high - mu_low < 0.15:
+            # Components too close — no meaningful separation
+            raise ValueError(
+                f"GMM gap too small ({mu_high - mu_low:.3f}); "
+                "distribution is effectively unimodal"
+            )
+
+        # Scan the valley between the two peaks to find the antimode
+        xs         = np.linspace(mu_low, mu_high, 500).reshape(-1, 1)
+        log_probs  = gmm.score_samples(xs)
+        antimode   = float(xs[np.argmin(log_probs)])
+
+        # Safety: antimode must lie strictly between the means
+        antimode = float(np.clip(antimode, mu_low + 0.01, mu_high - 0.01))
+
+        # Extra guard: never flag more than 20% or fewer than 1% of rows.
+        # 20% cap: above this the precision lift degrades below useful levels
+        # (empirically verified on TEST2/TEST3 diagnostic).
+        pct_flagged = float((score >= antimode).mean())
+        if pct_flagged > 0.20:
+            antimode = float(np.quantile(score, 0.80))
+            method = (
+                f"GMM_antimode_capped (would flag {pct_flagged*100:.1f}%; "
+                f"capped at 80th pct={antimode:.3f})"
+            )
+        elif pct_flagged < 0.01:
+            antimode = float(np.quantile(score, 0.90))
+            method = (
+                f"GMM_antimode_raised (would flag {pct_flagged*100:.2f}%; "
+                f"raised to 90th pct={antimode:.3f})"
+            )
+        else:
+            method = (
+                f"GMM_antimode μ_low={mu_low:.3f} μ_high={mu_high:.3f} "
+                f"flags={pct_flagged*100:.1f}%"
+            )
+
+        return antimode, method
+
+    except Exception as exc:
+        thr = float(np.quantile(score, 0.90))
+        return thr, f"fallback_quantile_90 (GMM error: {exc})"
+
+
+def _norm(arr: np.ndarray) -> np.ndarray:
+    """Normalise array to [0, 1]. Higher = more anomalous."""
+    lo, hi = arr.min(), arr.max()
+    if hi - lo < 1e-9:
+        return np.zeros_like(arr)
+    return (arr - lo) / (hi - lo)
+
+
+def _score_component_tfidf_row(txt_train, txt_score) -> np.ndarray:
+    """Component 1: row-level TF-IDF char n-grams → IsolationForest."""
+    vec = TfidfVectorizer(analyzer="char", ngram_range=(2, 4),
+                          max_features=600, sublinear_tf=True)
+    vec.fit(txt_train)
+    X_train = vec.transform(txt_train).toarray()
+    X_score = vec.transform(txt_score).toarray()
+    iso = IsolationForest(n_estimators=150, contamination="auto",
+                          random_state=42, n_jobs=-1)
+    iso.fit(X_train)
+    # IsolationForest: lower decision_function = more anomalous → invert
+    return _norm(-iso.decision_function(X_score))
+
+
+def _score_component_tfidf_col(df: pd.DataFrame) -> np.ndarray:
+    """Component 2: per-column TF-IDF → IsolationForest on concatenated features."""
+    col_vecs = []
+    for col in df.columns:
+        vals = df[col].fillna("").astype(str).tolist()
+        if len(set(vals)) < 3:
+            continue
+        try:
+            vec = TfidfVectorizer(analyzer="char", ngram_range=(2, 3),
+                                  max_features=60, sublinear_tf=True)
+            v = vec.fit_transform(vals).toarray()
+            col_vecs.append(v)
+        except Exception:
+            continue
+    if not col_vecs:
+        return None
+    X = np.hstack(col_vecs)
+    iso = IsolationForest(n_estimators=100, contamination="auto",
+                          random_state=42, n_jobs=-1)
+    iso.fit(X)
+    return _norm(-iso.decision_function(X))
+
+
+def _score_component_numeric(df: pd.DataFrame) -> Optional[np.ndarray]:
+    """Component 3: numeric columns → IsolationForest."""
+    from sklearn.preprocessing import StandardScaler
+    num_cols = []
+    for col in df.columns:
+        try:
+            num = pd.to_numeric(
+                df[col].astype(str).str.replace("£", "", regex=False)
+                                   .str.replace(",", "", regex=False),
+                errors="coerce",
+            )
+            if num.notna().sum() > max(10, len(df) * 0.05):
+                num_cols.append(num.fillna(num.median()))
+        except Exception:
+            continue
+    if not num_cols:
+        return None
+    X = StandardScaler().fit_transform(np.column_stack(num_cols))
+    iso = IsolationForest(n_estimators=100, contamination="auto",
+                          random_state=42, n_jobs=-1)
+    iso.fit(X)
+    return _norm(-iso.decision_function(X))
+
+
 def ml_anomaly_report(
     df_unclean: pd.DataFrame,
     df_ref: Optional[pd.DataFrame],
@@ -221,82 +360,110 @@ def ml_anomaly_report(
     ensemble: bool = True,
 ) -> pd.DataFrame:
     """
-    Train one or more novelty models on reference (if provided) or on unclean data itself,
-    using TF-IDF over row-concatenated text. Return top-15% most anomalous rows.
+    Three-component ensemble anomaly scorer with GMM-fitted threshold.
+
+    Components:
+      1. Row-level TF-IDF char n-gram → IsolationForest
+      2. Per-column TF-IDF → IsolationForest on stacked features
+      3. Numeric columns → StandardScaler → IsolationForest
+
+    Threshold: GMM antimode (principled boundary between normal/anomalous
+    clusters). Falls back to 90th-percentile if GMM finds no clear gap.
 
     Output columns: row_id, column="__row__", issue="ml_anomaly",
                     detail, severity, value=None, score, expected=None, rule
     """
+    _EMPTY = pd.DataFrame(columns=[
+        "row_id", "column", "issue", "detail",
+        "severity", "value", "score", "expected", "rule",
+    ])
     if not _HAVE_SK:
-        return pd.DataFrame(columns=["row_id","column","issue","detail","severity","value","score","expected","rule"])
+        return _EMPTY
     if not isinstance(df_unclean, pd.DataFrame) or df_unclean.empty:
-        return pd.DataFrame(columns=["row_id","column","issue","detail","severity","value","score","expected","rule"])
+        return _EMPTY
 
-    # ── Row cap: TF-IDF char n-grams on full data is O(n*vocab) — hard cap at 20k rows ──
+    # ── Row cap ───────────────────────────────────────────────────────────────
     ML_ROW_CAP = 20_000
-    sampled_for_ml = len(df_unclean) > ML_ROW_CAP
-    if sampled_for_ml:
+    if len(df_unclean) > ML_ROW_CAP:
         df_unclean = df_unclean.sample(n=ML_ROW_CAP, random_state=42).reset_index(drop=True)
-        logger.info("ml_anomaly_report: dataset sampled to %d rows for ML fitting", ML_ROW_CAP)
+        logger.info("ml_anomaly_report: dataset sampled to %d rows", ML_ROW_CAP)
 
+    # ── Reference text (for Component 1 training) ────────────────────────────
     txt_unclean = _row_concat(df_unclean)
-    X_train_text = txt_unclean
     if use_reference and isinstance(df_ref, pd.DataFrame) and not df_ref.empty:
-        # Also cap reference data
         if len(df_ref) > ML_ROW_CAP:
             df_ref = df_ref.sample(n=ML_ROW_CAP, random_state=42)
-        txt_ref = _row_concat(df_ref)
-        X_train_text = txt_ref
-
-    vec = TfidfVectorizer(analyzer="char", ngram_range=(3, 5), min_df=2)
-    vec.fit(X_train_text)
-    X_score = vec.transform(txt_unclean)
-    X_train = vec.transform(X_train_text)
-
-    scores = []
-    used = []
-    for name in models:
-        try:
-            s = _fit_and_score_model(name, X_train, X_score)
-            scores.append(s)
-            used.append(name)
-        except Exception:
-            # Skip models that fail (e.g., numerical issues on tiny datasets)
-            continue
-
-    if not scores:
-        return pd.DataFrame(columns=["row_id","column","issue","detail","severity","value","score","expected","rule"])
-
-    if ensemble and len(scores) > 1:
-        score = np.mean(scores, axis=0)
-        rule_name = "ml_ensemble"
-        detail_model = f"ensemble({','.join(used)})"
+        txt_train = _row_concat(df_ref)
     else:
-        score = scores[0]
-        rule_name = f"ml_{used[0].lower()}"
-        detail_model = used[0]
+        txt_train = txt_unclean
 
-    # Top 15% anomalies
-    thr = np.quantile(score, 0.85)
+    # ── Build component scores ────────────────────────────────────────────────
+    component_scores = []
+    component_names  = []
+
+    try:
+        s1 = _score_component_tfidf_row(txt_train, txt_unclean)
+        component_scores.append(s1)
+        component_names.append("tfidf_row")
+    except Exception as exc:
+        logger.warning("ml_anomaly_report: component 1 failed: %s", exc)
+
+    try:
+        s2 = _score_component_tfidf_col(df_unclean)
+        if s2 is not None:
+            component_scores.append(s2)
+            component_names.append("tfidf_col")
+    except Exception as exc:
+        logger.warning("ml_anomaly_report: component 2 failed: %s", exc)
+
+    try:
+        s3 = _score_component_numeric(df_unclean)
+        if s3 is not None:
+            component_scores.append(s3)
+            component_names.append("numeric")
+    except Exception as exc:
+        logger.warning("ml_anomaly_report: component 3 failed: %s", exc)
+
+    if not component_scores:
+        logger.warning("ml_anomaly_report: all components failed")
+        return _EMPTY
+
+    score       = np.mean(component_scores, axis=0)
+    rule_name   = "ml_ensemble_3c"
+    detail_pfx  = f"ensemble({'+'.join(component_names)})"
+
+    # ── Principled threshold (GMM antimode, Strategy 1) ──────────────────────
+    thr, thr_method = _principled_threshold(score)
+    logger.info("ml_anomaly_report: thr=%.4f method=%s n_components=%d",
+                thr, thr_method, len(component_scores))
+
     idx = np.where(score >= thr)[0]
     if idx.size == 0:
-        return pd.DataFrame(columns=["row_id","column","issue","detail","severity","value","score","expected","rule"])
+        return _EMPTY
 
-    hi_thr = np.quantile(score, 0.95)
+    # Confidence tiers: how far above threshold relative to max
+    score_max = score.max()
     def sev(x: float) -> str:
-        return "high" if x >= hi_thr else "medium"
+        span = score_max - thr + 1e-9
+        rel  = (x - thr) / span
+        if rel >= 0.6:
+            return "high"
+        if rel >= 0.25:
+            return "medium"
+        return "low"
 
     rows = []
     for i in idx:
+        s_val = float(score[i])
         rows.append(dict(
             row_id=int(i),
             column="__row__",
             value=None,
             issue="ml_anomaly",
-            detail=f"{detail_model} score={float(score[i]):.3f}",
-            severity=sev(float(score[i])),
-            score=float(score[i]),
+            detail=f"{detail_pfx} score={s_val:.3f} thr={thr:.3f} [{thr_method}]",
+            severity=sev(s_val),
+            score=s_val,
             expected=None,
-            rule=rule_name
+            rule=rule_name,
         ))
     return pd.DataFrame(rows)
