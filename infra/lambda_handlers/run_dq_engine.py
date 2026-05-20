@@ -60,15 +60,36 @@ def handler(event, context):
 
     api_key = _get_api_key()
 
+    # ── Auto-detect rules JSON by convention ─────────────────────────────
+    # If the inbox contains rules/aizle/{dataset}_rules.json where dataset
+    # is derived from the filename (strip noise-level suffix e.g. _01pct),
+    # pass it to the API so the engine uses defined constraints.
+    rules_key = None
+    try:
+        filename_stem = key.rsplit("/", 1)[-1].rsplit(".", 1)[0]  # e.g. transactions_01pct
+        # Strip trailing _NNpct suffix to get dataset name
+        import re as _re
+        dataset_name = _re.sub(r"_\d{2}pct$", "", filename_stem)  # e.g. transactions
+        candidate = f"rules/aizle/{dataset_name}_rules.json"
+        s3.head_object(Bucket=bucket, Key=candidate)
+        rules_key = candidate
+        logger.info(f"Found rules file: s3://{bucket}/{rules_key}")
+    except Exception:
+        logger.info("No rules file found — engine will auto-infer rules")
+
     # ── Call ECS API: POST /api/v1/s3/validate ────────────────────────────
-    payload = json.dumps({
+    api_payload: dict = {
         "bucket":         bucket,
         "key":            key,
         "region":         os.environ.get("AWS_REGION", "us-east-1"),
         "output_bucket":  OUTPUT_BUCKET,
         "output_prefix":  f"reports/{batch_id}",
         "pass_threshold": PASS_THRESHOLD,
-    }).encode("utf-8")
+    }
+    if rules_key:
+        api_payload["rules_key"] = rules_key
+
+    payload = json.dumps(api_payload).encode("utf-8")
 
     req = urllib.request.Request(
         url=f"{DQ_API_URL}/api/v1/s3/validate",
