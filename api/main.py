@@ -314,10 +314,22 @@ async def validate_from_s3(request: S3ValidateRequest, client: str = Security(re
         except Exception as e:
             logger.warning(f"Failed to load reference data from S3: {e}")
 
+    rules = None
+    if request.rules_key:
+        try:
+            import json as _json
+            import boto3 as _boto3
+            s3c = _boto3.client("s3", region_name=request.region)
+            obj = s3c.get_object(Bucket=request.bucket, Key=request.rules_key)
+            rules = _json.loads(obj["Body"].read().decode("utf-8"))
+            logger.info(f"Loaded rules from s3://{request.bucket}/{request.rules_key} ({len(rules)} columns)")
+        except Exception as e:
+            logger.warning(f"Failed to load rules from S3: {e} — falling back to auto-infer")
+
     config = _get_config()
     config.setdefault("validation", {}).setdefault("scoring", {})["pass_threshold"] = request.pass_threshold
 
-    result = run_pipeline(df=df, config=config, df_ref=df_ref)
+    result = run_pipeline(df=df, config=config, df_ref=df_ref, rules=rules)
 
     # Optionally save results back to S3
     output_paths = {}

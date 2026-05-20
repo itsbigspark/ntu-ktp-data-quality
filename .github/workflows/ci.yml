@@ -144,11 +144,12 @@ jobs:
           # Inject into the first container
           env = td['containerDefinitions'][0].setdefault('environment', [])
           # Remove any existing managed entries before re-injecting
-          managed = ('DQ_ENV', 'DQ_USERS', 'DATABASE_URL')
+          managed = ('DQ_ENV', 'DQ_USERS', 'DATABASE_URL', 'MASTER_API_KEY')
           env = [e for e in env if e['name'] not in managed]
-          env.append({'name': 'DQ_ENV',        'value': 'production'})
-          env.append({'name': 'DQ_USERS',      'value': '${{ secrets.DQ_USERS }}'})
-          env.append({'name': 'DATABASE_URL',  'value': '${{ secrets.DATABASE_URL }}'})
+          env.append({'name': 'DQ_ENV',          'value': 'production'})
+          env.append({'name': 'DQ_USERS',        'value': '${{ secrets.DQ_USERS }}'})
+          env.append({'name': 'DATABASE_URL',    'value': '${{ secrets.DATABASE_URL }}'})
+          env.append({'name': 'MASTER_API_KEY',  'value': '${{ secrets.MASTER_API_KEY }}'})
           td['containerDefinitions'][0]['environment'] = env
 
           # Bump task-level CPU and memory for 200k-row workloads

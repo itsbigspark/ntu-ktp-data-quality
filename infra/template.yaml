@@ -41,6 +41,16 @@ Parameters:
     Default: ""
     Description: URL of the Streamlit investigation app
 
+  DqApiUrl:
+    Type: String
+    Default: "http://dq-investigator-alb-1649689009.us-east-1.elb.amazonaws.com:8000"
+    Description: Base URL of the DQ Investigator ECS API (no trailing slash)
+
+  SsmKeyPath:
+    Type: String
+    Default: "/dq-investigator/master-api-key"
+    Description: SSM Parameter Store path for the master API key
+
 # ---------------------------------------------------------------------------
 # Globals
 # ---------------------------------------------------------------------------
@@ -116,7 +126,7 @@ Resources:
         - StepFunctionsExecutionPolicy:
             StateMachineName: !GetAtt DQPipelineStateMachine.Name
 
-  # 2. DQ Engine — runs the full validation pipeline
+  # 2. DQ Engine — calls the ECS API to run the full validation pipeline
   RunDQEngineFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -124,17 +134,30 @@ Resources:
       Handler: run_dq_engine.handler
       CodeUri: lambda_handlers/
       Timeout: 900
-      MemorySize: 1024
+      MemorySize: 256
       Environment:
         Variables:
           OUTPUT_BUCKET: !Ref OutputBucket
-          CONFIG_BUCKET: !Ref InboxBucket
-          CONFIG_KEY: "config/config.yaml"
+          DQ_API_URL: !Ref DqApiUrl
+          SSM_KEY_PATH: !Ref SsmKeyPath
+          PASS_THRESHOLD: !Sub "${PassThreshold}"
       Policies:
         - S3ReadPolicy:
             BucketName: !Ref InboxBucket
         - S3CrudPolicy:
             BucketName: !Ref OutputBucket
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+              Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${SsmKeyPath}"
+            - Effect: Allow
+              Action:
+                - kms:Decrypt
+              Resource: "*"
+              Condition:
+                StringEquals:
+                  "kms:ViaService": !Sub "ssm.${AWS::Region}.amazonaws.com"
 
   # 3. Check Threshold — evaluates pass/fail
   CheckThresholdFunction:

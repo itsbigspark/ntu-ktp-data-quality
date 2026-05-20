@@ -80,6 +80,7 @@ class S3ValidateRequest(BaseModel):
     key: str = Field(..., description="S3 object key (file path)")
     region: str = Field("us-east-1", description="AWS region")
     reference_key: Optional[str] = Field(None, description="S3 key for reference data")
+    rules_key: Optional[str] = Field(None, description="S3 key for rules JSON file")
     pass_threshold: float = Field(85.0, description="Quality score pass threshold")
     output_bucket: Optional[str] = Field(None, description="S3 bucket for saving results")
     output_prefix: Optional[str] = Field("reports", description="S3 prefix for output files")
