@@ -14,13 +14,21 @@
     "min_length": 2,
     "max_length": 13,
     "description": "The forename (first name) of the customer.",
-    "severity": "warning"
+    "severity": "warning",
+    "nullable": false
+  },
+  "second_name": {
+    "description": "Middle name — optional, many customers do not have one.",
+    "severity": "info",
+    "nullable": true,
+    "required": false
   },
   "last_name": {
     "min_length": 2,
     "max_length": 11,
     "description": "The last name (surname, family name) of the customer.",
-    "severity": "warning"
+    "severity": "warning",
+    "nullable": false
   },
   "dob": {
     "type": "date",
@@ -42,13 +50,15 @@
     "case": "upper",
     "description": "Town must be uppercase",
     "severity": "warning",
-    "auto_fix": true
+    "auto_fix": true,
+    "nullable": false
   },
   "postcode": {
     "pattern": "^[A-Z]{1,2}\\d{1,2}[A-Z]?\\s\\d[A-Z]{2}$",
     "description": "Must be a valid UK postcode (e.g. SW1A 2AA)",
     "severity": "error",
-    "auto_fix": true
+    "auto_fix": true,
+    "nullable": false
   },
   "pep": {
     "allowed_values": [
@@ -100,12 +110,14 @@
     "pattern": "^\\+44\\d{10}$",
     "description": "UK landline must start +44 followed by 10 digits",
     "severity": "warning",
-    "nullable": true
+    "nullable": true,
+    "required": false
   },
   "mobile_number": {
     "pattern": "^\\+447\\d{9}$",
     "description": "UK mobile must start +447 followed by 9 digits",
     "severity": "warning",
-    "nullable": true
+    "nullable": true,
+    "required": false
   }
 }
