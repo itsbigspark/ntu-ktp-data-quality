@@ -233,53 +233,112 @@ def _check_value(v: Any, rule: Dict[str, Any], column_name: str = "", confirmed_
     s = s_raw.strip()
     expected: Dict[str, Any] = {}
 
-    # Format validation (BEFORE regex) — only runs if a confirmed type
-    # was passed in (pre-validated against actual data in validate_df).
-    if FORMAT_VALIDATORS_AVAILABLE and confirmed_type:
-        detected_type = confirmed_type
-        if detected_type:
-            is_valid, error_reason = False, None
+    # Format validation (BEFORE regex) — runs if a confirmed type was passed in
+    # OR if the rule explicitly declares type: "email".
+    _eff_type = confirmed_type or (rule.get("type") if rule.get("type") in ("email", "url") else None)
+    if FORMAT_VALIDATORS_AVAILABLE and _eff_type:
+        detected_type = _eff_type
+        is_valid, error_reason = False, None
 
-            try:
-                if detected_type == 'email':
-                    is_valid, error_reason = validate_email(s)
-                    expected["format"] = "email"
-                elif detected_type == 'date':
-                    is_valid, error_reason = validate_date(s)
-                    expected["format"] = "date"
-                elif detected_type == 'url':
-                    is_valid, error_reason = validate_url(s)
-                    expected["format"] = "URL"
-            except Exception:
-                # If format validator fails, continue to other checks
-                pass
+        try:
+            if detected_type == 'email':
+                is_valid, error_reason = validate_email(s)
+                expected["format"] = "email"
+                # Secondary: domain-quality check for structurally valid emails.
+                # Common provider domains — misspellings like gmial.com, yahooo.com
+                # pass RFC structure check but are clearly wrong.
+                if is_valid and "@" in s:
+                    _domain = s.rsplit("@", 1)[1].lower().strip()
+                    _KNOWN_PROVIDERS = {
+                        "gmail.com", "googlemail.com",
+                        "yahoo.com", "yahoo.co.uk", "yahoo.fr", "yahoo.de",
+                        "hotmail.com", "hotmail.co.uk", "hotmail.fr",
+                        "outlook.com", "outlook.co.uk",
+                        "icloud.com", "me.com", "mac.com",
+                        "live.com", "live.co.uk",
+                        "btinternet.com", "bt.com",
+                        "virginmedia.com", "sky.com", "talktalk.net",
+                        "aol.com", "protonmail.com", "proton.me",
+                    }
+                    # Check if domain is close to a known provider but not exactly it
+                    import difflib as _dl
+                    close = _dl.get_close_matches(_domain, _KNOWN_PROVIDERS, n=1, cutoff=0.7)
+                    if close and close[0] != _domain:
+                        is_valid = False
+                        error_reason = f"domain '{_domain}' looks like a misspelling of '{close[0]}'"
+            elif detected_type == 'date':
+                is_valid, error_reason = validate_date(s)
+                expected["format"] = "date"
+            elif detected_type == 'url':
+                is_valid, error_reason = validate_url(s)
+                expected["format"] = "URL"
+        except Exception:
+            # If format validator fails, continue to other checks
+            is_valid = True  # don't falsely flag on validator crash
 
-            if not is_valid and error_reason:
-                return False, "format_error", f"invalid {detected_type}: {error_reason}", "high", expected, "format"
+        if not is_valid and error_reason:
+            return False, "format_error", f"invalid {detected_type}: {error_reason}", "high", expected, "format"
 
-    # Number type + bounds
-    if rule.get("type") == "number":
-        expected["type"] = "number"
+    # Number type + bounds  ("number" and "numeric" are treated identically)
+    if rule.get("type") in ("number", "numeric"):
+        expected["type"] = "numeric"
+        # First attempt: parse directly (no stripping).
+        # If that fails, try stripping currency symbols — if it THEN parses,
+        # that means the value has a currency prefix which is itself a format error.
+        _CURRENCY_RE = re.compile(r"[£$€¥]")
         try:
             x = float(s)
-            if "min" in rule:
-                expected["min"] = rule["min"]
-                if x < float(rule["min"]):
-                    return False, "<min", f"value {x} < min {rule['min']}", "high", expected, "bounds"
-            if "max" in rule:
-                expected["max"] = rule["max"]
-                if x > float(rule["max"]):
-                    return False, ">max", f"value {x} > max {rule['max']}", "high", expected, "bounds"
-        except Exception:
-            return False, "not number", "value is not numeric", "high", expected, "type"
+        except (ValueError, TypeError):
+            s_stripped = _CURRENCY_RE.sub("", s).replace(",", "").strip()
+            try:
+                float(s_stripped)  # parses after stripping → currency symbol is the issue
+                return False, "format_error", f"value '{s}' contains currency symbol; expected plain number", "high", expected, "type"
+            except (ValueError, TypeError):
+                return False, "not number", f"value '{s}' is not numeric", "high", expected, "type"
+        # Bounds check on successfully parsed numeric value
+        if "min" in rule:
+            expected["min"] = rule["min"]
+            if x < float(rule["min"]):
+                return False, "<min", f"value {x} < min {rule['min']}", "high", expected, "bounds"
+        if "max" in rule:
+            expected["max"] = rule["max"]
+            if x > float(rule["max"]):
+                return False, ">max", f"value {x} > max {rule['max']}", "high", expected, "bounds"
 
-    # Date type
+    # Date type — checks format, parseability AND optional min/max bounds
     if rule.get("type") == "date":
         expected["type"] = "date"
+        # If rule specifies a strict format, enforce it before attempting parse.
+        _date_format = rule.get("format", "")
+        if _date_format.upper() in ("YYYY-MM-DD", "ISO"):
+            # Must match YYYY-MM-DD exactly (no other representations allowed)
+            if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", s):
+                expected["format"] = "YYYY-MM-DD"
+                return False, "format_error", f"date '{s}' is not in ISO YYYY-MM-DD format", "high", expected, "format"
         try:
-            pd.to_datetime(s, errors="raise", infer_datetime_format=True)
+            parsed_dt = pd.to_datetime(s, errors="raise")
         except Exception:
             return False, "invalid date", "cannot parse date/time", "high", expected, "type"
+        # Bounds check (rule values may be ISO strings or "today")
+        if "min" in rule or "max" in rule:
+            try:
+                from dateutil.parser import parse as _parse_date
+                import datetime as _dt
+                _today = pd.Timestamp.today().normalize()
+                def _resolve(v: str) -> pd.Timestamp:
+                    if str(v).lower() in ("today", "now"):
+                        return _today
+                    return pd.Timestamp(_parse_date(str(v)))
+                if "min" in rule:
+                    expected["min"] = rule["min"]
+                    if parsed_dt < _resolve(rule["min"]):
+                        return False, "<min", f"date {s} is before minimum {rule['min']}", "high", expected, "bounds"
+                if "max" in rule:
+                    expected["max"] = rule["max"]
+                    if parsed_dt > _resolve(rule["max"]):
+                        return False, ">max", f"date {s} is after maximum {rule['max']}", "high", expected, "bounds"
+            except Exception:
+                pass  # If bounds parsing fails, skip bounds check silently
 
     # Allowed values (categorical constraints)
     if "allowed_values" in rule and isinstance(rule["allowed_values"], (list, tuple)):
@@ -288,9 +347,11 @@ def _check_value(v: Any, rule: Dict[str, Any], column_name: str = "", confirmed_
         if s not in allowed:
             return False, "not in allowed set", "value not in allowed set", "medium", expected, "allowed_values"
 
-    # Regex (single string or list)
-    if "regex" in rule:
-        pats = rule["regex"]
+    # Regex / pattern (single string or list).
+    # Rules may use "regex" or "pattern" interchangeably — try both keys.
+    _regex_source = "regex" if "regex" in rule else ("pattern" if "pattern" in rule else None)
+    if _regex_source:
+        pats = rule[_regex_source]
         pats = pats if isinstance(pats, list) else [pats]
         ok_any = False
         for pat in pats:
@@ -303,7 +364,7 @@ def _check_value(v: Any, rule: Dict[str, Any], column_name: str = "", confirmed_
                 continue
         if not ok_any and len(pats) > 0:
             expected["regex"] = pats[0]  # show one for explainability
-            return False, "regex mismatch", "value does not match pattern", "high", expected, "regex"
+            return False, "regex mismatch", "value does not match pattern", "high", expected, _regex_source
 
     # All checks passed / or no rule parts
     return True, "", "", "low", expected, ""

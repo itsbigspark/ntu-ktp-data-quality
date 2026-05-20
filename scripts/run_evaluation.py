@@ -54,12 +54,22 @@ ENGINE_TO_GT = {
     # ── Rule layer ────────────────────────────────────────────────────────────
     "missing":              "missing_value",
     "missing_value":        "missing_value",
+    # Format-type codes (both old short-form and new _check_value codes)
     "format":               "format_error",
+    "format_error":         "format_error",
     "pattern":              "format_error",
+    "regex mismatch":       "format_error",
     "type_mismatch":        "format_error",
+    "not number":           "format_error",
+    "invalid date":         "format_error",
+    # Range-type codes (old short-form and new _check_value codes)
     "range":                "range_error",
     "out_of_range":         "range_error",
+    "<min":                 "range_error",
+    ">max":                 "range_error",
+    # Allowed-values / categorical codes
     "allowed_values":       "standardisation_error",
+    "not in allowed set":   "standardisation_error",
     "invalid_category":     "standardisation_error",
     "cross_column":         "logical_error",
     "logical":              "logical_error",
@@ -94,7 +104,13 @@ df = pd.read_csv(DATA_PATH, dtype=str, keep_default_na=False)
 print(f"  {len(df)} rows × {len(df.columns)} columns")
 
 with open(RULES_PATH) as f:
-    rules = json.load(f)
+    _raw_rules = json.load(f)
+
+# Support both flat {"column": rule_dict} and wrapped {"columns": {"column": rule_dict}} formats.
+if "columns" not in _raw_rules:
+    rules = {"columns": _raw_rules}
+else:
+    rules = _raw_rules
 
 gt = pd.read_csv(GT_PATH, dtype=str)
 gt["row_id"] = gt["row_id"].astype(int)
