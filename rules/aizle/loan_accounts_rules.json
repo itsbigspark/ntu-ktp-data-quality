@@ -1,0 +1,114 @@
+{
+  "start_date": {
+    "type": "date",
+    "min": "2000-01-01",
+    "max": "today",
+    "description": "The date that the loan commenced.",
+    "severity": "error"
+  },
+  "settle_date": {
+    "type": "date",
+    "min": "2000-01-01",
+    "max": "2050-12-31",
+    "description": "The date the loan was settled or is due to settle.",
+    "severity": "error"
+  },
+  "loan_status": {
+    "allowed_values": [
+      "UPTODATE",
+      "ARREARS",
+      "SETTLED",
+      "DEFAULT",
+      "WRITEOFF"
+    ],
+    "case_sensitive": true,
+    "description": "Loan status must be a recognised value",
+    "severity": "error"
+  },
+  "payment_frequency": {
+    "allowed_values": [
+      "MONTHLY"
+    ],
+    "case_sensitive": true,
+    "description": "The payment cadence for the loan.",
+    "severity": "error"
+  },
+  "loan_amount": {
+    "min": 100,
+    "max": 100000,
+    "type": "numeric",
+    "description": "The amount taken out as a loan.",
+    "severity": "error"
+  },
+  "interest_rate": {
+    "min": 0.5,
+    "max": 50.0,
+    "type": "numeric",
+    "description": "The annual interest rate of the loan.",
+    "severity": "error"
+  },
+  "number_payments": {
+    "min": 25.0,
+    "max": 82.0,
+    "type": "numeric",
+    "description": "The number of payments to be made for the loan.",
+    "severity": "error"
+  },
+  "repayment_amount": {
+    "min": 1.0,
+    "max": 5000.0,
+    "type": "numeric",
+    "description": "The agreed payment amount per installment.",
+    "severity": "error"
+  },
+  "total_payable": {
+    "min": 100,
+    "max": 200000,
+    "type": "numeric",
+    "description": "The total amount to be repaid for the loan, inclusive of interest rates and additional fees.",
+    "severity": "error"
+  },
+  "early_repayment_fee": {
+    "min": 7.055,
+    "max": 889.665,
+    "type": "numeric",
+    "description": "The fee to be paid if the loan is paid before the agreed date.",
+    "severity": "error"
+  },
+  "payment_arrears": {
+    "min": 0.0,
+    "max": 0.0,
+    "type": "numeric",
+    "description": "The number of payments in arrears.",
+    "severity": "error"
+  },
+  "payment_arrears_amount": {
+    "min": 0.0,
+    "max": 0.0,
+    "type": "numeric",
+    "description": "The amount of arrears due.",
+    "severity": "error"
+  },
+  "is_secured": {
+    "allowed_values": [
+      "true",
+      "false",
+      "True",
+      "False",
+      "0",
+      "1"
+    ],
+    "description": "Indicates whether the loan is secured.",
+    "severity": "warning"
+  },
+  "loan_purpose": {
+    "allowed_values": [
+      "DEBT_CONSOLIDATION",
+      "HOLIDAY",
+      "WEDDING"
+    ],
+    "case_sensitive": true,
+    "description": "The purpose of the loan.",
+    "severity": "error"
+  }
+}

@@ -1,0 +1,117 @@
+{
+  "sort_code": {
+    "allowed_values": [
+      "01-01-01"
+    ],
+    "case_sensitive": true,
+    "description": "The SORT Code of the bank account of the customer.",
+    "severity": "error",
+    "nullable": true
+  },
+  "account_number": {
+    "min_length": 8,
+    "max_length": 16,
+    "description": "The unique number associated with an account.",
+    "severity": "warning"
+  },
+  "counterparty_sort_code": {
+    "allowed_values": [
+      "01-01-01",
+      "02-02-02",
+      "03-03-03",
+      "04-04-04"
+    ],
+    "case_sensitive": true,
+    "description": "Counterparty sort code in DD-DD-DD format (nullable)",
+    "severity": "warning",
+    "nullable": true,
+    "pattern": "^\\d{2}-\\d{2}-\\d{2}$"
+  },
+  "counterparty_account_number": {
+    "min_length": 8,
+    "max_length": 8,
+    "description": "The unique number associated with the transaction's counterparty account.",
+    "severity": "warning",
+    "nullable": true
+  },
+  "transaction_type": {
+    "min_length": 3,
+    "max_length": 9,
+    "description": "Must be a recognised transaction type code",
+    "severity": "error",
+    "allowed_values": [
+      "ATM",
+      "BACS_C",
+      "BACS_D",
+      "BGC",
+      "CASH_DEP",
+      "CCR_D",
+      "CC_C",
+      "DD_C",
+      "DD_D",
+      "DEP",
+      "FP_C",
+      "FP_D",
+      "INTP_C",
+      "POS",
+      "SELF_DD_C",
+      "SELF_DD_D",
+      "SO_C",
+      "SO_D",
+      "TFR_C",
+      "TFR_D"
+    ],
+    "case_sensitive": true
+  },
+  "original_currency": {
+    "allowed_values": [
+      "AED",
+      "EUR",
+      "GBP",
+      "USD"
+    ],
+    "case_sensitive": true,
+    "description": "The currency in which the transaction was initiated.",
+    "severity": "error"
+  },
+  "amount": {
+    "min": -50000,
+    "max": 50000,
+    "type": "numeric",
+    "description": "Transaction amount in GBP",
+    "severity": "error"
+  },
+  "balance": {
+    "min": -290644.11,
+    "max": 67188.6,
+    "type": "numeric",
+    "description": "Balance on first-party account after transaction has occurred. Negative amounts represent overdraft balances.",
+    "severity": "error"
+  },
+  "account_type": {
+    "allowed_values": [
+      "personal_credit_card_account",
+      "personal_current_account",
+      "personal_joint_account",
+      "personal_loan_account",
+      "personal_mortgage_account",
+      "personal_savings_account"
+    ],
+    "case_sensitive": true,
+    "description": "Type of account, e.g.  personal_current_account",
+    "severity": "error"
+  },
+  "transaction_category": {
+    "min_length": 4,
+    "max_length": 36,
+    "description": "Internal categories used for transactions classification.",
+    "severity": "warning"
+  },
+  "timestamp": {
+    "type": "date",
+    "min": "2025-01-01",
+    "max": "today",
+    "description": "Datetime of the event, formatted as an ISO-8601 date (YYYY-MM-DD HH:MM:SS).",
+    "severity": "error"
+  }
+}

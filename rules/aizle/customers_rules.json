@@ -1,0 +1,111 @@
+{
+  "title": {
+    "allowed_values": [
+      "Dr",
+      "Mr",
+      "Mrs",
+      "Ms"
+    ],
+    "case_sensitive": true,
+    "description": "The title (Mr, Ms etc.) to use when communicating with the customer.",
+    "severity": "error"
+  },
+  "first_name": {
+    "min_length": 2,
+    "max_length": 13,
+    "description": "The forename (first name) of the customer.",
+    "severity": "warning"
+  },
+  "last_name": {
+    "min_length": 2,
+    "max_length": 11,
+    "description": "The last name (surname, family name) of the customer.",
+    "severity": "warning"
+  },
+  "dob": {
+    "type": "date",
+    "min": "1900-01-01",
+    "max": "today",
+    "description": "Date of birth must be in the past and after 1900",
+    "severity": "error"
+  },
+  "sex": {
+    "allowed_values": [
+      "F",
+      "M"
+    ],
+    "case_sensitive": true,
+    "description": "The gender (sex) of the customer. Currently only supports M and F.",
+    "severity": "error"
+  },
+  "address_town": {
+    "case": "upper",
+    "description": "Town must be uppercase",
+    "severity": "warning",
+    "auto_fix": true
+  },
+  "postcode": {
+    "pattern": "^[A-Z]{1,2}\\d{1,2}[A-Z]?\\s\\d[A-Z]{2}$",
+    "description": "Must be a valid UK postcode (e.g. SW1A 2AA)",
+    "severity": "error",
+    "auto_fix": true
+  },
+  "pep": {
+    "allowed_values": [
+      "true",
+      "false",
+      "True",
+      "False",
+      "0",
+      "1"
+    ],
+    "description": "Flag showing whether the director is a politically exposed person (PEP).",
+    "severity": "warning"
+  },
+  "is_resident": {
+    "allowed_values": [
+      "true",
+      "false",
+      "True",
+      "False",
+      "0",
+      "1"
+    ],
+    "description": "Indicates whether the customer is a resident.",
+    "severity": "warning"
+  },
+  "is_sanctioned": {
+    "allowed_values": [
+      "true",
+      "false",
+      "True",
+      "False",
+      "0",
+      "1"
+    ],
+    "description": "Indicates whether the customer is on a sanctions list.",
+    "severity": "warning"
+  },
+  "verification_method": {
+    "allowed_values": [
+      "branch",
+      "email",
+      "online"
+    ],
+    "case_sensitive": true,
+    "description": "The method used to verify the customer.",
+    "severity": "error"
+  },
+  "land_line": {
+    "pattern": "^\\+44\\d{10}$",
+    "description": "UK landline must start +44 followed by 10 digits",
+    "severity": "warning",
+    "nullable": true
+  },
+  "mobile_number": {
+    "pattern": "^\\+447\\d{9}$",
+    "description": "UK mobile must start +447 followed by 9 digits",
+    "severity": "warning",
+    "nullable": true
+  }
+}

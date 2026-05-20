@@ -1,0 +1,88 @@
+{
+  "card_issue_date": {
+    "type": "date",
+    "min": "2000-01-01",
+    "max": "today",
+    "description": "The date on which the credit card was issued.",
+    "severity": "error"
+  },
+  "card_expiration_date": {
+    "type": "date",
+    "min": "today",
+    "max": "2040-12-31",
+    "description": "Card expiry must be in the future",
+    "severity": "error"
+  },
+  "credit_limit": {
+    "min": 100,
+    "max": 50000,
+    "type": "numeric",
+    "description": "The maximum credit available through the credit card.",
+    "severity": "error"
+  },
+  "interest_rate": {
+    "min": 0.1,
+    "max": 60.0,
+    "type": "numeric",
+    "description": "The annual interest rate of the credit card.",
+    "severity": "error"
+  },
+  "payment_frequency": {
+    "allowed_values": [
+      "Monthly"
+    ],
+    "case_sensitive": true,
+    "description": "The payment cadence for the credit card.",
+    "severity": "error"
+  },
+  "payment_due_date": {
+    "type": "date",
+    "min": "2025-07-01",
+    "max": "today",
+    "description": "The date on which the next payment towards the credit card balance is due.",
+    "severity": "error"
+  },
+  "minimum_payment": {
+    "min": 2.5,
+    "max": 7.5,
+    "type": "numeric",
+    "description": "The minimum balance amount that must be paid off in each statement period.",
+    "severity": "error"
+  },
+  "current_balance": {
+    "min": -50000,
+    "max": 0.0,
+    "type": "numeric",
+    "description": "The current amount of used credit on the credit card. The more negative the number, the more debt has been accrued.",
+    "severity": "error"
+  },
+  "available_credit": {
+    "min": 0.0,
+    "max": 3853.44,
+    "type": "numeric",
+    "description": "The remaining amount of credit available to be spent on the card.",
+    "severity": "error"
+  },
+  "last_statement_balance": {
+    "min": -11391.435,
+    "max": 0.0,
+    "type": "numeric",
+    "description": "The total amount owed at the time of the last card statement.",
+    "severity": "error"
+  },
+  "total_paid_year_to_date": {
+    "min": 0.0,
+    "max": 35770.14,
+    "type": "numeric",
+    "description": "How much the card holder has paid into the credit card account so far in the current calendar year.",
+    "severity": "error"
+  },
+  "account_type": {
+    "allowed_values": [
+      "personal_credit_card_account"
+    ],
+    "case_sensitive": true,
+    "description": "Type of account, e.g.  personal_credit_card_account",
+    "severity": "error"
+  }
+}
