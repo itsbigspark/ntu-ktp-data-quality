@@ -500,6 +500,22 @@ if result is not None:
                 type_counts["% of Total"] = (type_counts["Count"] / len(rpt) * 100).round(1).astype(str) + "%"
                 st.dataframe(type_counts, use_container_width=True, hide_index=True, height=min(300, 40 + 35 * len(type_counts)))
 
+        # ── Colour-coded data grid ───────────────────────────────────────────
+        section_header("// Data View (flagged cells in red)")
+        try:
+            from core.validation_ui_helpers import style_dataframe_with_issues
+            n_cells = len(df_raw) * max(len(df_raw.columns), 1)
+            if n_cells > 60000:
+                st.caption(
+                    f"Large dataset ({len(df_raw):,} rows) - cells are colour-coded; "
+                    "hover tooltips are disabled above 60,000 cells for performance."
+                )
+            styled = style_dataframe_with_issues(df_raw, rpt)
+            st.dataframe(styled, use_container_width=True, height=420)
+        except Exception as _style_err:
+            st.caption(f"Coloured data view unavailable: {_style_err}")
+            st.dataframe(df_raw.head(200), use_container_width=True, height=420)
+
         # ── Full issue table ─────────────────────────────────────────────────
         section_header("// Full Issue Report")
         st.dataframe(rpt, use_container_width=True, hide_index=True, height=400)

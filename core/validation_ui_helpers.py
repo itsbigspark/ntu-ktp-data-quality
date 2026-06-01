@@ -11,44 +11,79 @@ from typing import Dict, List, Optional, Tuple, Any
 import re
 
 
-def style_dataframe_with_issues(df: pd.DataFrame, issues_report: pd.DataFrame) -> pd.io.formats.style.Styler:
+_STYLE_ISSUE = 'background-color: #ffcccc; color: #cc0000; font-weight: bold'
+_STYLE_VALID = 'background-color: #ccffcc; color: #006600'
+
+# Above this many cells we skip per-cell tooltips (the HTML they generate
+# freezes the browser on large datasets). Colouring still applies.
+_MAX_TOOLTIP_CELLS = 60000
+
+
+def style_dataframe_with_issues(
+    df: pd.DataFrame,
+    issues_report: pd.DataFrame,
+    include_citation: bool = True,
+    max_tooltip_cells: int = _MAX_TOOLTIP_CELLS,
+) -> pd.io.formats.style.Styler:
     """
-    Style a dataframe to highlight cells with issues in red, valid cells in green.
+    Style a dataframe: cells with an issue are red, valid cells are green.
+
+    When the grid is small enough, each flagged cell also gets a hover tooltip
+    showing the issue type, its description, and the regulatory citation
+    (e.g. "missing - value is missing | BCBS 239 Principle 4 (Completeness)").
 
     Args:
-        df: Original dataframe
-        issues_report: DataFrame with columns [row_id, column, issue_type, ...]
+        df: Original dataframe.
+        issues_report: issues with columns [row_id, column, issue|issue_type,
+            description?, regulatory_citation?].
+        include_citation: append the regulatory citation to the tooltip text.
+        max_tooltip_cells: above this cell count, tooltips are skipped for
+            performance (colouring is unaffected).
 
     Returns:
-        Styled dataframe with color-coded cells
+        A pandas Styler with colour coding (and tooltips when feasible).
     """
-    # Create a boolean mask of same shape as df
-    # True = has issue (red), False = valid (green)
+    # Boolean mask + per-cell tooltip text, both shaped like df.
     issue_mask = pd.DataFrame(False, index=df.index, columns=df.columns)
-
-    # Mark cells with issues
-    for _, issue in issues_report.iterrows():
-        row_id = issue.get('row_id')
-        col = issue.get('column')
-
-        if row_id is not None and col in df.columns:
-            try:
-                issue_mask.at[row_id, col] = True
-            except (KeyError, IndexError):
-                continue
-
-    # Define styling function
-    def highlight_cell(val, row_idx, col_name):
-        if issue_mask.at[row_idx, col_name]:
-            return 'background-color: #ffcccc; color: #cc0000; font-weight: bold'  # Red
-        else:
-            return 'background-color: #ccffcc; color: #006600'  # Green
-
-    # Apply styling
-    styled = df.style.apply(
-        lambda x: [highlight_cell(val, idx, x.name) for idx, val in x.items()],
-        axis=0
+    n_cells = max(len(df) * max(len(df.columns), 1), 1)
+    want_tooltips = n_cells <= max_tooltip_cells
+    tooltips = (
+        pd.DataFrame("", index=df.index, columns=df.columns) if want_tooltips else None
     )
+
+    issue_attr = "issue_type" if "issue_type" in issues_report.columns else "issue"
+
+    for _, issue in issues_report.iterrows():
+        row_id = issue.get("row_id")
+        col = issue.get("column")
+        if row_id is None or col not in df.columns:
+            continue
+        try:
+            issue_mask.at[row_id, col] = True
+            if want_tooltips:
+                itype = str(issue.get(issue_attr, "") or "")
+                desc = str(issue.get("description", "") or "")
+                parts = [p for p in (itype, desc) if p]
+                text = " - ".join(parts) if parts else "issue"
+                if include_citation:
+                    cite = issue.get("regulatory_citation")
+                    if cite is not None and str(cite) not in ("", "None", "nan"):
+                        text = f"{text} | {cite}"
+                # Keep the first issue's tooltip if a cell already has one.
+                if not tooltips.at[row_id, col]:
+                    tooltips.at[row_id, col] = text
+        except (KeyError, IndexError):
+            continue
+
+    # Build a style DataFrame in one shot (far faster than per-cell python).
+    style_df = issue_mask.applymap(lambda flagged: _STYLE_ISSUE if flagged else _STYLE_VALID)
+    styled = df.style.apply(lambda _: style_df, axis=None)
+
+    if want_tooltips and tooltips is not None and (tooltips.values != "").any():
+        try:
+            styled = styled.set_tooltips(tooltips)
+        except Exception:
+            pass  # tooltips are a nicety; never fail the render over them
 
     return styled
 

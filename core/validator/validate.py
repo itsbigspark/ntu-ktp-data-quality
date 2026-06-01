@@ -947,7 +947,14 @@ def attach_suggestions(report: pd.DataFrame,
             fmt = _col_formats.get(col)
             if fmt and val is not None:
                 suggestion = _reformat_value(str(val), fmt)
-            # If reformatting didn't work, fall back to corpus matching
+            # Email domain typo correction (e.g. outlok.co -> outlook.com)
+            if suggestion is None and val is not None and "@" in str(val):
+                try:
+                    from .corpus_correction import suggest_email_fix
+                    suggestion = suggest_email_fix(str(val))
+                except Exception:
+                    pass
+            # If still nothing, fall back to corpus matching
             if suggestion is None:
                 corpus = _col_corpus.get(col, [])
                 suggestion = suggest_fix("" if val is None else str(val), col, corpus=corpus)
