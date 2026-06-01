@@ -95,7 +95,12 @@ elif provider == "anthropic":
         type="password",
         key="anthropic_key_input",
     )
+    # Strip stray whitespace/newlines that commonly sneak in when pasting keys.
+    api_key = (api_key or "").strip()
     st.session_state["anthropic_api_key"] = api_key
+    if api_key and not api_key.startswith("sk-ant-"):
+        st.warning("Anthropic API keys normally start with 'sk-ant-'. "
+                   "This value does not — check you pasted an Anthropic key (not OpenAI or a console admin token).")
 
     _anthropic_models = [
         "claude-opus-4-6",
@@ -123,6 +128,7 @@ elif provider == "anthropic":
                 st.warning("Connected but unexpected response")
         except Exception as e:
             st.error("Anthropic connection failed. Check your API key is correct and has credits.")
+            st.exception(e)
 
 elif provider == "openai":
     st.markdown(

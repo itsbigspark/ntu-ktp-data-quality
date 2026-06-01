@@ -175,6 +175,13 @@ if st.button("RUN VALIDATION", key="run_validation", use_container_width=True):
 
     progress_bar.progress(1.0, text="Pipeline complete")
 
+    # ── Attach regulatory citations (RAG) ─────────────────────────────────
+    try:
+        from core.regulatory_rag import get_regulatory_rag
+        result.report = get_regulatory_rag().annotate_report(result.report)
+    except Exception as _reg_err:
+        st.warning(f"Regulatory citations unavailable: {_reg_err}")
+
     # Store results
     st.session_state["validation_result"] = result
     st.session_state["unified_issues_report"] = result.report

@@ -228,6 +228,32 @@ def run_pipeline(
     # ── Step 4: Attach issue descriptions ──────────────────────────────────
     report = attach_issue_descriptions(report)
 
+    # ── Step 4.5: Attach regulatory citations (RAG) ────────────────────────
+    reg_cfg = config.get("regulatory", {})
+    if reg_cfg.get("enabled", True) and not report.empty:
+        t0 = time.time()
+        try:
+            from core.regulatory_rag import get_regulatory_rag
+            rag = get_regulatory_rag()
+            report = rag.annotate_report(
+                report,
+                min_similarity=reg_cfg.get("min_similarity", 0.15),
+            )
+            cited = int(report["regulatory_citation"].notna().sum()) if "regulatory_citation" in report.columns else 0
+            audit_trail.append({
+                "step": "regulatory_citations",
+                "duration_ms": round((time.time() - t0) * 1000),
+                "issues_cited": cited,
+            })
+            logger.info(f"Regulatory citations attached to {cited} issues")
+        except Exception as e:
+            logger.warning(f"Regulatory citation step skipped: {e}")
+            audit_trail.append({
+                "step": "regulatory_citations",
+                "duration_ms": round((time.time() - t0) * 1000),
+                "error": str(e),
+            })
+
     # ── Step 5: Quality scoring ────────────────────────────────────────────
     t0 = time.time()
     quality_scores = compute_quality_scores(df)

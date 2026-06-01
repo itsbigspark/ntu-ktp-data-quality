@@ -33,6 +33,7 @@ COPY TEST2_DATA/ ./TEST2_DATA/
 COPY configs/ ./configs/
 COPY assets/ ./assets/
 COPY lib/ ./lib/
+COPY regulatory_kb/ ./regulatory_kb/
 COPY start.sh ./start.sh
 
 # Create output directory

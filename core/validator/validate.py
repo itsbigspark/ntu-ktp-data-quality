@@ -224,8 +224,10 @@ def _check_value(v: Any, rule: Dict[str, Any], column_name: str = "", confirmed_
     confirmed_type: pre-validated format type ('email', 'date', 'url') or None.
                     Only set when column name matched AND data sample confirmed.
     """
-    # Presence / Missing check (FIRST)
+    # Presence / Missing check (FIRST) — honor nullable/required from rule
     if _is_missing(v):
+        if rule.get("nullable") is True or rule.get("required") is False:
+            return True, "", "", "low", {}, "presence"
         return False, "missing", "value is missing / placeholder", "high", {"not_missing": True}, "presence"
 
     # Basic pre-normalisation

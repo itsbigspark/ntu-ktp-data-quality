@@ -1,0 +1,150 @@
+{
+  "_meta": {
+    "description": "Regulatory knowledge base for the data quality RAG layer. Each entry is an authored, plain-English summary of a regulatory data requirement paired with its exact citation. Summaries are original paraphrases written for retrieval - they are NOT verbatim reproductions of the official regulatory texts. Always consult the official source (BIS for BCBS 239; legislation.gov.uk and EUR-Lex for UK GDPR / Data Protection Act 2018) for the authoritative wording.",
+    "sources": [
+      "BCBS 239 - Principles for effective risk data aggregation and risk reporting, Basel Committee on Banking Supervision, Bank for International Settlements (January 2013)",
+      "UK GDPR - Retained Regulation (EU) 2016/679 as it forms part of UK domestic law",
+      "Data Protection Act 2018 (c. 12), legislation.gov.uk, Open Government Licence v3.0"
+    ],
+    "dimensions": ["completeness", "uniqueness", "consistency", "validity", "accuracy", "timeliness"],
+    "version": "1.0",
+    "last_updated": "2026-05-27"
+  },
+  "clauses": [
+    {
+      "id": "bcbs239-p1",
+      "regulation": "BCBS 239",
+      "citation": "BCBS 239 Principle 1 (Governance)",
+      "title": "Governance",
+      "summary": "A bank's risk data aggregation capabilities and risk reporting practices should be subject to strong governance arrangements. Data quality is a board and senior management responsibility, and roles for ownership and stewardship of data must be clearly defined.",
+      "dimensions": ["accuracy", "completeness", "consistency"],
+      "keywords": ["governance", "data ownership", "data stewardship", "accountability", "board oversight", "risk data"]
+    },
+    {
+      "id": "bcbs239-p2",
+      "regulation": "BCBS 239",
+      "citation": "BCBS 239 Principle 2 (Data architecture and IT infrastructure)",
+      "title": "Data architecture and IT infrastructure",
+      "summary": "A bank should design, build and maintain data architecture and IT infrastructure that fully supports risk data aggregation and reporting, including in times of stress, while still meeting the other principles. Fragmented systems and manual workarounds undermine data quality.",
+      "dimensions": ["consistency", "completeness", "validity"],
+      "keywords": ["data architecture", "IT infrastructure", "single source", "data lineage", "integration", "manual workaround", "fragmented systems"]
+    },
+    {
+      "id": "bcbs239-p3",
+      "regulation": "BCBS 239",
+      "citation": "BCBS 239 Principle 3 (Accuracy and Integrity)",
+      "title": "Accuracy and Integrity",
+      "summary": "A bank should be able to generate accurate and reliable risk data. Data should be aggregated on a largely automated basis to minimise the probability of errors, and the accuracy and integrity of data should be reconciled and validated. Inaccurate values, format errors, and out-of-range values directly breach this principle.",
+      "dimensions": ["accuracy", "validity", "consistency"],
+      "keywords": ["accuracy", "integrity", "reliable data", "reconciliation", "validation", "format error", "invalid value", "out of range", "data error", "automation"]
+    },
+    {
+      "id": "bcbs239-p4",
+      "regulation": "BCBS 239",
+      "citation": "BCBS 239 Principle 4 (Completeness)",
+      "title": "Completeness",
+      "summary": "A bank should be able to capture and aggregate all material risk data across the banking group. Data should be available by business line, legal entity, asset type, region and other groupings relevant to the risk in question. Missing values, missing records and partial coverage breach this principle.",
+      "dimensions": ["completeness"],
+      "keywords": ["completeness", "missing value", "missing data", "missing record", "null", "blank", "incomplete", "coverage", "material risk data"]
+    },
+    {
+      "id": "bcbs239-p5",
+      "regulation": "BCBS 239",
+      "citation": "BCBS 239 Principle 5 (Timeliness)",
+      "title": "Timeliness",
+      "summary": "A bank should be able to generate aggregate and up-to-date risk data in a timely manner while also meeting the principles relating to accuracy and integrity, completeness and adaptability. Stale dates, outdated records and delayed updates breach this principle.",
+      "dimensions": ["timeliness"],
+      "keywords": ["timeliness", "up to date", "stale data", "outdated", "old date", "delay", "lag", "recent", "freshness", "as of date"]
+    },
+    {
+      "id": "bcbs239-p6",
+      "regulation": "BCBS 239",
+      "citation": "BCBS 239 Principle 6 (Adaptability)",
+      "title": "Adaptability",
+      "summary": "A bank should be able to generate aggregate risk data to meet a broad range of on-demand, ad hoc risk management reporting requests, including requests during stress situations and requests driven by changing internal needs or supervisory queries.",
+      "dimensions": ["consistency", "completeness"],
+      "keywords": ["adaptability", "ad hoc", "on demand", "flexibility", "reporting request", "stress scenario", "drill down"]
+    },
+    {
+      "id": "bcbs239-p7",
+      "regulation": "BCBS 239",
+      "citation": "BCBS 239 Principle 7 (Accuracy of reporting)",
+      "title": "Accuracy of risk reports",
+      "summary": "Risk management reports should accurately and precisely convey aggregated risk data and reflect risk in an exact manner. Reports should be reconciled and validated. Inconsistent or contradictory values across columns or sources undermine the accuracy of reporting.",
+      "dimensions": ["accuracy", "consistency", "validity"],
+      "keywords": ["report accuracy", "precision", "reconciliation", "inconsistency", "contradiction", "cross-field", "cross-column", "mismatch"]
+    },
+    {
+      "id": "gdpr-art5-1a",
+      "regulation": "UK GDPR",
+      "citation": "UK GDPR Art. 5(1)(a) (Lawfulness, fairness and transparency)",
+      "title": "Lawfulness, fairness and transparency",
+      "summary": "Personal data shall be processed lawfully, fairly and in a transparent manner in relation to the data subject. Processing data of poor quality can lead to unfair outcomes for individuals.",
+      "dimensions": ["accuracy"],
+      "keywords": ["lawfulness", "fairness", "transparency", "personal data", "data subject", "fair processing"]
+    },
+    {
+      "id": "gdpr-art5-1b",
+      "regulation": "UK GDPR",
+      "citation": "UK GDPR Art. 5(1)(b) (Purpose limitation)",
+      "title": "Purpose limitation",
+      "summary": "Personal data shall be collected for specified, explicit and legitimate purposes and not further processed in a manner incompatible with those purposes. Data captured for one purpose should not silently be repurposed.",
+      "dimensions": ["validity", "consistency"],
+      "keywords": ["purpose limitation", "specified purpose", "legitimate purpose", "repurposing", "scope creep"]
+    },
+    {
+      "id": "gdpr-art5-1c",
+      "regulation": "UK GDPR",
+      "citation": "UK GDPR Art. 5(1)(c) (Data minimisation)",
+      "title": "Data minimisation",
+      "summary": "Personal data shall be adequate, relevant and limited to what is necessary in relation to the purposes for which they are processed. Holding excessive or unnecessary personal fields, or exposing more personal data than required, breaches this principle.",
+      "dimensions": ["validity", "completeness"],
+      "keywords": ["data minimisation", "adequate", "relevant", "necessary", "excessive data", "unnecessary fields", "PII exposure", "limited"]
+    },
+    {
+      "id": "gdpr-art5-1d",
+      "regulation": "UK GDPR",
+      "citation": "UK GDPR Art. 5(1)(d) (Accuracy)",
+      "title": "Accuracy",
+      "summary": "Personal data shall be accurate and, where necessary, kept up to date; every reasonable step must be taken to ensure that inaccurate personal data are erased or rectified without delay. Incorrect values, typos, invalid formats and stale personal data all breach this principle.",
+      "dimensions": ["accuracy", "validity", "timeliness"],
+      "keywords": ["accuracy", "accurate", "kept up to date", "inaccurate", "rectified", "erased", "typo", "incorrect value", "invalid format", "stale personal data", "correction"]
+    },
+    {
+      "id": "gdpr-art5-1e",
+      "regulation": "UK GDPR",
+      "citation": "UK GDPR Art. 5(1)(e) (Storage limitation)",
+      "title": "Storage limitation",
+      "summary": "Personal data shall be kept in a form which permits identification of data subjects for no longer than is necessary for the purposes for which the data are processed. Retaining stale or obsolete personal records beyond their useful life breaches this principle.",
+      "dimensions": ["timeliness", "validity"],
+      "keywords": ["storage limitation", "retention", "no longer than necessary", "obsolete record", "stale record", "data retention", "archival"]
+    },
+    {
+      "id": "gdpr-art5-1f",
+      "regulation": "UK GDPR",
+      "citation": "UK GDPR Art. 5(1)(f) (Integrity and confidentiality)",
+      "title": "Integrity and confidentiality",
+      "summary": "Personal data shall be processed in a manner that ensures appropriate security, including protection against unauthorised or unlawful processing and against accidental loss, destruction or damage, using appropriate technical and organisational measures. Data corruption and uncontrolled exposure breach this principle.",
+      "dimensions": ["accuracy", "validity"],
+      "keywords": ["integrity", "confidentiality", "security", "unauthorised processing", "accidental loss", "corruption", "data protection by design", "technical measures"]
+    },
+    {
+      "id": "gdpr-art5-2",
+      "regulation": "UK GDPR",
+      "citation": "UK GDPR Art. 5(2) (Accountability)",
+      "title": "Accountability",
+      "summary": "The controller shall be responsible for, and be able to demonstrate compliance with, the data protection principles in Article 5(1). This requires auditable evidence of data quality controls and remediation, such as a traceable record of how each issue was detected and resolved.",
+      "dimensions": ["accuracy", "completeness", "consistency"],
+      "keywords": ["accountability", "demonstrate compliance", "audit trail", "evidence", "controller responsibility", "traceability", "record keeping"]
+    },
+    {
+      "id": "dpa2018-s2",
+      "regulation": "Data Protection Act 2018",
+      "citation": "Data Protection Act 2018, s.2 (Protection of personal data)",
+      "title": "Protection of personal data (UK application of GDPR principles)",
+      "summary": "The Data Protection Act 2018 applies and supplements the UK GDPR within the United Kingdom, including the data protection principles of accuracy, minimisation and storage limitation. UK firms must apply these principles to personal data they hold and process.",
+      "dimensions": ["accuracy", "validity", "timeliness"],
+      "keywords": ["Data Protection Act 2018", "UK GDPR", "personal data", "data protection principles", "supplement", "UK application"]
+    }
+  ]
+}
