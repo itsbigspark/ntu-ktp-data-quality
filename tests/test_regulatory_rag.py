@@ -28,7 +28,16 @@ def _top_citation(results):
 
 def test_ingest_count(rag):
     stats = rag.ingest(force=True)
-    assert stats["count"] == 15
+    # 15 BCBS/GDPR + 18 FCA Handbook clauses
+    assert stats["count"] == 33
+
+
+def test_fca_clauses_present(rag):
+    # An FCA-specific scenario should retrieve an FCA Handbook clause.
+    res = rag.retrieve(issue="duplicate_value", column="submission_id",
+                       dimension="uniqueness", k=2)
+    cites = [r["regulation"] for r in res]
+    assert any("FCA Handbook" in c for c in cites)
 
 
 def test_missing_value_maps_to_completeness(rag):

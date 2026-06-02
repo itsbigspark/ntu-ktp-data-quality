@@ -118,17 +118,65 @@ class RegulatoryRAG:
     # Knowledge base loading
     # ------------------------------------------------------------------
     def _load_clauses(self) -> List[Dict[str, Any]]:
+        """
+        Load clauses from every *.json file in the knowledge base directory.
+
+        Handles two on-disk formats:
+          - wrapped: {"_meta": {...}, "clauses": [ ... ]}
+          - bare:    [ {clause}, {clause}, ... ]
+
+        Clauses are de-duplicated by 'id' (first file wins). Missing optional
+        fields (dimensions, keywords, title) are defaulted so any minimal file
+        (e.g. id/regulation/citation/summary/url) ingests cleanly.
+        """
         if self._clauses is not None:
             return self._clauses
-        if not self.kb_path.exists():
-            raise FileNotFoundError(f"Regulatory KB not found at {self.kb_path}")
-        with open(self.kb_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        clauses = data.get("clauses", [])
-        if not clauses:
-            raise ValueError(f"No clauses found in {self.kb_path}")
-        self._clauses = clauses
-        return clauses
+
+        kb_dir = self.kb_path.parent if self.kb_path.suffix == ".json" else self.kb_path
+        if not kb_dir.exists():
+            raise FileNotFoundError(f"Regulatory KB directory not found at {kb_dir}")
+
+        files = sorted(kb_dir.glob("*.json"))
+        if not files:
+            raise FileNotFoundError(f"No clause JSON files found in {kb_dir}")
+
+        merged: List[Dict[str, Any]] = []
+        seen_ids = set()
+        for fp in files:
+            try:
+                with open(fp, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+            except Exception as exc:
+                logger.warning("Skipping unreadable KB file %s: %s", fp.name, exc)
+                continue
+
+            if isinstance(data, dict):
+                raw = data.get("clauses", [])
+            elif isinstance(data, list):
+                raw = data
+            else:
+                raw = []
+
+            for c in raw:
+                if not isinstance(c, dict) or "id" not in c or "summary" not in c:
+                    continue
+                cid = c["id"]
+                if cid in seen_ids:
+                    continue
+                seen_ids.add(cid)
+                # Normalise optional fields so ingest never KeyErrors.
+                c.setdefault("dimensions", [])
+                c.setdefault("keywords", [])
+                c.setdefault("title", c.get("citation", ""))
+                c.setdefault("regulation", "")
+                merged.append(c)
+
+        if not merged:
+            raise ValueError(f"No clauses found in {kb_dir}")
+
+        logger.info("Loaded %d regulatory clauses from %d file(s)", len(merged), len(files))
+        self._clauses = merged
+        return merged
 
     def _get_vdb(self):
         if self._vdb is None:
@@ -203,6 +251,7 @@ class RegulatoryRAG:
                 "regulation": c.get("regulation", ""),
                 "title": c.get("title", ""),
                 "summary": c.get("summary", ""),
+                "url": c.get("url", ""),
                 "dimensions": ",".join(dims),
                 "keywords": kw_str,
             }
@@ -328,6 +377,7 @@ class RegulatoryRAG:
                     "regulation": meta.get("regulation", ""),
                     "title": meta.get("title", ""),
                     "summary": meta.get("summary", ""),
+                    "url": meta.get("url", ""),
                     "dimensions": [d for d in meta.get("dimensions", "").split(",") if d],
                     "similarity": similarity,
                 }

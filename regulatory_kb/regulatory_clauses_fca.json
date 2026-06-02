@@ -1,0 +1,128 @@
+[
+  {
+    "id": "SUP_16_3_14_R",
+    "regulation": "FCA Handbook — SUP",
+    "citation": "SUP 16.3.14 R",
+    "summary": "A firm must ensure that every regulatory return it submits to the FCA is accurate, complete, and not misleading. Submitting a return that contains errors, omissions, or inconsistent values is a breach of this rule.",
+    "url": "https://www.handbook.fca.org.uk/handbook/SUP/16/3.html"
+  },
+  {
+    "id": "SUP_16_3_3_R",
+    "regulation": "FCA Handbook — SUP",
+    "citation": "SUP 16.3.3 R",
+    "summary": "A firm must submit its regulatory return by the due date specified for that return. Submitting a return before the reporting period has ended, or after the deadline, breaches this rule.",
+    "url": "https://www.handbook.fca.org.uk/handbook/SUP/16/3.html"
+  },
+  {
+    "id": "SUP_16_3_8_R",
+    "regulation": "FCA Handbook — SUP",
+    "citation": "SUP 16.3.8 R",
+    "summary": "A firm must not submit duplicate returns for the same reporting period. Where more than one submission is received for the same period, only the most recent submission will be treated as the firm's return, but multiple submissions may indicate a systems or governance failure.",
+    "url": "https://www.handbook.fca.org.uk/handbook/SUP/16/3.html"
+  },
+  {
+    "id": "MIPRU_3_2_1_R",
+    "regulation": "FCA Handbook — MIPRU",
+    "citation": "MIPRU 3.2.1 R",
+    "summary": "A home finance intermediary must take out and maintain a professional indemnity insurance policy that meets the FCA's minimum requirements. The policy must be in force at all times while the firm carries on regulated activities. A missing or null PII coverage amount indicates no valid policy has been recorded.",
+    "url": "https://www.handbook.fca.org.uk/handbook/MIPRU/3/2.html"
+  },
+  {
+    "id": "MIPRU_3_2_3_R",
+    "regulation": "FCA Handbook — MIPRU",
+    "citation": "MIPRU 3.2.3 R",
+    "summary": "The professional indemnity insurance policy held by a firm must be current and must not have expired. A firm carrying on regulated activities with an expired PII policy is in breach of this rule and must notify the FCA immediately.",
+    "url": "https://www.handbook.fca.org.uk/handbook/MIPRU/3/2.html"
+  },
+  {
+    "id": "MIPRU_3_2_6_R",
+    "regulation": "FCA Handbook — MIPRU",
+    "citation": "MIPRU 3.2.6 R",
+    "summary": "The minimum level of professional indemnity insurance coverage a firm must maintain is determined by the firm's annual income from regulated activities. Coverage below the required minimum renders the policy non-compliant.",
+    "url": "https://www.handbook.fca.org.uk/handbook/MIPRU/3/2.html"
+  },
+  {
+    "id": "DISP_1_10_2_R",
+    "regulation": "FCA Handbook — DISP",
+    "citation": "DISP 1.10.2 R",
+    "summary": "A firm must report, in its regulatory return, the total number of complaints received and the total number upheld during the reporting period. The number of complaints upheld cannot exceed the number of complaints received in the same period — a higher upheld count than received count indicates a data entry error.",
+    "url": "https://www.handbook.fca.org.uk/handbook/DISP/1/10.html"
+  },
+  {
+    "id": "DISP_1_10_3_R",
+    "regulation": "FCA Handbook — DISP",
+    "citation": "DISP 1.10.3 R",
+    "summary": "A firm must separately report the number of complaints referred to the Financial Ombudsman Service. This number should not exceed the number of complaints upheld in the same period, as FOS referrals arise from dissatisfied complainants whose complaints were not resolved in their favour.",
+    "url": "https://www.handbook.fca.org.uk/handbook/DISP/1/10.html"
+  },
+  {
+    "id": "DISP_1_6_1_R",
+    "regulation": "FCA Handbook — DISP",
+    "citation": "DISP 1.6.1 R",
+    "summary": "A firm must resolve complaints within eight weeks of receipt. The number of complaints resolved within eight weeks must be reported in the regulatory return and cannot exceed the total number of complaints received in the same period.",
+    "url": "https://www.handbook.fca.org.uk/handbook/DISP/1/6.html"
+  },
+  {
+    "id": "TC_2_1_1_R",
+    "regulation": "FCA Handbook — TC",
+    "citation": "TC 2.1.1 R",
+    "summary": "A firm must ensure that an employee does not carry on a controlled function or retail activity unless that employee is competent to do so. The number of advisers recorded as holding a current Statement of Professional Standing cannot exceed the total number of advisers employed by the firm.",
+    "url": "https://www.handbook.fca.org.uk/handbook/TC/2/1.html"
+  },
+  {
+    "id": "TC_2_1_5_R",
+    "regulation": "FCA Handbook — TC",
+    "citation": "TC 2.1.5 R",
+    "summary": "A firm must maintain records sufficient to demonstrate that its employees meet the competence requirements. Every adviser included on the firm's Training and Competence scheme must also be counted within the firm's total adviser headcount.",
+    "url": "https://www.handbook.fca.org.uk/handbook/TC/2/1.html"
+  },
+  {
+    "id": "SUP_16_12_4_R",
+    "regulation": "FCA Handbook — SUP",
+    "citation": "SUP 16.12.4 R",
+    "summary": "A firm assigned to a Reporting Activity Group under the Integrated Regulatory Reporting framework must submit all data items prescribed for that group. Revenue from regulated activities is a mandatory field for firms carrying on retail mediation activities and must not be left blank.",
+    "url": "https://www.handbook.fca.org.uk/handbook/SUP/16/12.html"
+  },
+  {
+    "id": "SUP_16_12_11_R",
+    "regulation": "FCA Handbook — SUP",
+    "citation": "SUP 16.12.11 R",
+    "summary": "A firm reporting revenue from regulated activities must report a non-negative value. A negative revenue figure indicates either a data entry error or a material misstatement. Firms must ensure all financial figures submitted are arithmetically correct and consistent with the firm's internal records.",
+    "url": "https://www.handbook.fca.org.uk/handbook/SUP/16/12.html"
+  },
+  {
+    "id": "PRIN_2_1_1_R",
+    "regulation": "FCA Handbook — PRIN",
+    "citation": "PRIN 2.1.1 R (Principle 3)",
+    "summary": "A firm must take reasonable care to organise and control its affairs responsibly and effectively, with adequate risk management systems. Submitting a regulatory return with impossible values — such as negative client counts or figures that are mathematically inconsistent — indicates a failure of internal controls.",
+    "url": "https://www.handbook.fca.org.uk/handbook/PRIN/2/1.html"
+  },
+  {
+    "id": "PRIN_2_1_1_R_P11",
+    "regulation": "FCA Handbook — PRIN",
+    "citation": "PRIN 2.1.1 R (Principle 11)",
+    "summary": "A firm must deal with its regulators in an open and cooperative way and must disclose to the FCA anything relating to the firm of which the FCA would reasonably expect notice. Submitting a return with a significant unexplained anomaly — such as a revenue figure 30 times lower than the prior quarter — without notification may breach this principle.",
+    "url": "https://www.handbook.fca.org.uk/handbook/PRIN/2/1.html"
+  },
+  {
+    "id": "COBS_4_2_1_R",
+    "regulation": "FCA Handbook — COBS",
+    "citation": "COBS 4.2.1 R",
+    "summary": "A firm must ensure that its communications, including regulatory data submissions, are fair, clear and not misleading. Reporting zero retail clients alongside material revenue from regulated activities is inconsistent and may indicate a misclassification of client type or a data entry error.",
+    "url": "https://www.handbook.fca.org.uk/handbook/COBS/4/2.html"
+  },
+  {
+    "id": "SUP_15_3_1_R",
+    "regulation": "FCA Handbook — SUP",
+    "citation": "SUP 15.3.1 R",
+    "summary": "A firm must notify the FCA immediately if it becomes aware, or has information that reasonably suggests, that it has submitted a regulatory return containing a significant error or omission. An unexplained material change in reported figures between periods must be investigated and, if erroneous, corrected by resubmission.",
+    "url": "https://www.handbook.fca.org.uk/handbook/SUP/15/3.html"
+  },
+  {
+    "id": "FIT_1_3_1_G",
+    "regulation": "FCA Handbook — FIT",
+    "citation": "FIT 1.3.1 G",
+    "summary": "Approved persons and senior managers are personally accountable for the accuracy of information submitted to the FCA under their oversight. Where a regulatory return contains material inaccuracies, the FCA may consider whether the responsible senior manager demonstrated adequate oversight of the submission process.",
+    "url": "https://www.handbook.fca.org.uk/handbook/FIT/1/3.html"
+  }
+]
