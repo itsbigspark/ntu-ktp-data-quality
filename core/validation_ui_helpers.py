@@ -88,6 +88,47 @@ def style_dataframe_with_issues(
     return styled
 
 
+def styled_table_html(df: pd.DataFrame, issues_report: pd.DataFrame,
+                      include_citation: bool = True,
+                      max_tooltip_cells: int = _MAX_TOOLTIP_CELLS) -> str:
+    """
+    Render the colour-coded data grid as a self-contained HTML string.
+
+    Streamlit's st.dataframe only partially honours pandas Styler styling and
+    drops cell background colours and tooltips. Rendering the Styler to HTML and
+    embedding it (e.g. via st.components.v1.html) guarantees both the red/green
+    cell colours and the hover tooltips appear.
+
+    Returns an HTML string with a scrollable, bordered table.
+    """
+    styled = style_dataframe_with_issues(
+        df, issues_report, include_citation=include_citation,
+        max_tooltip_cells=max_tooltip_cells,
+    )
+    # Base table formatting (the iframe has no inherited page styles).
+    styled = styled.set_table_styles([
+        {"selector": "table",
+         "props": [("border-collapse", "collapse"), ("font-family",
+                   "-apple-system, Segoe UI, Roboto, sans-serif"),
+                   ("font-size", "12px"), ("width", "100%")]},
+        {"selector": "td, th",
+         "props": [("border", "1px solid #e2e8f0"), ("padding", "4px 8px"),
+                   ("text-align", "left"), ("white-space", "nowrap")]},
+        {"selector": "thead th",
+         "props": [("position", "sticky"), ("top", "0"),
+                   ("background", "#1e3052"), ("color", "#ffffff"),
+                   ("z-index", "1")]},
+    ], overwrite=False)
+    try:
+        table_html = styled.to_html()
+    except Exception:
+        table_html = df.to_html()
+    return (
+        "<div style='max-height:430px; overflow:auto; border:1px solid #e2e8f0; "
+        "border-radius:6px;'>" + table_html + "</div>"
+    )
+
+
 def create_severity_badge(severity: str) -> str:
     """Create HTML badge for issue severity."""
     badges = {

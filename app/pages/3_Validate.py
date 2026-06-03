@@ -502,16 +502,18 @@ if result is not None:
 
         # ── Colour-coded data grid ───────────────────────────────────────────
         section_header("// Data View (flagged cells in red)")
+        st.caption("Red = flagged issue · green = valid. Hover a red cell for the issue and its regulatory citation.")
         try:
-            from core.validation_ui_helpers import style_dataframe_with_issues
+            import streamlit.components.v1 as _components
+            from core.validation_ui_helpers import styled_table_html
             n_cells = len(df_raw) * max(len(df_raw.columns), 1)
             if n_cells > 60000:
                 st.caption(
-                    f"Large dataset ({len(df_raw):,} rows) - cells are colour-coded; "
+                    f"Large dataset ({len(df_raw):,} rows): cells are colour-coded; "
                     "hover tooltips are disabled above 60,000 cells for performance."
                 )
-            styled = style_dataframe_with_issues(df_raw, rpt)
-            st.dataframe(styled, use_container_width=True, height=420)
+            html = styled_table_html(df_raw, rpt)
+            _components.html(html, height=460, scrolling=True)
         except Exception as _style_err:
             st.caption(f"Coloured data view unavailable: {_style_err}")
             st.dataframe(df_raw.head(200), use_container_width=True, height=420)
