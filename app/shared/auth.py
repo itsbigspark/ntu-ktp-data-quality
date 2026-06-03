@@ -94,7 +94,7 @@ def login_page():
     st.markdown(
         "<p style='text-align:center;color:#5a9a5a;font-family:Share Tech Mono,monospace;"
         "font-size:0.65rem;letter-spacing:2px;margin-top:8px;'>"
-        "BIGSPARK · NOTTINGHAM TRENT UNIVERSITY · INNOVATE UK KTP</p>",
+        "BIGSPARK · ENTERPRISE DATA QUALITY</p>",
         unsafe_allow_html=True,
     )
 

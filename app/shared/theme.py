@@ -23,16 +23,12 @@ def _img_b64(filename: str) -> str:
 
 def logo_strip_html(height: int = 32, justify: str = "center") -> str:
     """
-    Return HTML for the three partner logos on a dark background.
+    Return HTML for the bigspark logo on a dark background.
 
     bigspark has a transparent PNG → brightness(0) invert(1) → clean white silhouette.
-    NTU and UKRI have white-background PNGs → invert(1) only turns the white bg
-    black/transparent and keeps logo content visible in inverted colours.
     """
     logos = [
         (_img_b64("bigspark_logo.png"),    "bigspark",    "brightness(0) invert(1)", "0.85"),
-        (_img_b64("NTU_Primary_logo.png"), "NTU",         "invert(1)",               "0.90"),
-        (_img_b64("UKRI_logo.png"),        "Innovate UK", "invert(1)",               "0.90"),
     ]
     parts = []
     for src, alt, css_filter, opacity in logos:
@@ -547,7 +543,7 @@ def apply_theme(show_rain: bool = False):
             st.markdown(logo_strip_html(height=26), unsafe_allow_html=True)
             st.markdown(
                 '<p style="color:#5a9a5a;font-family:Share Tech Mono;font-size:0.6rem;'
-                'text-align:center;letter-spacing:1px;margin-top:6px;">KTP PARTNERSHIP</p>',
+                'text-align:center;letter-spacing:1px;margin-top:6px;">ENTERPRISE DATA QUALITY</p>',
                 unsafe_allow_html=True,
             )
 
