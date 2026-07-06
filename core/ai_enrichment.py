@@ -76,7 +76,7 @@ class LLMClient:
         if not self._client:
             self._client = anthropic.Anthropic(api_key=api_key) if api_key else anthropic.Anthropic()
 
-        model = self.model or "claude-sonnet-4-20250514"
+        model = self.model or "claude-sonnet-4-6"
         response = self._client.messages.create(
             model=model,
             max_tokens=max_tokens,
@@ -90,7 +90,7 @@ class LLMClient:
         import anthropic
 
         region = self._config.get("bedrock", {}).get("region", "eu-west-2")
-        model_id = self._config.get("bedrock", {}).get("model_id", "anthropic.claude-sonnet-4-20250514-v1:0")
+        model_id = self._config.get("bedrock", {}).get("model_id", "anthropic.claude-sonnet-4-5-20250929-v1:0")
 
         if not self._client:
             self._client = anthropic.AnthropicBedrock(aws_region=region)

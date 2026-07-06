@@ -17,8 +17,10 @@ import io
 import json
 import time
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, date, timedelta, timezone
+from decimal import Decimal
 from typing import Any, Dict, List, Optional
+from uuid import UUID
 
 import numpy as np
 import pandas as pd
@@ -89,6 +91,14 @@ def _numpy_serializer(obj):
         return obj.tolist()
     if isinstance(obj, pd.Timestamp):
         return obj.isoformat()
+    if isinstance(obj, (datetime, date)):
+        return obj.isoformat()
+    if isinstance(obj, timedelta):
+        return obj.total_seconds()
+    if isinstance(obj, Decimal):
+        return float(obj)
+    if isinstance(obj, UUID):
+        return str(obj)
     if hasattr(obj, "item"):
         return obj.item()
     raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
@@ -375,14 +385,16 @@ async def validate_from_s3(request: S3ValidateRequest, client: str = Security(re
     return JSONResponse(content=response)
 
 
-@app.post("/api/v1/investigate", tags=["AI Agent"])
+@app.post("/api/v1/investigate", tags=["Investigation"])
 async def investigate(request: InvestigateRequest, client: str = Security(require_api_key)):
     """
-    Run the AI agentic investigation workflow.
+    Run a deterministic investigation workflow over a dataset.
 
-    The agent autonomously validates, profiles, checks history,
-    identifies fixable issues, and produces a summary with
-    pass/fail recommendation.
+    Executes a fixed sequence: validate -> profile -> identify fixable issues
+    -> summarise, returning a quality summary with a pass/fail recommendation.
+    The steps and order are fixed and reproducible (this is not an autonomous
+    LLM agent; for conversational, multi-step agent interaction use the
+    Streamlit assistant).
     """
     from core.storage.s3 import read_from_s3
 
@@ -465,10 +477,11 @@ async def list_batches(
                 "count": len(batches),
             })
     except Exception as e:
+        logger.error(f"Batch history retrieval failed: {e}")
         return JSONResponse(content={
             "batches": [],
             "count": 0,
-            "note": f"Database not available: {str(e)}",
+            "note": f"Could not retrieve batch history: {str(e)}",
         })
 
 

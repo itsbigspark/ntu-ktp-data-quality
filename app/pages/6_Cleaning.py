@@ -269,5 +269,57 @@ if export_df is not None:
 
     st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
     st.dataframe(export_df.head(50), use_container_width=True, hide_index=False, height=300)
+
+    # ── S3 write-back (human approval gated) ──────────────────────────────
+    st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
+    with st.expander("// WRITE APPROVED DATASET TO S3", expanded=False):
+        from core.s3_writeback import boto3_available, get_default_config, write_df_to_s3
+        if not boto3_available():
+            st.warning("boto3 is not installed in this environment, so S3 write-back is unavailable.")
+        else:
+            _cfg = get_default_config()
+            st.caption(
+                "Persist the cleaned dataset to S3. This requires explicit human "
+                "approval below and uploads only when you click the button."
+            )
+            _c1, _c2 = st.columns(2)
+            with _c1:
+                _s3_bucket = st.text_input(
+                    "S3 bucket", value=_cfg["bucket"],
+                    placeholder="my-data-quality-bucket",
+                    help="Defaults to the S3_WRITEBACK_BUCKET environment variable.",
+                    key="s3_wb_bucket",
+                )
+            with _c2:
+                _s3_prefix = st.text_input(
+                    "Key prefix", value=_cfg["prefix"],
+                    help="A timestamped filename is appended automatically.",
+                    key="s3_wb_prefix",
+                )
+            _s3_filename = st.text_input("Base filename", value="cleaned_data.csv", key="s3_wb_filename")
+            _approved = st.checkbox(
+                "I have reviewed the cleaned dataset and approve writing it back to S3.",
+                value=False, key="s3_wb_approved",
+            )
+            if st.button(
+                "APPROVE & WRITE TO S3", type="primary",
+                disabled=not _approved, use_container_width=True, key="s3_wb_button",
+                help="Enabled only after you tick the approval checkbox above.",
+            ):
+                if not (_s3_bucket and _s3_bucket.strip()):
+                    st.error("Enter an S3 bucket (or set S3_WRITEBACK_BUCKET).")
+                else:
+                    with st.spinner(f"Uploading {len(export_df)} rows to S3..."):
+                        _res = write_df_to_s3(
+                            export_df, bucket=_s3_bucket.strip(),
+                            prefix=_s3_prefix, filename=_s3_filename or "cleaned_data.csv",
+                            region=_cfg["region"] or None,
+                            metadata={"rows": len(export_df), "columns": len(export_df.columns)},
+                        )
+                    if _res.get("success"):
+                        st.success(f"Written to {_res['uri']}")
+                        st.caption(f"{_res['rows']:,} rows · {_res['bytes']:,} bytes")
+                    else:
+                        st.error(f"Write-back failed: {_res.get('error')}")
 else:
     terminal_block("// NO CLEANED DATA YET<br><span style='color:#5a9a5a;'>Apply cleaning or fixes above.</span>")

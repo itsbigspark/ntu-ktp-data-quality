@@ -120,7 +120,7 @@ elif provider == "anthropic":
     if api_key and st.button("Test Anthropic Connection", key="test_anthropic"):
         try:
             from dq_engine import AnthropicProvider
-            p = AnthropicProvider(api_key=api_key)
+            p = AnthropicProvider(api_key=api_key, model=anthropic_model)
             resp = p.call("Reply with exactly: CONNECTION_OK", temperature=0)
             if "CONNECTION_OK" in resp or len(resp) > 0:
                 st.success(f"Connected to Anthropic API. Response: {resp[:50]}")

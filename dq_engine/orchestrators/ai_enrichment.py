@@ -106,7 +106,7 @@ class OllamaProvider(LLMProvider):
 class BedrockProvider(LLMProvider):
     """AWS Bedrock provider for enterprise deployment."""
 
-    def __init__(self, model_id: str = "anthropic.claude-3-sonnet-20240229-v1:0", region: str = "eu-west-2"):
+    def __init__(self, model_id: str = "anthropic.claude-sonnet-4-5-20250929-v1:0", region: str = "eu-west-2"):
         self.model_id = model_id
         self.region = region
         self._client = None
@@ -146,7 +146,7 @@ class BedrockProvider(LLMProvider):
 class AnthropicProvider(LLMProvider):
     """Direct Anthropic API provider."""
 
-    def __init__(self, api_key: Optional[str] = None, model: str = "claude-sonnet-4-20250514", max_tokens: int = 4096):
+    def __init__(self, api_key: Optional[str] = None, model: str = "claude-sonnet-4-6", max_tokens: int = 4096):
         import os
         self.api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
         self.model = model

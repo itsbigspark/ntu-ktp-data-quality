@@ -78,7 +78,7 @@ validation:
 llm:
   # Which provider to use
   provider: "anthropic"         # anthropic | ollama | bedrock
-  model: "claude-sonnet-4-20250514"   # model name
+  model: "claude-sonnet-4-6"   # model name
 
   anthropic:
     api_key: ""                 # env: ANTHROPIC_API_KEY (never put keys here)
@@ -89,7 +89,7 @@ llm:
 
   bedrock:
     region: "eu-west-2"         # env: DQ_AWS_REGION
-    model_id: "anthropic.claude-sonnet-4-20250514-v1:0"
+    model_id: "anthropic.claude-sonnet-4-5-20250929-v1:0"
 
   # Context control — what the LLM is allowed to see
   context:
