@@ -44,6 +44,24 @@ MISSING_TOKENS = {
     "", "missing", "null", "none", "na", "n/a", "n.a.", "-", "--", "nan", "nil", "unknown"
 }
 
+
+def _edit_distance(a: str, b: str) -> int:
+    """Levenshtein edit distance (small, dependency-free)."""
+    a, b = str(a), str(b)
+    m, n = len(a), len(b)
+    if m == 0:
+        return n
+    if n == 0:
+        return m
+    prev = list(range(n + 1))
+    for i in range(1, m + 1):
+        cur = [i] + [0] * n
+        for j in range(1, n + 1):
+            cost = 0 if a[i - 1] == b[j - 1] else 1
+            cur[j] = min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost)
+        prev = cur
+    return prev[n]
+
 # Column type detection patterns (data-agnostic only)
 # Only generic formats that apply to ANY dataset regardless of domain.
 # Domain-specific formats (UK postcode, UK company number, phone) are NOT
@@ -262,12 +280,23 @@ def _check_value(v: Any, rule: Dict[str, Any], column_name: str = "", confirmed_
                         "virginmedia.com", "sky.com", "talktalk.net",
                         "aol.com", "protonmail.com", "proton.me",
                     }
-                    # Check if domain is close to a known provider but not exactly it
-                    import difflib as _dl
-                    close = _dl.get_close_matches(_domain, _KNOWN_PROVIDERS, n=1, cutoff=0.7)
-                    if close and close[0] != _domain:
-                        is_valid = False
-                        error_reason = f"domain '{_domain}' looks like a misspelling of '{close[0]}'"
+                    # Flag ONLY genuine near-typos of a known provider. Requires the
+                    # domain to be a real provider-length string (>=6 chars), not
+                    # already a known provider, and within a 1-2 character edit of one
+                    # of similar length. This deliberately never fires on ordinary
+                    # company domains (e.g. 'x.com', 'acme.io') — see P1 in
+                    # tests/ENGINE_FIXES_AND_TESTS.md.
+                    if _domain not in _KNOWN_PROVIDERS and len(_domain) >= 6:
+                        _best, _bd = None, 99
+                        for _p in _KNOWN_PROVIDERS:
+                            if abs(len(_p) - len(_domain)) > 1:
+                                continue
+                            _d = _edit_distance(_domain, _p)
+                            if _d < _bd:
+                                _best, _bd = _p, _d
+                        if _best is not None and 1 <= _bd <= 2:
+                            is_valid = False
+                            error_reason = f"domain '{_domain}' looks like a misspelling of '{_best}'"
             elif detected_type == 'date':
                 is_valid, error_reason = validate_date(s)
                 expected["format"] = "date"
@@ -281,8 +310,8 @@ def _check_value(v: Any, rule: Dict[str, Any], column_name: str = "", confirmed_
         if not is_valid and error_reason:
             return False, "format_error", f"invalid {detected_type}: {error_reason}", "high", expected, "format"
 
-    # Number type + bounds  ("number" and "numeric" are treated identically)
-    if rule.get("type") in ("number", "numeric"):
+    # Number type + bounds  ("number", "numeric", "integer", "int" share bounds logic)
+    if rule.get("type") in ("number", "numeric", "integer", "int"):
         expected["type"] = "numeric"
         # First attempt: parse directly (no stripping).
         # If that fails, try stripping currency symbols — if it THEN parses,
@@ -321,24 +350,28 @@ def _check_value(v: Any, rule: Dict[str, Any], column_name: str = "", confirmed_
             parsed_dt = pd.to_datetime(s, errors="raise")
         except Exception:
             return False, "invalid date", "cannot parse date/time", "high", expected, "type"
-        # Bounds check (rule values may be ISO strings or "today")
-        if "min" in rule or "max" in rule:
+        # Bounds check. Accept min/max OR min_date/max_date (date-specific keys).
+        _min_bound = rule.get("min", rule.get("min_date"))
+        _max_bound = rule.get("max", rule.get("max_date"))
+        if _min_bound is not None or _max_bound is not None:
             try:
                 from dateutil.parser import parse as _parse_date
-                import datetime as _dt
                 _today = pd.Timestamp.today().normalize()
-                def _resolve(v: str) -> pd.Timestamp:
+                _dayfirst = "DD/MM" in str(rule.get("format", "")).upper() or "DD-MM" in str(rule.get("format", "")).upper()
+                def _resolve(v) -> pd.Timestamp:
                     if str(v).lower() in ("today", "now"):
                         return _today
-                    return pd.Timestamp(_parse_date(str(v)))
-                if "min" in rule:
-                    expected["min"] = rule["min"]
-                    if parsed_dt < _resolve(rule["min"]):
-                        return False, "<min", f"date {s} is before minimum {rule['min']}", "high", expected, "bounds"
-                if "max" in rule:
-                    expected["max"] = rule["max"]
-                    if parsed_dt > _resolve(rule["max"]):
-                        return False, ">max", f"date {s} is after maximum {rule['max']}", "high", expected, "bounds"
+                    return pd.Timestamp(_parse_date(str(v), dayfirst=_dayfirst))
+                # Re-parse the value with dayfirst awareness for non-ISO formats.
+                _val_dt = pd.Timestamp(_parse_date(s, dayfirst=_dayfirst)) if _dayfirst else parsed_dt
+                if _min_bound is not None:
+                    expected["min"] = _min_bound
+                    if _val_dt < _resolve(_min_bound):
+                        return False, "<min", f"date {s} is before minimum {_min_bound}", "high", expected, "bounds"
+                if _max_bound is not None:
+                    expected["max"] = _max_bound
+                    if _val_dt > _resolve(_max_bound):
+                        return False, ">max", f"date {s} is after maximum {_max_bound}", "high", expected, "bounds"
             except Exception:
                 pass  # If bounds parsing fails, skip bounds check silently
 

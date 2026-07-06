@@ -12,9 +12,36 @@ from datetime import datetime
 MAJORITY_COVERAGE = 0.80
 MIN_SAMPLES_FOR_REGEX = 1
 LOW_CARDINALITY_MAX_ABS = 25
-UNIQUE_RATIO_THR = 0.95
+UNIQUE_RATIO_THR = 0.99
 MIN_REGEX_COVERAGE = 0.05
 MAX_REGEX_PATTERNS = 100
+
+# Presence inference: a column populated in at least this fraction of rows is
+# treated as "required" (missing values are errors); otherwise "nullable".
+PRESENCE_REQUIRED_THRESHOLD = 0.85
+# Categorical inference: values appearing fewer than this many times are treated
+# as likely errors and excluded from the inferred allowed-value set (weak
+# supervision heuristic — see tests/ENGINE_FIXES_AND_TESTS.md).
+MIN_ALLOWED_VALUE_COUNT = 2
+
+# Placeholder tokens that count as "missing" for presence inference (kept in
+# sync with core/validator/validate.py MISSING_TOKENS).
+_MISSING_TOKENS = {
+    "", "missing", "null", "none", "na", "n/a", "n.a.", "-", "--",
+    "nan", "nil", "unknown",
+}
+
+def _present_rate(s_full: pd.Series) -> float:
+    """Fraction of rows that hold a real (non-missing, non-placeholder) value."""
+    if s_full is None or len(s_full) == 0:
+        return 0.0
+    def _present(v) -> bool:
+        if v is None:
+            return False
+        if isinstance(v, float) and math.isnan(v):
+            return False
+        return str(v).strip().lower() not in _MISSING_TOKENS
+    return float(s_full.map(_present).mean())
 
 # Common date formats to try (expand as needed)
 COMMON_DATE_FORMATS = [
@@ -55,7 +82,9 @@ def _looks_numeric_series(s: pd.Series) -> bool:
             ok += 1
         except Exception:
             pass
-    return ok / max(len(s), 1) > 0.8
+    # Strict: only treat a column as numeric when almost every value parses.
+    # Alphanumeric identifiers (e.g. 'SC123456') must not become numeric.
+    return ok / max(len(s), 1) > 0.99
 
 def _try_numeric_bounds(s: pd.Series) -> Tuple[Optional[float], Optional[float]]:
     s = _non_null_str_series(s)
@@ -164,25 +193,35 @@ def _infer_regexes_from_series(s: pd.Series,
     return [p for p, _ in kept], kept
 
 # ----------------- Public API: rule discovery -----------------
-def infer_rules_from_unclean(df: pd.DataFrame) -> Dict[str, Any]:
+def infer_rules_from_unclean(df: pd.DataFrame, prune: bool = True) -> Dict[str, Any]:
     rules: Dict[str, Any] = {"columns": {}, "uniqueness": {}, "cross_field": []}
     for c in df.columns:
         s_full = df[c]
         s = _non_null_str_series(s_full)
         col_rule: Dict[str, Any] = {}
+
+        # Presence inference (P2): mark every column required or nullable so the
+        # validator checks missing values consistently, not only on columns that
+        # happened to receive another rule.
+        if _present_rate(s_full) >= PRESENCE_REQUIRED_THRESHOLD:
+            col_rule["required"] = True
+        else:
+            col_rule["nullable"] = True
+
         if s.empty:
             rules["columns"][c] = col_rule
             continue
 
-        # Uniqueness
-        nunq = s_full.nunique(dropna=True)
-        uniq_ratio = nunq / max(len(s_full), 1)
-        if uniq_ratio >= UNIQUE_RATIO_THR:
-            rules["uniqueness"][c] = True
+        # Present (non-missing) values only, so placeholder tokens do not pollute
+        # type/format/value inference (e.g. an empty-string '^$' regex pattern).
+        s_present = s[~s.str.lower().isin(_MISSING_TOKENS)]
+        if s_present.empty:
+            rules["columns"][c] = col_rule
+            continue
 
         # Numeric
-        if _looks_numeric_series(s):
-            mn, mx = _try_numeric_bounds(s)
+        if _looks_numeric_series(s_present):
+            mn, mx = _try_numeric_bounds(s_present)
             if mn is not None and mx is not None:
                 col_rule["type"] = "number"
                 col_rule["min"], col_rule["max"] = mn, mx
@@ -190,36 +229,67 @@ def infer_rules_from_unclean(df: pd.DataFrame) -> Dict[str, Any]:
                 continue
 
         # Date
-        if _is_date_series(s_full):
+        if _is_date_series(s_present):
             col_rule["type"] = "date"
-            dmin, dmax = _date_bounds_iso(s_full)
+            dmin, dmax = _date_bounds_iso(s_present)
             if dmin: col_rule["min_date"] = dmin
             if dmax: col_rule["max_date"] = dmax
-            fmts = _infer_date_formats(s_full)
+            fmts = _infer_date_formats(s_present)
             if fmts:
                 col_rule["date_format"] = fmts
             rules["columns"][c] = col_rule
             continue
 
-        # Low-cardinality allowed_values
-        nunique_non_null = s.nunique(dropna=True)
-        if nunique_non_null <= LOW_CARDINALITY_MAX_ABS:
-            vc = s.value_counts()
-            vals = vc.index.tolist()
-            col_rule["allowed_values"] = vals[:200]
-            total = max(int(vc.sum()), 1)
-            col_rule["_allowed_values_meta"] = [
-                {"value": str(v), "count": int(vc[v]), "coverage": float(vc[v]/total)}
-                for v in vals[:200]
-            ]
+        # Uniqueness — only for text columns that are almost entirely distinct
+        # (identifier-like). Numeric/date columns returned above, so merely
+        # mostly-distinct dates are never treated as unique.
+        uniq_ratio = s_present.nunique(dropna=True) / max(len(s_present), 1)
+        if uniq_ratio >= UNIQUE_RATIO_THR:
+            rules["uniqueness"][c] = True
 
-        # Regex patterns (multi) with coverage
-        patterns, meta = _infer_regexes_from_series(s)
-        if patterns:
-            col_rule["regex"] = patterns
-            col_rule["_regex_meta"] = [{"pattern": p, "coverage": cov} for p, cov in meta]
+        # Low-cardinality allowed_values (P3): infer the allowed set only from
+        # values that appear at least MIN_ALLOWED_VALUE_COUNT times, so rare
+        # erroneous values (e.g. a stray 'gbp' among 'GBP') are not mistaken for
+        # a valid category and therefore remain detectable.
+        nunique_non_null = s_present.nunique(dropna=True)
+        if nunique_non_null <= LOW_CARDINALITY_MAX_ABS:
+            vc = s_present.value_counts()
+            vals = [v for v in vc.index.tolist() if int(vc[v]) >= MIN_ALLOWED_VALUE_COUNT]
+            if vals:
+                col_rule["allowed_values"] = vals[:200]
+                total = max(int(vc.sum()), 1)
+                col_rule["_allowed_values_meta"] = [
+                    {"value": str(v), "count": int(vc[v]), "coverage": float(vc[v]/total)}
+                    for v in vals[:200]
+                ]
+
+        # Regex patterns — only when the column is NOT already captured as a
+        # categorical. Redundant regex on categoricals only adds false-positive
+        # risk; over-fit regex on free-text is pruned below.
+        if "allowed_values" not in col_rule:
+            patterns, meta = _infer_regexes_from_series(s_present)
+            if patterns:
+                col_rule["regex"] = patterns
+                col_rule["_regex_meta"] = [{"pattern": p, "coverage": cov} for p, cov in meta]
 
         rules["columns"][c] = col_rule
+
+    # Quality pruning (P1): drop over-fit regex on free-text columns (union
+    # coverage below threshold) so names/addresses/emails are not mass-flagged.
+    # Numeric-bound tightening is disabled so inferred min/max (which catch
+    # out-of-range values) are preserved.
+    if prune:
+        rules = prune_rules_by_quality(
+            df, rules,
+            RuleQualityConfig(
+                numeric_bounds_quantiles=(0.0, 1.0),  # keep inferred min/max
+                min_regex_overall_hit=0.90,           # drop regex on free-text
+                min_regex_coverage=0.0,               # once kept, retain all valid
+                                                      # formats (don't flag the rare
+                                                      # but legitimate ID/postcode
+                                                      # patterns)
+            ),
+        )
 
     return rules
 

@@ -11,9 +11,10 @@ logger = logging.getLogger(__name__)
 try:
     from sklearn.ensemble import IsolationForest
     from sklearn.svm import OneClassSVM
-    from sklearn.neighbors import LocalOutlierFactor
+    from sklearn.neighbors import LocalOutlierFactor, NearestNeighbors
     from sklearn.feature_extraction.text import TfidfVectorizer
     from sklearn.mixture import GaussianMixture
+    from sklearn.cluster import DBSCAN as _DBSCAN
     _HAVE_SK = True
 except Exception:
     _HAVE_SK = False
@@ -352,6 +353,63 @@ def _score_component_numeric(df: pd.DataFrame) -> Optional[np.ndarray]:
     return _norm(-iso.decision_function(X))
 
 
+def _score_component_lof_row(txt_train, txt_score) -> Optional[np.ndarray]:
+    """LOF component: row-level TF-IDF char n-grams -> LocalOutlierFactor (novelty).
+
+    Fits on the reference text and scores the unclean rows by local density
+    deviation. Higher score = more anomalous.
+    """
+    try:
+        vec = TfidfVectorizer(analyzer="char", ngram_range=(2, 4),
+                              max_features=600, sublinear_tf=True)
+        vec.fit(txt_train)
+        X_train = vec.transform(txt_train).toarray()
+        X_score = vec.transform(txt_score).toarray()
+        n_neighbors = int(min(35, max(5, len(X_train) - 1)))
+        lof = LocalOutlierFactor(n_neighbors=n_neighbors, novelty=True)
+        lof.fit(X_train)
+        # score_samples: higher = more normal -> invert so higher = anomalous
+        return _norm(-lof.score_samples(X_score))
+    except Exception as exc:
+        logger.warning("lof_row component failed: %s", exc)
+        return None
+
+
+def _score_component_dbscan_row(txt_train, txt_score) -> Optional[np.ndarray]:
+    """DBSCAN component: row-level TF-IDF char n-grams -> DBSCAN noise scoring.
+
+    Fits DBSCAN on the reference text to find dense clusters. Scores each
+    unclean row by its distance to the nearest core sample — noise points
+    (label=-1) and points far from any core get high anomaly scores.
+    """
+    try:
+        vec = TfidfVectorizer(analyzer="char", ngram_range=(2, 4),
+                              max_features=600, sublinear_tf=True)
+        vec.fit(txt_train)
+        X_train = vec.transform(txt_train).toarray()
+        X_score = vec.transform(txt_score).toarray()
+
+        db = _DBSCAN(eps=0.3, min_samples=3, metric="cosine")
+        db.fit(X_train)
+
+        core_mask = np.zeros(len(X_train), dtype=bool)
+        if hasattr(db, 'core_sample_indices_') and len(db.core_sample_indices_) > 0:
+            core_mask[db.core_sample_indices_] = True
+        else:
+            logger.warning("dbscan_row: no core samples found")
+            return None
+
+        X_core = X_train[core_mask]
+        nn = NearestNeighbors(n_neighbors=1, metric="cosine")
+        nn.fit(X_core)
+        dists, _ = nn.kneighbors(X_score)
+        scores = dists.flatten()
+        return _norm(scores)
+    except Exception as exc:
+        logger.warning("dbscan_row component failed: %s", exc)
+        return None
+
+
 def ml_anomaly_report(
     df_unclean: pd.DataFrame,
     df_ref: Optional[pd.DataFrame],
@@ -397,39 +455,67 @@ def ml_anomaly_report(
     else:
         txt_train = txt_unclean
 
+    # ── Which algorithm families to include ──────────────────────────────────
+    # `models` selects the ensemble members. Recognised names:
+    #   "IsolationForest" -> 3 Isolation Forest components (row TF-IDF, column
+    #                        TF-IDF, numeric)
+    #   "LOF"             -> Local Outlier Factor on row TF-IDF
+    #   "DBSCAN"          -> DBSCAN noise scoring on row TF-IDF
+    # An empty/None list defaults to the full ensemble for backward compatibility.
+    if isinstance(models, list) and len(models) > 0:
+        selected = {str(m) for m in models}
+    else:
+        selected = {"IsolationForest", "LOF", "DBSCAN"}
+    use_iforest = "IsolationForest" in selected
+    use_lof     = "LOF" in selected
+    use_dbscan  = "DBSCAN" in selected
+
     # ── Build component scores ────────────────────────────────────────────────
     component_scores = []
     component_names  = []
 
-    try:
-        s1 = _score_component_tfidf_row(txt_train, txt_unclean)
-        component_scores.append(s1)
-        component_names.append("tfidf_row")
-    except Exception as exc:
-        logger.warning("ml_anomaly_report: component 1 failed: %s", exc)
+    if use_iforest:
+        try:
+            s1 = _score_component_tfidf_row(txt_train, txt_unclean)
+            component_scores.append(s1)
+            component_names.append("iforest_tfidf_row")
+        except Exception as exc:
+            logger.warning("ml_anomaly_report: iforest_tfidf_row failed: %s", exc)
 
-    try:
-        s2 = _score_component_tfidf_col(df_unclean)
-        if s2 is not None:
-            component_scores.append(s2)
-            component_names.append("tfidf_col")
-    except Exception as exc:
-        logger.warning("ml_anomaly_report: component 2 failed: %s", exc)
+        try:
+            s2 = _score_component_tfidf_col(df_unclean)
+            if s2 is not None:
+                component_scores.append(s2)
+                component_names.append("iforest_tfidf_col")
+        except Exception as exc:
+            logger.warning("ml_anomaly_report: iforest_tfidf_col failed: %s", exc)
 
-    try:
-        s3 = _score_component_numeric(df_unclean)
-        if s3 is not None:
-            component_scores.append(s3)
-            component_names.append("numeric")
-    except Exception as exc:
-        logger.warning("ml_anomaly_report: component 3 failed: %s", exc)
+        try:
+            s3 = _score_component_numeric(df_unclean)
+            if s3 is not None:
+                component_scores.append(s3)
+                component_names.append("iforest_numeric")
+        except Exception as exc:
+            logger.warning("ml_anomaly_report: iforest_numeric failed: %s", exc)
+
+    if use_lof:
+        s4 = _score_component_lof_row(txt_train, txt_unclean)
+        if s4 is not None:
+            component_scores.append(s4)
+            component_names.append("lof_row")
+
+    if use_dbscan:
+        s5 = _score_component_dbscan_row(txt_train, txt_unclean)
+        if s5 is not None:
+            component_scores.append(s5)
+            component_names.append("dbscan_row")
 
     if not component_scores:
-        logger.warning("ml_anomaly_report: all components failed")
+        logger.warning("ml_anomaly_report: all components failed or none selected")
         return _EMPTY
 
     score       = np.mean(component_scores, axis=0)
-    rule_name   = "ml_ensemble_3c"
+    rule_name   = f"ml_ensemble_{len(component_scores)}c"
     detail_pfx  = f"ensemble({'+'.join(component_names)})"
 
     # ── Principled threshold (GMM antimode, Strategy 1) ──────────────────────
