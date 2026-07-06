@@ -36,6 +36,10 @@ except Exception:  # not installed as a distribution (e.g. running from source)
 from core.engine import run_pipeline, load_config, load_data  # noqa: E402
 from core.validator.discover import infer_rules_from_unclean as infer_rules  # noqa: E402
 
+# Source connectors + headless tracked batch runner (the autonomous spine).
+from .sources import parse_source, SourceConnector  # noqa: E402
+from .batch import run_batch, SQLiteBatchStore, BatchRecord  # noqa: E402
+
 
 def validate(
     df: pd.DataFrame,
@@ -75,5 +79,10 @@ __all__ = [
     "infer_rules",
     "load_config",
     "load_data",
+    "parse_source",
+    "SourceConnector",
+    "run_batch",
+    "SQLiteBatchStore",
+    "BatchRecord",
     "__version__",
 ]

@@ -68,6 +68,30 @@ dataqualify validate data.csv --rules rules.json --format json
 Exits non-zero when issues are found (use `--no-fail` to override), so it can gate
 a downstream job in Airflow, cron, or CI.
 
+### Connect a source and run a tracked batch
+
+Point it at any source — a local file, an S3 object, a JSON HTTP API, or the
+Companies House API — and it fetches, validates, and records a tracked batch:
+
+```bash
+dataqualify run --source data.csv --out ./out
+dataqualify run --source s3://my-bucket/incoming/data.csv --out ./out
+dataqualify run --source https://api.example.com/records
+dataqualify run --source companies-house:12345678       # needs CH_API_KEY
+
+dataqualify batches                                      # list tracked batches
+```
+
+Every run is recorded (source, timestamp, score, pass/fail, issue count, timing)
+in a local SQLite tracker by default. The same `run_batch` function is available
+from the library and is the headless spine reused by the cloud pipeline:
+
+```python
+import dataqualify as dq
+rec = dq.run_batch(dq.parse_source("s3://bucket/incoming/data.csv"), sink_dir="./out")
+print(rec.overall_score, rec.status)
+```
+
 ## 3. As a REST API
 
 ```bash
