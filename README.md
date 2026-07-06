@@ -1,195 +1,184 @@
+<div align="center">
+
 # DataQualify
 
-Explainable, weakly-supervised data quality for tabular financial data.
+### Explainable, weakly-supervised data quality for financial data
 
-DataQualify detects, explains, and suggests corrections for errors in tabular
-datasets (KYC records, transactions, claims) by combining explicit domain rules,
-a clean reference dataset, and unsupervised statistical learning — **without
-requiring labelled training data**. Every decision is deterministic and carries a
-human-readable rationale (the rule that fired, the expected value, a regulatory
-citation), so the output is auditable for regulated use.
+Detect, explain, and correct errors in tabular data — with a deterministic,
+auditable core and an agent that handles each batch on its own.
 
-It ships with **four front doors** over one shared engine — a Python **library**, a
-**CLI**, a **REST API**, and an interactive **Streamlit app** — plus a reference
-**event-driven batch pipeline** on AWS.
+![Python](https://img.shields.io/badge/python-3.10%2B-1B2A4A)
+![Surfaces](https://img.shields.io/badge/surfaces-library%20%C2%B7%20CLI%20%C2%B7%20API%20%C2%B7%20app%20%C2%B7%20MCP-C8901A)
+![Tests](https://img.shields.io/badge/tests-52%20passing-2A9D8F)
+![License](https://img.shields.io/badge/license-proprietary-5A5A5A)
 
-Developed through a Knowledge Transfer Partnership between **bigspark Ltd** and
-**Nottingham Trent University**, funded by Innovate UK.
+<img src="docs/img/dashboard.png" alt="DataQualify — Command Center" width="820"/>
+
+</div>
 
 ---
 
-## Install
+## What it is
+
+DataQualify finds and fixes errors in tabular financial datasets (KYC records,
+transactions, claims) by combining **explicit domain rules**, a **clean reference
+dataset**, and **unsupervised statistical learning** — *without labelled training
+data*. Every decision is deterministic and carries a human-readable rationale (the
+rule that fired, the expected value, a regulatory citation), so the output is
+auditable for regulated use.
+
+One shared engine sits behind **five front doors** — a Python **library**, a
+**CLI**, a **REST API**, an interactive **app**, and an **MCP server** — fed by
+pluggable **source connectors** and deployed as a reference stack on AWS.
+
+> Developed through a Knowledge Transfer Partnership between **bigspark Ltd** and
+> **Nottingham Trent University**, funded by Innovate UK.
+
+---
+
+## Screenshots
+
+<!-- Replace the placeholder images in docs/img/ with real screenshots (keep the same file names). -->
+
+| Validate | Clean & approve |
+|:--:|:--:|
+| <img src="docs/img/validation.png" width="420"/> | <img src="docs/img/cleaning.png" width="420"/> |
+| **Pipeline Monitor** | **AI Investigation** |
+| <img src="docs/img/pipeline_monitor.png" width="420"/> | <img src="docs/img/ai_investigation.png" width="420"/> |
+
+---
+
+## Highlights
+
+- **Deterministic + explainable** — the engine decides; a language model only
+  explains and narrates. Every finding is traceable to a rule, an expected value,
+  and a regulatory citation (BCBS 239, UK GDPR/DPA, FCA).
+- **Weakly supervised** — no labelled data required; learns from rules, a clean
+  reference, and unsupervised structure.
+- **Connect any source** — a file, an S3 object, an HTTP API, Companies House, or
+  a database. One interface; everything downstream is identical.
+- **Autonomous, tracked batches** — a source is connected once; each arrival is
+  fetched, validated, triaged, and recorded automatically.
+- **An agent that triages** — every batch is routed `accept` / `review` /
+  `quarantine` with a plain-English narrative and trend escalations.
+- **Five surfaces, one engine** — library, CLI, REST API, Streamlit app, MCP.
+
+---
+
+## Quickstart
+
+**Docker (recommended — no Python setup):**
 
 ```bash
-pip install -e .                 # core engine only (pandas, numpy, scikit-learn)
-pip install -e ".[api]"          # + REST API (FastAPI)
+git clone https://github.com/itsbigspark/ntu-ktp-data-quality
+cd ntu-ktp-data-quality
+docker compose up      # app at http://localhost:8501
+```
+
+**Python (pip, light core):**
+
+```bash
+pip install -e .                 # core engine only
 pip install -e ".[app]"          # + Streamlit application
-pip install -e ".[ml]"           # + embeddings / vector search (torch, chromadb)
-pip install -e ".[aws]"          # + S3 / batch pipeline (boto3)
-pip install -e ".[all]"          # everything
+pip install -e ".[all]"          # everything (app, API, ML, MCP, AWS)
 ```
 
 The **core** install is deliberately light — no Streamlit, torch, chromadb, boto3
-or redis. Install only the extras you need.
+or redis. Install only the extras you need: `[api] [app] [ml] [nlp] [aws] [mcp]`.
 
 ---
 
-## 1. As a library
+## Five ways to use it
+
+**1. Library**
 
 ```python
-import pandas as pd
-import dataqualify as dq
-
-df = pd.read_csv("customers.csv")
-
-# Infer rules from the data, validate, return a cell-level issue report.
-issues = dq.validate(df)
-
-# Recommended: infer rules from a clean reference so bounds/allowed-values
-# are not contaminated by the errors in df.
-issues = dq.validate(df, reference=pd.read_csv("clean_reference.csv"))
-
-# Full pipeline: six quality-dimension scores, corrected copy, audit trail.
-result = dq.run_pipeline(df, dq.load_config())
-print(result["overall_score"], result["issues_count"])
+import pandas as pd, dataqualify as dq
+issues = dq.validate(pd.read_csv("customers.csv"))
+result = dq.run_pipeline(df, dq.load_config())     # scores, corrected copy, audit trail
 ```
 
-`issues` is a DataFrame with one row per finding: `row_id`, `column`, `issue`,
-`detail`, `severity`, `value`, `expected`, `rule`, `description`.
-
-## 2. As a CLI (pipeline step)
+**2. CLI**
 
 ```bash
-dataqualify validate data.csv
 dataqualify validate data.csv --reference clean.csv --out issues.csv
-dataqualify validate data.csv --rules rules.json --format json
 ```
 
-Exits non-zero when issues are found (use `--no-fail` to override), so it can gate
-a downstream job in Airflow, cron, or CI.
+**3. REST API**
 
-### Connect a source and run a tracked batch
+```bash
+pip install -e ".[api]" && uvicorn api.main:app --port 8000   # docs at /docs
+```
 
-Point it at any source — a local file, an S3 object, a JSON HTTP API, or the
-Companies House API — and it fetches, validates, and records a tracked batch:
+**4. Streamlit app**
+
+```bash
+pip install -e ".[app]" && streamlit run app/Home.py
+```
+
+**5. MCP server (for agents)**
+
+```bash
+pip install -e ".[mcp]" && python -m dataqualify.mcp_server
+# tools: validate, run_batch, list_batches, infer_rules
+```
+
+---
+
+## Connect a source, run itself, track every batch
+
+Point it at any source and it fetches, validates, triages, and records a batch —
+no human in the loop for the run:
 
 ```bash
 dataqualify run --source data.csv --out ./out
-dataqualify run --source s3://my-bucket/incoming/data.csv --out ./out
+dataqualify run --source s3://my-bucket/incoming/data.csv
 dataqualify run --source https://api.example.com/records
-dataqualify run --source companies-house:12345678       # needs CH_API_KEY
-
-dataqualify batches                                      # list tracked batches
+dataqualify run --source companies-house:12345678        # needs CH_API_KEY
+dataqualify batches                                      # tracked history + verdicts
 ```
 
-Every run is recorded (source, timestamp, score, pass/fail, issue count, timing)
-in a local SQLite tracker by default. An **agent node** triages each batch —
-`accept` / `review` / `quarantine` with a plain-English narrative and trend
-escalations. The routing *decisions* are deterministic and auditable; the LLM is
-used only to phrase the narrative. The same `run_batch` function is available from
-the library and is the headless spine reused by the cloud pipeline:
+An **agent node** triages each batch (`accept` / `review` / `quarantine`) with a
+narrative and escalations. The routing decisions are deterministic and auditable;
+the language model is used only to phrase the narrative. The same `run_batch`
+function backs the CLI, the app's Pipeline Monitor, and the MCP tools.
 
-```python
-import dataqualify as dq
-rec = dq.run_batch(dq.parse_source("s3://bucket/incoming/data.csv"), sink_dir="./out")
-print(rec.overall_score, rec.status)
-```
-
-## 3. As a REST API
-
-```bash
-pip install -e ".[api]"
-uvicorn api.main:app --port 8000        # interactive docs at /docs
-```
-
-Key endpoints (all require an `X-API-Key` header):
-
-| Endpoint | Purpose |
-|---|---|
-| `POST /api/v1/validate` | validate an uploaded file → scores, issues, audit trail |
-| `POST /api/v1/s3/validate` | read from S3, validate, write the report back to S3 |
-| `POST /api/v1/profile` | column-level data profiling |
-| `POST /api/v1/rules/generate` | infer validation rules from a dataset |
-| `GET  /api/v1/batches` | batch history |
-
-## 4. As an interactive app
-
-```bash
-pip install -e ".[app]"
-streamlit run app/Home.py                # opens at http://localhost:8501
-```
-
-Default logins (development): `admin` / `admin123`, `analyst` / `dq2026`.
-
-The **Pipeline Monitor** page drives the source connectors from the UI: paste a
-source (file, S3, HTTP API, Companies House), run it, and watch every tracked
-batch — score, pass/fail, issues, timing.
-
-## 5. As an MCP server (for agents)
-
-Expose the engine as tools any MCP-aware agent (Claude Desktop, a pipeline agent)
-can call:
-
-```bash
-pip install -e ".[mcp]"
-python -m dataqualify.mcp_server        # stdio transport
-```
-
-Tools: `validate(source)`, `run_batch(source)`, `list_batches(limit)`,
-`infer_rules(source)`. The tools return deterministic engine results; the calling
-agent decides what to do with them.
+| Source | Example | Status |
+|---|---|---|
+| File | `data.csv`, `data.parquet` | ✅ |
+| S3 | `s3://bucket/key.csv` | ✅ |
+| HTTP API | `https://api.host/records` | ✅ |
+| Companies House | `companies-house:12345678` | ✅ |
+| Database | Postgres, MySQL, … | supported by the interface, added on demand |
 
 ---
 
-## What it checks
+## Architecture
 
-Six quality dimensions — **Completeness, Uniqueness, Consistency, Validity,
-Accuracy, Timeliness** — combined into an overall score against a configurable
-pass threshold (default 85).
+<div align="center">
+<img src="docs/img/architecture.png" alt="DataQualify layered architecture" width="780"/>
+</div>
 
-The engine runs: rule consolidation/inference → hybrid error detection
-(rule-based + Levenshtein typo layer) → unsupervised anomaly scoring
-(Isolation Forest + Local Outlier Factor, GMM-antimode threshold) → correction
-suggestion (abstains rather than guessing) → quality scoring → an explainability
-audit trail on every finding. Optional layers add regulatory citations (BCBS 239,
-UK GDPR/DPA, FCA), entity resolution, and deduplication.
+One deterministic engine is the single source of truth; five surfaces call it,
+source connectors feed it, the agent triages its output, and a cloud-agnostic
+deployment (AWS reference) hosts it. Full detail in the
+[Architecture Document](docs/architecture.md).
 
-See `architecture.md` for the full pipeline and
-`tests/ENGINE_FIXES_AND_TESTS.md` for precision behaviour and known limitations.
-
----
-
-## Layout
-
-```
-dataqualify/        Public API package (library + CLI entry point)
-core/               The engine: validation, anomaly, correction, corpus, RAG
-  validator/          rule inference (discover.py) + validation (validate.py)
-api/                FastAPI service (thin wrapper over the engine)
-dq_engine/          Orchestrators (validation, rules, AI enrichment)
-app/                Streamlit multi-page application
-infra/              AWS SAM template, Lambda handlers, Step Functions
-tests/              Engine + quality regression tests
-```
-
-The engine has no hard dependency on Streamlit, AWS, or a language model. LLMs are
-used only for explanation, narration, and orchestration — never for the
-data-quality decisions, which stay deterministic and auditable.
+**What it checks —** six dimensions (Completeness, Uniqueness, Consistency,
+Validity, Accuracy, Timeliness) into an overall score. The engine runs: rule
+inference → hybrid detection (rules + Levenshtein typos) → anomaly scoring
+(Isolation Forest + LOF) → correction (abstains rather than guessing) → scoring →
+an audit trail on every finding.
 
 ---
 
-## Batch pipeline (AWS)
+## Deployment
 
-A reference event-driven deployment: a file dropped in an S3 inbox triggers
+A reference event-driven pipeline on AWS: a file dropped in S3 triggers
 EventBridge → Step Functions → Lambda (thin orchestration) → the ECS engine
 service (heavy compute) → a scored report back to S3 and a record in RDS. The
-`[aws]` extra provides the S3 read/write-back helpers (`core/s3_writeback.py`).
-The storage layer is being generalised behind an adapter so the same engine runs
+storage layer is being generalised behind an adapter so the same engine runs
 against GCS / Azure Blob / local disk.
-
-Optional AI enrichment (rule suggestions, plain-English explanations, executive
-summaries) runs via local Ollama (default, fully offline), Anthropic Claude, or
-AWS Bedrock. It is optional; the validation engine works without it.
 
 ---
 
@@ -197,12 +186,20 @@ AWS Bedrock. It is optional; the validation engine works without it.
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest tests/ -q
+python -m pytest tests/ -q          # 52 tests
 ```
 
-`tests/test_engine_quality.py` holds the precision, presence, and categorical
-regression suite (see `tests/ENGINE_FIXES_AND_TESTS.md`). Requirements: Python
-3.10+, 4 GB RAM (8 GB for ML features).
+See [`tests/ENGINE_FIXES_AND_TESTS.md`](tests/ENGINE_FIXES_AND_TESTS.md) for the
+precision/regression suite and known limitations.
+
+---
+
+## Documentation
+
+- **Architecture** — [`docs/architecture.md`](docs/architecture.md) (full formatted version available as a Word document)
+- **User & technical guide** — KTP Output O.6.3
+- **Productisation framework** — KTP Output O.6.5
+- **Engine precision notes** — `tests/ENGINE_FIXES_AND_TESTS.md`
 
 ---
 
