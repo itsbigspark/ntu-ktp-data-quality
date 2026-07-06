@@ -1,0 +1,92 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dataqualify"
+version = "0.1.0"
+description = "Explainable, weakly-supervised data quality for tabular financial data."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Proprietary" }
+authors = [
+    { name = "Preetham Yuvaraju" },
+    { name = "bigspark Ltd" },
+]
+keywords = ["data-quality", "validation", "explainable-ai", "entity-resolution", "financial-data"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+]
+
+# Core dependencies — the validation engine only. Deliberately light: no
+# Streamlit, torch, chromadb, boto3 or redis. Those live in the extras below so
+# a pipeline or library user installs only what they need.
+dependencies = [
+    "pandas>=2.0.0",
+    "numpy>=1.24.0",
+    "scikit-learn>=1.3.0",
+    "scipy>=1.11.0",
+    "pyyaml>=6.0.1",
+    "python-dateutil>=2.8.0",
+    "jellyfish>=1.0.0",
+    "python-Levenshtein>=0.21.0",
+]
+
+[project.optional-dependencies]
+# Semantic ML: embeddings, vector search, dimensionality reduction.
+ml = [
+    "sentence-transformers>=2.2.0",
+    "torch>=2.0.0",
+    "chromadb>=0.4.0",
+    "umap-learn>=0.5.5",
+]
+# PII / NER.
+nlp = [
+    "spacy>=3.7.0",
+    "presidio-analyzer>=2.2.0",
+    "presidio-anonymizer>=2.2.0",
+]
+# REST API service.
+api = [
+    "fastapi>=0.110.0",
+    "uvicorn>=0.29.0",
+    "python-multipart>=0.0.9",
+]
+# Interactive Streamlit application.
+app = [
+    "streamlit>=1.37.0",
+    "altair>=4.2.0",
+    "streamlit-aggrid>=0.3.4",
+    "plotly>=5.18.0",
+    "pyvis>=0.3.2",
+    "matplotlib>=3.7.0",
+    "seaborn>=0.12.2",
+    "Pillow>=10.0.0",
+]
+# Cloud storage / batch pipeline.
+aws = ["boto3>=1.34.0"]
+# Caching (postcode lookups etc.).
+cache = ["redis>=5.0.0"]
+# Reports and external validators.
+extras = ["jinja2>=3.1.2", "requests>=2.31.0", "openpyxl>=3.1.2", "pyarrow>=14.0.1"]
+# Development / testing.
+dev = ["pytest>=7.0", "pytest-cov>=4.0"]
+# Everything (interactive app + pipeline + ML).
+all = [
+    "dataqualify[ml,nlp,api,app,aws,cache,extras]",
+]
+
+[project.scripts]
+dataqualify = "dataqualify.cli:main"
+
+[project.urls]
+Repository = "https://github.com/itsbigspark/ntu-ktp-data-quality"
+
+[tool.setuptools.packages.find]
+include = ["dataqualify*", "core*", "api*", "dq_engine*", "shared*"]
+exclude = ["tests*", "app*", "conference_paper*", "docs*", "TEST2_DATA*", "TEST3_DATA*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

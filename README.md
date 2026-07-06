@@ -1,146 +1,168 @@
-# AI Powered DQ Investigator
+# DataQualify
 
-Enterprise-grade data quality platform for banking and financial services. Upload data, validate it against 50+ rules, detect anomalies with ML, and get AI-powered insights that tell you exactly what's wrong and what to fix first.
+Explainable, weakly-supervised data quality for tabular financial data.
 
-## Quick Start
+DataQualify detects, explains, and suggests corrections for errors in tabular
+datasets (KYC records, transactions, claims) by combining explicit domain rules,
+a clean reference dataset, and unsupervised statistical learning — **without
+requiring labelled training data**. Every decision is deterministic and carries a
+human-readable rationale (the rule that fired, the expected value, a regulatory
+citation), so the output is auditable for regulated use.
 
-### Option 1: Shell Script (Recommended)
+It ships with **four front doors** over one shared engine — a Python **library**, a
+**CLI**, a **REST API**, and an interactive **Streamlit app** — plus a reference
+**event-driven batch pipeline** on AWS.
 
-```bash
-git clone <repo-url>
-cd ntu-ktp-data-quality
-./start.sh
-```
+Developed through a Knowledge Transfer Partnership between **bigspark Ltd** and
+**Nottingham Trent University**, funded by Innovate UK.
 
-Opens at `http://localhost:8501`. Login: `admin` / `admin123`.
+---
 
-### Option 2: Docker
-
-```bash
-git clone <repo-url>
-cd ntu-ktp-data-quality
-docker-compose up
-```
-
-### Option 3: Manual
+## Install
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-streamlit run app/Home.py
+pip install -e .                 # core engine only (pandas, numpy, scikit-learn)
+pip install -e ".[api]"          # + REST API (FastAPI)
+pip install -e ".[app]"          # + Streamlit application
+pip install -e ".[ml]"           # + embeddings / vector search (torch, chromadb)
+pip install -e ".[aws]"          # + S3 / batch pipeline (boto3)
+pip install -e ".[all]"          # everything
 ```
 
-## What It Does
+The **core** install is deliberately light — no Streamlit, torch, chromadb, boto3
+or redis. Install only the extras you need.
 
-1. **Load Data** -- Upload CSV, Parquet, or Excel files
-2. **Rules Engine** -- Auto-discovers validation rules from data patterns
-3. **Validate** -- Rule-based, ML anomaly, corpus matching, and BERT-enhanced validation
-4. **AI Enrichment** -- 5 targeted AI calls that generate:
-   - Smart validation rules with confidence scores
-   - Cross-column logical contradiction detection
-   - Plain-English anomaly explanations with business impact
-   - Priority-ranked triage with effort estimates
-   - Executive summary for management
-5. **Command Center** -- Real-time monitoring dashboard with quality trends, AI insights, and batch history
-6. **Cleaning** -- Apply corrections, standardise formats, fix issues
-7. **Deduplication** -- Exact and fuzzy duplicate detection with clustering
-8. **Corpus Manager** -- Load and manage reference data corpora for standardisation
-9. **Pipeline Manager** -- Build and execute multi-step data cleaning pipelines
-10. **Entity Resolution** -- Match records across multiple datasets using vector similarity
+---
 
-## Architecture
+## 1. As a library
 
-```
-app/                    UI layer (Streamlit multi-page app)
-  Home.py               Entry point + login
-  shared/               Auth, state, theme (shared across pages)
-  pages/                One file per feature page
+```python
+import pandas as pd
+import dataqualify as dq
 
-dq_engine/              Core engine (zero UI dependencies)
-  orchestrators/
-    validation.py       ValidationOrchestrator
-    rules.py            RulesWorkflow
-    ai_enrichment.py    AIEnrichment + LLM providers
+df = pd.read_csv("customers.csv")
 
-core/                   Processing modules
-  validator/            Rule-based validation
-  anomaly.py            ML anomaly detection
-  corpus_validation.py  Corpus matching
-  enhanced_validator.py BERT-enhanced validation
-  storage/database.py   SQLite/PostgreSQL persistence
+# Infer rules from the data, validate, return a cell-level issue report.
+issues = dq.validate(df)
+
+# Recommended: infer rules from a clean reference so bounds/allowed-values
+# are not contaminated by the errors in df.
+issues = dq.validate(df, reference=pd.read_csv("clean_reference.csv"))
+
+# Full pipeline: six quality-dimension scores, corrected copy, audit trail.
+result = dq.run_pipeline(df, dq.load_config())
+print(result["overall_score"], result["issues_count"])
 ```
 
-The engine (`dq_engine/`) has zero UI dependencies. It can be wrapped in FastAPI, called from a Lambda function, or used as a Python library.
+`issues` is a DataFrame with one row per finding: `row_id`, `column`, `issue`,
+`detail`, `severity`, `value`, `expected`, `rule`, `description`.
 
-## AI Providers
-
-| Provider | Setup | Data Privacy |
-|----------|-------|-------------|
-| Ollama (default) | Install [Ollama](https://ollama.ai), run `ollama pull phi3:mini` | Fully offline, data never leaves your machine |
-| Anthropic (Claude) | Set API key in Settings page | Only column statistics sent, never raw data |
-| AWS Bedrock | Configure AWS credentials | Enterprise-grade, runs in your VPC |
-
-AI enrichment is optional. The validation engine works without it.
-
-## Database
-
-Results are stored in SQLite at `./output/dq_investigator.db`. Tables:
-
-- `batch_runs` -- Pipeline execution metadata
-- `issues` -- Every data quality issue found
-- `audit_trail` -- Step-by-step pipeline timing
-- `ai_smart_rules` -- AI-generated validation rules
-- `ai_cross_column` -- Cross-column contradiction analysis
-- `ai_explanations` -- Plain-English anomaly explanations
-- `ai_triage` -- Priority-ranked action plan
-- `ai_executive_summary` -- Management assessment
-
-For enterprise deployment, configure PostgreSQL via environment variables.
-
-## Configuration
-
-### Environment Variables
+## 2. As a CLI (pipeline step)
 
 ```bash
-ANTHROPIC_API_KEY=sk-ant-...    # For Claude AI enrichment
-AWS_REGION=eu-west-2            # For Bedrock/S3
-DATABASE_URL=postgresql://...    # For PostgreSQL (optional)
+dataqualify validate data.csv
+dataqualify validate data.csv --reference clean.csv --out issues.csv
+dataqualify validate data.csv --rules rules.json --format json
 ```
 
-### Default Credentials
+Exits non-zero when issues are found (use `--no-fail` to override), so it can gate
+a downstream job in Airflow, cron, or CI.
 
-| Username | Password |
-|----------|----------|
-| admin | admin123 |
-| analyst | dq2026 |
-| demo | demo |
+## 3. As a REST API
 
-## Requirements
+```bash
+pip install -e ".[api]"
+uvicorn api.main:app --port 8000        # interactive docs at /docs
+```
 
-- Python 3.9+
-- 4GB RAM minimum (8GB recommended for ML features)
-- Ollama (optional, for offline AI)
+Key endpoints (all require an `X-API-Key` header):
 
-## Project Structure
+| Endpoint | Purpose |
+|---|---|
+| `POST /api/v1/validate` | validate an uploaded file → scores, issues, audit trail |
+| `POST /api/v1/s3/validate` | read from S3, validate, write the report back to S3 |
+| `POST /api/v1/profile` | column-level data profiling |
+| `POST /api/v1/rules/generate` | infer validation rules from a dataset |
+| `GET  /api/v1/batches` | batch history |
+
+## 4. As an interactive app
+
+```bash
+pip install -e ".[app]"
+streamlit run app/Home.py                # opens at http://localhost:8501
+```
+
+Default logins (development): `admin` / `admin123`, `analyst` / `dq2026`.
+
+---
+
+## What it checks
+
+Six quality dimensions — **Completeness, Uniqueness, Consistency, Validity,
+Accuracy, Timeliness** — combined into an overall score against a configurable
+pass threshold (default 85).
+
+The engine runs: rule consolidation/inference → hybrid error detection
+(rule-based + Levenshtein typo layer) → unsupervised anomaly scoring
+(Isolation Forest + Local Outlier Factor, GMM-antimode threshold) → correction
+suggestion (abstains rather than guessing) → quality scoring → an explainability
+audit trail on every finding. Optional layers add regulatory citations (BCBS 239,
+UK GDPR/DPA, FCA), entity resolution, and deduplication.
+
+See `architecture.md` for the full pipeline and
+`tests/ENGINE_FIXES_AND_TESTS.md` for precision behaviour and known limitations.
+
+---
+
+## Layout
 
 ```
-ntu-ktp-data-quality/
-  app/                    Multi-page Streamlit application
-  dq_engine/              Core engine package (zero UI dependencies)
-  core/                   Processing modules (validation, anomaly, BERT, S3)
-  infra/                  AWS SAM template, Lambda handlers, Step Functions
-  configs/                Abbreviation mappings, YAML config
-  assets/                 Logos (NTU, UKRI, Bigspark)
-  lib/                    Frontend JS libraries (vis-network, tom-select)
-  tests/                  Engine unit tests
-  TEST2_DATA/             Demo dataset (500 rows, all error types)
-  start.sh                One-command startup script
-  Dockerfile              Docker containerisation
-  docker-compose.yml      Docker Compose config
-  requirements.txt        Python dependencies
+dataqualify/        Public API package (library + CLI entry point)
+core/               The engine: validation, anomaly, correction, corpus, RAG
+  validator/          rule inference (discover.py) + validation (validate.py)
+api/                FastAPI service (thin wrapper over the engine)
+dq_engine/          Orchestrators (validation, rules, AI enrichment)
+app/                Streamlit multi-page application
+infra/              AWS SAM template, Lambda handlers, Step Functions
+tests/              Engine + quality regression tests
 ```
+
+The engine has no hard dependency on Streamlit, AWS, or a language model. LLMs are
+used only for explanation, narration, and orchestration — never for the
+data-quality decisions, which stay deterministic and auditable.
+
+---
+
+## Batch pipeline (AWS)
+
+A reference event-driven deployment: a file dropped in an S3 inbox triggers
+EventBridge → Step Functions → Lambda (thin orchestration) → the ECS engine
+service (heavy compute) → a scored report back to S3 and a record in RDS. The
+`[aws]` extra provides the S3 read/write-back helpers (`core/s3_writeback.py`).
+The storage layer is being generalised behind an adapter so the same engine runs
+against GCS / Azure Blob / local disk.
+
+Optional AI enrichment (rule suggestions, plain-English explanations, executive
+summaries) runs via local Ollama (default, fully offline), Anthropic Claude, or
+AWS Bedrock. It is optional; the validation engine works without it.
+
+---
+
+## Development
+
+```bash
+pip install -e ".[dev]"
+python -m pytest tests/ -q
+```
+
+`tests/test_engine_quality.py` holds the precision, presence, and categorical
+regression suite (see `tests/ENGINE_FIXES_AND_TESTS.md`). Requirements: Python
+3.10+, 4 GB RAM (8 GB for ML features).
+
+---
 
 ## License
 
-Proprietary. NTU KTP Project.
+Proprietary — a Knowledge Transfer Partnership output co-owned by bigspark Ltd,
+Nottingham Trent University, and Innovate UK. Redistribution terms are subject to
+the partners' agreement.
