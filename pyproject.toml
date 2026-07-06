@@ -67,6 +67,8 @@ app = [
 ]
 # Cloud storage / batch pipeline.
 aws = ["boto3>=1.34.0"]
+# MCP server — expose the engine as agent-callable tools.
+mcp = ["mcp>=1.0.0"]
 # Caching (postcode lookups etc.).
 cache = ["redis>=5.0.0"]
 # Reports and external validators.
@@ -75,11 +77,12 @@ extras = ["jinja2>=3.1.2", "requests>=2.31.0", "openpyxl>=3.1.2", "pyarrow>=14.0
 dev = ["pytest>=7.0", "pytest-cov>=4.0"]
 # Everything (interactive app + pipeline + ML).
 all = [
-    "dataqualify[ml,nlp,api,app,aws,cache,extras]",
+    "dataqualify[ml,nlp,api,app,aws,cache,mcp,extras]",
 ]
 
 [project.scripts]
 dataqualify = "dataqualify.cli:main"
+dataqualify-mcp = "dataqualify.mcp_server:main"
 
 [project.urls]
 Repository = "https://github.com/itsbigspark/ntu-ktp-data-quality"

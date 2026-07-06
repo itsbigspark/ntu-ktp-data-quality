@@ -118,6 +118,24 @@ streamlit run app/Home.py                # opens at http://localhost:8501
 
 Default logins (development): `admin` / `admin123`, `analyst` / `dq2026`.
 
+The **Pipeline Monitor** page drives the source connectors from the UI: paste a
+source (file, S3, HTTP API, Companies House), run it, and watch every tracked
+batch — score, pass/fail, issues, timing.
+
+## 5. As an MCP server (for agents)
+
+Expose the engine as tools any MCP-aware agent (Claude Desktop, a pipeline agent)
+can call:
+
+```bash
+pip install -e ".[mcp]"
+python -m dataqualify.mcp_server        # stdio transport
+```
+
+Tools: `validate(source)`, `run_batch(source)`, `list_batches(limit)`,
+`infer_rules(source)`. The tools return deterministic engine results; the calling
+agent decides what to do with them.
+
 ---
 
 ## What it checks
