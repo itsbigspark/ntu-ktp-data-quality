@@ -83,8 +83,11 @@ dataqualify batches                                      # list tracked batches
 ```
 
 Every run is recorded (source, timestamp, score, pass/fail, issue count, timing)
-in a local SQLite tracker by default. The same `run_batch` function is available
-from the library and is the headless spine reused by the cloud pipeline:
+in a local SQLite tracker by default. An **agent node** triages each batch —
+`accept` / `review` / `quarantine` with a plain-English narrative and trend
+escalations. The routing *decisions* are deterministic and auditable; the LLM is
+used only to phrase the narrative. The same `run_batch` function is available from
+the library and is the headless spine reused by the cloud pipeline:
 
 ```python
 import dataqualify as dq

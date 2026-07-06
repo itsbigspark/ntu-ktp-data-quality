@@ -81,15 +81,24 @@ if st.button("RUN BATCH", key="pm_run", use_container_width=True, type="primary"
                     store=_store,
                 )
             if rec.status == "completed":
-                st.success(
-                    f"Batch {rec.batch_id} completed in {rec.duration_s}s — "
-                    f"score {rec.overall_score}, {'PASS' if rec.passed else 'FAIL'}, "
-                    f"{rec.issues_count} issues across {rec.rows} rows."
+                _verdict_style = {"accept": st.success, "review": st.warning,
+                                  "quarantine": st.error}.get(rec.verdict or "review", st.info)
+                _verdict_style(
+                    f"Batch {rec.batch_id} — {(rec.verdict or '').upper()} "
+                    f"({rec.severity}) — score {rec.overall_score}, "
+                    f"{rec.issues_count} issues across {rec.rows} rows, {rec.duration_s}s."
                 )
+                if rec.narrative:
+                    st.markdown(
+                        f"<div style='background:rgba(0,229,255,0.06);border-left:3px solid #00e5ff;"
+                        f"padding:10px 14px;font-family:Share Tech Mono;font-size:0.78rem;"
+                        f"color:#b0ffb8;'>AGENT: {rec.narrative}</div>",
+                        unsafe_allow_html=True,
+                    )
                 if rec.sink:
                     st.caption(f"Results written to {rec.sink}")
             else:
-                st.error(f"Batch {rec.batch_id} failed: {rec.error}")
+                st.error(f"Batch {rec.batch_id} QUARANTINED — {rec.error}")
         except Exception as exc:
             st.error(f"Could not run batch: {exc}")
 
@@ -128,11 +137,11 @@ else:
         "Batch": r.batch_id,
         "Source": r.source,
         "Status": r.status,
+        "Verdict": (r.verdict or "").upper(),
         "Score": "" if r.overall_score is None else round(r.overall_score, 1),
-        "Pass": "" if r.passed is None else ("PASS" if r.passed else "FAIL"),
         "Issues": "" if r.issues_count is None else r.issues_count,
         "Rows": r.rows,
-        "Time (s)": r.duration_s,
+        "Agent narrative": r.narrative or "",
         "When": r.timestamp,
     } for r in records])
 

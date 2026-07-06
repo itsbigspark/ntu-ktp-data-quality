@@ -81,12 +81,18 @@ def _cmd_run(args: argparse.Namespace) -> int:
     if rec.status == "completed":
         print(f"rows: {rec.rows}  columns: {rec.columns}")
         print(f"score: {rec.overall_score}  pass: {rec.passed}  issues: {rec.issues_count}")
+        if rec.verdict:
+            print(f"verdict: {rec.verdict.upper()} ({rec.severity})")
+        if rec.narrative:
+            print(f"agent: {rec.narrative}")
         if rec.sink:
             print(f"written: {rec.sink}")
     else:
         print(f"error: {rec.error}")
+        if rec.verdict:
+            print(f"verdict: {rec.verdict.upper()} ({rec.severity})")
         return 2
-    if rec.passed is False and not args.no_fail:
+    if (rec.passed is False or rec.verdict == "quarantine") and not args.no_fail:
         return 1
     return 0
 
@@ -98,11 +104,12 @@ def _cmd_batches(args: argparse.Namespace) -> int:
     if not records:
         print("no batches recorded yet")
         return 0
-    print(f"{'batch_id':<28} {'status':<10} {'score':>7} {'issues':>7}  source")
+    print(f"{'batch_id':<28} {'status':<10} {'verdict':<11} {'score':>7} {'issues':>7}  source")
     for r in records:
         score = "-" if r.overall_score is None else f"{r.overall_score:.1f}"
         issues = "-" if r.issues_count is None else str(r.issues_count)
-        print(f"{r.batch_id:<28} {r.status:<10} {score:>7} {issues:>7}  {r.source}")
+        verdict = r.verdict or "-"
+        print(f"{r.batch_id:<28} {r.status:<10} {verdict:<11} {score:>7} {issues:>7}  {r.source}")
     return 0
 
 

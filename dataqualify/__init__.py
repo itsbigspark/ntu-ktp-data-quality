@@ -39,6 +39,7 @@ from core.validator.discover import infer_rules_from_unclean as infer_rules  # n
 # Source connectors + headless tracked batch runner (the autonomous spine).
 from .sources import parse_source, SourceConnector  # noqa: E402
 from .batch import run_batch, SQLiteBatchStore, BatchRecord  # noqa: E402
+from .agent import triage, AgentDecision  # noqa: E402
 
 
 def validate(
@@ -84,5 +85,7 @@ __all__ = [
     "run_batch",
     "SQLiteBatchStore",
     "BatchRecord",
+    "triage",
+    "AgentDecision",
     "__version__",
 ]

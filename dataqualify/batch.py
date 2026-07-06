@@ -48,6 +48,10 @@ class BatchRecord:
     duration_s: float = 0.0
     sink: Optional[str] = None
     error: Optional[str] = None
+    # Agent-node decision (per-batch triage/routing/narration).
+    verdict: Optional[str] = None       # "accept" | "review" | "quarantine"
+    severity: Optional[str] = None      # "ok" | "warn" | "critical"
+    narrative: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -74,9 +78,15 @@ CREATE TABLE IF NOT EXISTS batches (
     issues_count  INTEGER,
     duration_s    REAL,
     sink          TEXT,
-    error         TEXT
+    error         TEXT,
+    verdict       TEXT,
+    severity      TEXT,
+    narrative     TEXT
 );
 """
+
+# Columns added after the first release; migrated onto existing databases.
+_MIGRATIONS = [("verdict", "TEXT"), ("severity", "TEXT"), ("narrative", "TEXT")]
 
 
 class SQLiteBatchStore:
@@ -87,6 +97,10 @@ class SQLiteBatchStore:
         os.makedirs(os.path.dirname(os.path.abspath(path)) or ".", exist_ok=True)
         with self._conn() as c:
             c.execute(_SCHEMA)
+            existing = {r["name"] for r in c.execute("PRAGMA table_info(batches)").fetchall()}
+            for col, coltype in _MIGRATIONS:
+                if col not in existing:
+                    c.execute(f"ALTER TABLE batches ADD COLUMN {col} {coltype}")
 
     def _conn(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self.path)
@@ -98,12 +112,14 @@ class SQLiteBatchStore:
             c.execute(
                 """INSERT OR REPLACE INTO batches
                    (batch_id, source, timestamp, status, rows, columns,
-                    overall_score, passed, issues_count, duration_s, sink, error)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    overall_score, passed, issues_count, duration_s, sink, error,
+                    verdict, severity, narrative)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                 (rec.batch_id, rec.source, rec.timestamp, rec.status, rec.rows,
                  rec.columns, rec.overall_score,
                  None if rec.passed is None else int(rec.passed),
-                 rec.issues_count, rec.duration_s, rec.sink, rec.error),
+                 rec.issues_count, rec.duration_s, rec.sink, rec.error,
+                 rec.verdict, rec.severity, rec.narrative),
             )
 
     def list(self, limit: int = 50) -> List[BatchRecord]:
@@ -160,11 +176,14 @@ def run_batch(
     rules: Optional[Dict[str, Any]] = None,
     sink_dir: Optional[str] = None,
     store: Optional[SQLiteBatchStore] = None,
+    agent: bool = True,
 ) -> BatchRecord:
-    """Fetch from ``source``, run the pipeline, record a tracked batch.
+    """Fetch from ``source``, run the pipeline, triage, and record a tracked batch.
 
-    Never raises on a data/pipeline error: failures are captured and recorded
-    with ``status="failed"`` so every attempt is tracked.
+    When ``agent`` is True (default) the per-batch agent node triages the result
+    (verdict / severity / narrative / escalations) after validation. Never raises
+    on a data/pipeline error: failures are captured and recorded with
+    ``status="failed"`` (and quarantined) so every attempt is tracked.
     """
     from core.engine import run_pipeline
 
@@ -194,12 +213,25 @@ def run_batch(
         rec.issues_count = int(result.get("issues_count", 0))
         rec.status = "completed"
 
+        if agent:
+            from .agent import triage
+            decision = triage(
+                rows=rec.rows, overall_score=rec.overall_score, passed=rec.passed,
+                issues_count=rec.issues_count or 0, issues_df=result.get("issues"),
+                history=store.list(limit=10),
+            )
+            rec.verdict, rec.severity, rec.narrative = (
+                decision.verdict, decision.severity, decision.narrative)
+
         if sink_dir:
             rec.sink = _write_sink(sink_dir, batch_id, result)
     except Exception as exc:  # noqa: BLE001 - we deliberately record all failures
         rec.status = "failed"
         rec.error = f"{type(exc).__name__}: {exc}"
         rec._traceback = traceback.format_exc()  # type: ignore[attr-defined]
+        if agent:
+            rec.verdict, rec.severity = "quarantine", "critical"
+            rec.narrative = f"Batch could not be processed and was quarantined: {rec.error}"
     finally:
         rec.duration_s = round(time.time() - started, 3)
         store.record(rec)
